@@ -1,6 +1,8 @@
 # Ghalib Ahmad
 
-[![Twitter Badge](https://iq.aws.amazon.com/e/ghalib?style=flat-square&logo=twitter&logoColor=white&link=https://iq.aws.amazon.com/e/ghalib)]([https://twitter.com/owainlewi](https://iq.aws.amazon.com/e/ghalib)
+
+[![Twitter Badge](https://iq.aws.amazon.com/e/ghalib?style=flat-square&logo=twitter&logoColor=white&link=https://iq.aws.amazon.com/e/ghalib)](https://iq.aws.amazon.com/e/ghalib)
+ps://iq.aws.amazon.com/e/ghalib?style=flat-square&logo=twitter&logoColor=white&link=https://iq.aws.amazon.com/e/ghalib)](https://iq.aws.amazon.com/e/ghalib)
 
 1. :office: Head of  Engineering. Cloud Architect, ML Engineer.
 2. :speech_balloon: Ask me about Cloud Architecture, Tech leadership, or how to build/scale software engineering teams: [LinkedIn](https://www.linkedin.com/in/cloudadvisory/). 
