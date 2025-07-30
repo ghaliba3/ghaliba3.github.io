@@ -1,7 +1,7 @@
 # Ghalib Ahmad
 
 
-[![Twitter Badge](https://iq.aws.amazon.com/e/ghalib?style=flat-square&logo=twitter&logoColor=white&link=https://iq.aws.amazon.com/e/ghalib)](https://iq.aws.amazon.com/e/ghalib)
+[![Twitter Badge](https://iq.aws.amazon.com/e/ghalib/?style=flat-square&logo=twitter&logoColor=white&link=https://iq.aws.amazon.com/e/ghalib/)](https://iq.aws.amazon.com/e/ghalib/)
 
 
 1. :office: Head of  Engineering. Cloud Architect, ML Engineer.
