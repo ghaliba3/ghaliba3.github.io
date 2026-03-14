@@ -106,7 +106,7 @@ Services/ difficult topics I encountered:
 
 52. https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_example-scps.html#example-scp-deny-region
 
-53. 
+53. AWS Bedrock
 
 
 
