@@ -16,6 +16,7 @@
       </div>
     </div>
     <div class="stats" id="stats">
+      <div class="stat timer" id="timer" hidden><span class="stat-num" id="timer-num">--:--</span><span class="stat-label">Time left</span></div>
       <div class="stat"><span class="stat-num" id="stat-answered">0</span><span class="stat-label">Answered</span></div>
       <div class="stat"><span class="stat-num" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
       <div class="stat"><span class="stat-num" id="stat-accuracy">—</span><span class="stat-label">Accuracy</span></div>
@@ -30,6 +31,7 @@
       <select id="mode-select">
         <option value="practice">Practice (instant feedback)</option>
         <option value="exam">Exam (reveal at end)</option>
+        <option value="mock">Mock exam (timed, 65 Q / 130 min)</option>
       </select>
     </label>
     <button id="shuffle-btn" class="btn ghost">⤮ Shuffle</button>
@@ -40,6 +42,19 @@
       <span class="progress-text" id="progress-text">0 / 0</span>
     </div>
   </div>
+
+  <section class="mock-start card" id="mock-start" hidden>
+    <h2>Full-length timed mock exam</h2>
+    <p class="mock-lead">Simulates the real testing experience at professional difficulty.</p>
+    <ul class="mock-facts">
+      <li><strong>65</strong> questions, drawn at random and balanced across all 10 domains</li>
+      <li><strong>130 minutes</strong> on a countdown timer — the exam auto-submits when time runs out</li>
+      <li><strong>No feedback</strong> during the exam; you can flag/revisit any question via the navigator</li>
+      <li>Scored at the end with a <strong>per-domain breakdown</strong> and full answer review (passing ≈ 72%)</li>
+    </ul>
+    <button id="start-mock-btn" class="btn primary">Start mock exam</button>
+    <button id="cancel-mock-btn" class="btn ghost" hidden>Cancel</button>
+  </section>
 
   <main id="main">
     <section class="card" id="question-card">
