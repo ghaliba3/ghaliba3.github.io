@@ -126,6 +126,14 @@ main {
 .exam-result h2 { margin-top: 0; }
 .score-big { font-size: 42px; font-weight: 800; color: var(--accent); }
 
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
+.auth { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.auth-hint { color: var(--muted); font-size: 12px; }
+.user-chip { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 4px 8px 4px 4px; }
+.user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: var(--panel-2); }
+.user-name { font-size: 13px; font-weight: 600; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-chip .btn { padding: 6px 10px; font-size: 12px; }
+
 .stat.timer .stat-num { color: var(--accent-2); font-variant-numeric: tabular-nums; }
 .stat.timer.warn { border-color: var(--red); animation: pulse 1s infinite; }
 .stat.timer.warn .stat-num { color: var(--red); }

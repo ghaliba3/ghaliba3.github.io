@@ -1,13 +1,23 @@
 /* AWS Generative AI Developer — practice exam (vanilla JS, no build step) */
 
 const LS_KEY = "aws-genai-quiz-progress-v1";
+const USER_KEY = "aws-genai-quiz-user-v1";
 const MOCK = { count: 65, minutes: 130, pass: 72 }; // full-length timed mock exam
+
+// ── Google Sign-In ──────────────────────────────────────────────────────────
+// Paste your OAuth 2.0 Client ID below (see README.md). Until it is set, the app
+// runs in guest mode and shows a small "Sign-in not configured" hint.
+const GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const AUTH_CONFIGURED =
+  /\.apps\.googleusercontent\.com$/.test(GOOGLE_CLIENT_ID) &&
+  !GOOGLE_CLIENT_ID.startsWith("REPLACE_WITH_");
 
 const state = {
   all: [],          // every question
   view: [],         // questions currently in play
   idx: 0,
   mode: "practice",
+  user: null,             // { sub, name, email, picture } when signed in
   // practice/exam progress, persisted; keyed by question id: { selected:[], checked, correct }
   records: {},
   // in-memory record set for the active mock attempt (not persisted)
@@ -30,23 +40,111 @@ async function load() {
     $("foot-status").textContent = "Load error";
     return;
   }
+  migrateLegacyProgress();
+  restoreUser();
   restore();
   buildCategoryFilter();
   state.mode = $("mode-select").value;
   applyFilter();
   wire();
+  initAuth();
+  renderAuthUI();
   $("foot-status").textContent = `${state.all.length} questions loaded`;
+}
+
+/* ---- per-user progress storage ---- */
+function userKey() { return LS_KEY + "::" + (state.user ? state.user.sub : "guest"); }
+
+function migrateLegacyProgress() {
+  // Early builds stored guest progress under the bare LS_KEY — preserve it.
+  const guestKey = LS_KEY + "::guest";
+  const legacy = localStorage.getItem(LS_KEY);
+  if (legacy && !localStorage.getItem(guestKey)) localStorage.setItem(guestKey, legacy);
 }
 
 function restore() {
   try {
-    const saved = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
-    if (saved && saved.records) state.records = saved.records;
-  } catch { /* ignore */ }
+    const saved = JSON.parse(localStorage.getItem(userKey()) || "{}");
+    state.records = (saved && saved.records) ? saved.records : {};
+  } catch { state.records = {}; }
 }
 function persist() {
   if (state.mock.active) return; // mock attempts are ephemeral
-  localStorage.setItem(LS_KEY, JSON.stringify({ records: state.records }));
+  localStorage.setItem(userKey(), JSON.stringify({ records: state.records }));
+}
+
+function restoreUser() {
+  try {
+    const u = JSON.parse(localStorage.getItem(USER_KEY) || "null");
+    if (u && u.sub) state.user = u;
+  } catch { /* ignore */ }
+}
+
+/* ---- Google Identity Services ---- */
+function decodeJwt(token) {
+  const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  const json = decodeURIComponent(
+    atob(b64).split("").map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("")
+  );
+  return JSON.parse(json);
+}
+
+function onCredential(resp) {
+  try {
+    const p = decodeJwt(resp.credential);
+    state.user = { sub: p.sub, name: p.name || p.email || "User", email: p.email || "", picture: p.picture || "" };
+    localStorage.setItem(USER_KEY, JSON.stringify(state.user));
+    afterIdentityChange();
+  } catch (e) { console.error("Google sign-in failed:", e); }
+}
+
+function signOut() {
+  if (AUTH_CONFIGURED && window.google?.accounts?.id) {
+    try { google.accounts.id.disableAutoSelect(); } catch { /* ignore */ }
+  }
+  state.user = null;
+  localStorage.removeItem(USER_KEY);
+  afterIdentityChange();
+}
+
+// Switch the active progress namespace and reset transient UI when the user changes.
+function afterIdentityChange() {
+  leaveMock();
+  restore();
+  renderAuthUI();
+  if (state.mode === "mock") showMockStart();
+  else applyFilter();
+}
+
+let gisTries = 0;
+function initAuth() {
+  if (!AUTH_CONFIGURED) return; // guest-only; hint shown by renderAuthUI()
+  if (!(window.google && google.accounts && google.accounts.id)) {
+    if (gisTries++ < 40) setTimeout(initAuth, 150); // wait for async GIS script
+    return;
+  }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onCredential, auto_select: false });
+  if (!state.user) renderGisButton();
+}
+function renderGisButton() {
+  const el = $("g-signin");
+  if (!el || !(window.google && google.accounts && google.accounts.id)) return;
+  el.innerHTML = "";
+  google.accounts.id.renderButton(el, { theme: "filled_black", size: "medium", type: "standard", shape: "pill", text: "signin_with" });
+}
+
+function renderAuthUI() {
+  const chip = $("user-chip"), gbtn = $("g-signin"), hint = $("auth-hint");
+  if (state.user) {
+    chip.hidden = false; gbtn.hidden = true; hint.hidden = true;
+    $("user-name").textContent = state.user.name;
+    const av = $("user-avatar");
+    if (state.user.picture) { av.src = state.user.picture; av.hidden = false; } else { av.hidden = true; }
+  } else {
+    chip.hidden = true;
+    if (AUTH_CONFIGURED) { gbtn.hidden = false; hint.hidden = true; renderGisButton(); }
+    else { gbtn.hidden = true; hint.hidden = false; hint.textContent = "Sign-in not configured"; }
+  }
 }
 
 /* ---- record access (practice/exam vs mock) ---- */
@@ -414,6 +512,7 @@ function wire() {
   $("shuffle-btn").addEventListener("click", shuffle);
   $("category-filter").addEventListener("change", applyFilter);
   $("start-mock-btn").addEventListener("click", startMock);
+  $("signout-btn").addEventListener("click", signOut);
 
   $("mode-select").addEventListener("change", (e) => {
     leaveMock();
@@ -429,7 +528,8 @@ function wire() {
   });
 
   $("reset-btn").addEventListener("click", () => {
-    if (!confirm("Reset all saved practice progress and answers?")) return;
+    const who = state.user ? state.user.name : "guest";
+    if (!confirm(`Reset saved practice progress for ${who}?`)) return;
     state.records = {};
     persist();
     state.idx = 0;
