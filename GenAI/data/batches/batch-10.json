@@ -1,0 +1,397 @@
+[
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A platform team must allow a microservice to invoke only two specific Anthropic Claude models in us-east-1, while explicitly preventing it from invoking any other foundation model or using cross-Region inference profiles. The IAM policy will be attached to the service role. Which design best enforces least privilege?",
+    "options": [
+      "Allow bedrock:InvokeModel and bedrock:InvokeModelWithResponseStream on the two specific foundation-model ARNs, and avoid using a wildcard Resource",
+      "Allow bedrock:* on Resource \"*\" but add a permissions boundary that denies bedrock:CreateModelCustomizationJob",
+      "Allow bedrock:InvokeModel on Resource \"*\" with a condition aws:RequestedRegion equals us-east-1",
+      "Allow bedrock:InvokeModel on the two model ARNs plus a separate statement allowing the bedrock:InvokeModel action on all inference-profile ARNs in the account"
+    ],
+    "correct": [0],
+    "explanation": "Scoping the allowed actions to the exact foundation-model ARNs grants only what is needed and naturally excludes other models and inference profiles. A wildcard Resource with only a Region condition still permits every model in the Region, and adding an inference-profile statement would reintroduce cross-Region access the requirement forbids."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Your security team requires that an IAM role be permitted to call Bedrock only when the request originates from inside your VPC through an interface endpoint, and never from the public internet or another network. Which IAM policy condition most precisely enforces this for the InvokeModel action?",
+    "options": [
+      "A Deny statement using NotIpAddress on aws:SourceIp with your office CIDR ranges",
+      "An Allow statement with a condition on aws:SourceVpce matching the Bedrock interface VPC endpoint ID",
+      "An Allow statement with a condition on aws:PrincipalOrgID matching your organization",
+      "A condition on aws:SecureTransport set to true"
+    ],
+    "correct": [1],
+    "explanation": "The aws:SourceVpce condition key ties access to a specific interface VPC endpoint, guaranteeing traffic arrives through PrivateLink rather than the public endpoint. SourceIp filtering is brittle and does not prove the request used the endpoint, SecureTransport only enforces TLS, and PrincipalOrgID controls which org accounts can call, not the network path."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "multiple",
+    "question": "A regulated firm runs a Bedrock application in private subnets with no internet gateway or NAT. The app must invoke Bedrock models, read prompt templates from S3, and write invocation logs to S3, all without traffic leaving the AWS network. Which connectivity choices meet the requirement at the lowest ongoing cost? (Select TWO.)",
+    "options": [
+      "Create an interface VPC endpoint (PrivateLink) for com.amazonaws.<region>.bedrock-runtime",
+      "Create a gateway VPC endpoint for Amazon S3",
+      "Create an interface VPC endpoint for Amazon S3 to handle both reads and log delivery",
+      "Add a NAT gateway and route 0.0.0.0/0 through it to reach the public Bedrock endpoint",
+      "Use a Bedrock gateway VPC endpoint, since Bedrock supports gateway endpoints like S3 and DynamoDB"
+    ],
+    "correct": [0, 1],
+    "explanation": "Bedrock runtime is reachable only via an interface (PrivateLink) endpoint, while S3 supports a gateway endpoint that carries no hourly or per-GB charge, making it the cheapest private path to S3. An interface endpoint for S3 works but adds hourly and data-processing fees, a NAT gateway sends traffic over the internet, and Bedrock does not offer a gateway endpoint."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Compliance mandates that all data Bedrock stores or processes on your behalf, including model customization training data and the resulting custom model artifacts, be encrypted with keys your organization controls and can audit and revoke. What is the correct approach?",
+    "options": [
+      "Rely on Bedrock's default AWS owned encryption, which already satisfies customer-managed key requirements",
+      "Encrypt the S3 training bucket with SSE-S3 and let Bedrock copy the data internally",
+      "Provide a customer managed AWS KMS key when creating the customization job and for the custom model, and grant Bedrock the necessary kms:Decrypt/GenerateDataKey permissions via the key policy",
+      "Use client-side encryption on the training files and pass the plaintext data key in the job request"
+    ],
+    "correct": [2],
+    "explanation": "Bedrock lets you supply a customer managed KMS key for customization jobs and custom models, which gives you key rotation, audit via CloudTrail, and the ability to revoke access. Default AWS owned keys are not auditable or revocable by you, SSE-S3 does not cover the model artifacts Bedrock produces, and passing plaintext data keys is insecure and unsupported."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A team has steady, predictable production traffic of roughly 40 requests per second to a single Claude model 24x7 and is hitting on-demand throughput throttling at peak. They want guaranteed throughput and the lowest cost for this sustained load. Which option is most appropriate?",
+    "options": [
+      "Purchase Provisioned Throughput with a committed term for the model to reserve model units",
+      "Stay on on-demand and implement exponential backoff with jitter to absorb the throttling",
+      "Switch the workload to the Batch inference API to avoid throttling",
+      "Request a service quota increase for on-demand InvokeModel and keep paying per token"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned Throughput reserves model units that guarantee a fixed throughput and, with a committed term, offers the lowest cost for steady high-volume workloads. Backoff and quota increases only mitigate on-demand throttling without guaranteeing capacity, and Batch is for asynchronous, latency-tolerant jobs, not real-time request/response traffic."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "An analytics team needs to score 5 million customer reviews with a Bedrock model overnight. Latency per record does not matter, but total cost does. Which approach minimizes cost while completing the job?",
+    "options": [
+      "Use the Bedrock Batch inference (CreateModelInvocationJob) API, which processes records asynchronously at a reduced per-token price",
+      "Use on-demand InvokeModel in a tight loop across hundreds of threads",
+      "Purchase Provisioned Throughput for the night and tear it down in the morning",
+      "Use prompt caching on the on-demand endpoint to lower the per-record cost"
+    ],
+    "correct": [0],
+    "explanation": "Batch inference is designed for large asynchronous workloads and is billed at roughly half the on-demand token price, making it the cheapest option when latency is irrelevant. On-demand looping risks throttling and costs full price, Provisioned Throughput is billed by committed model-unit time and is overkill for a one-off job, and prompt caching helps only with repeated prompt prefixes, not unique reviews."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A chatbot sends a long, unchanging 8,000-token system prompt and tool definitions on every turn, followed by a short user message. Token costs from the repeated prefix dominate the bill. Which Bedrock capability reduces cost with the least application rework?",
+    "options": [
+      "Enable prompt caching so the static prefix is cached and billed at a large discount on cache hits",
+      "Move the system prompt into a Knowledge Base so it is retrieved instead of sent",
+      "Switch to Provisioned Throughput to get a flat rate regardless of token count",
+      "Truncate the system prompt on every other request to halve input tokens"
+    ],
+    "correct": [0],
+    "explanation": "Prompt caching stores the repeated prefix so cache-read tokens are billed at a steep discount versus normal input tokens, directly targeting the cost of the unchanging prefix with minimal code changes. A Knowledge Base addresses dynamic retrieval not a fixed system prompt, Provisioned Throughput still meters work via model units, and truncating the prompt degrades behavior."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "multiple",
+    "question": "An auditor must be able to prove, for every Bedrock InvokeModel call over the last year, who made the call, when, and from where, AND separately review the actual prompt and completion content for a sampled subset. Which two configurations together satisfy both needs? (Select TWO.)",
+    "options": [
+      "Enable CloudTrail data events for Bedrock to capture per-invocation API activity (identity, time, source)",
+      "Enable Bedrock model invocation logging, delivering request/response payloads to S3 (and/or CloudWatch Logs)",
+      "Rely on CloudTrail management events alone, which already log every InvokeModel request with payloads",
+      "Enable AWS Config rules to record the prompt and completion of each invocation",
+      "Turn on VPC Flow Logs to capture the prompt and completion content"
+    ],
+    "correct": [0, 1],
+    "explanation": "CloudTrail data events record the per-call API activity (principal, time, source IP) but not payload bodies, while Bedrock model invocation logging captures the actual request and response content to S3/CloudWatch. Management events do not log InvokeModel or its payloads, Config records resource configuration not prompts, and Flow Logs capture network metadata only."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A team enabled CloudTrail data events for Bedrock across the organization and the monthly CloudTrail bill jumped sharply due to extremely high invocation volume. They still need an audit trail of management actions (model access changes, guardrail edits) but want to cut the data-event cost. What is the best action?",
+    "options": [
+      "Disable Bedrock data events and keep management events, which are recorded at no additional CloudTrail charge",
+      "Delete the trail entirely to stop all charges",
+      "Switch data events to log only to CloudWatch Logs instead of S3 to avoid per-event billing",
+      "Reduce the S3 bucket lifecycle to delete CloudTrail logs after one day"
+    ],
+    "correct": [0],
+    "explanation": "CloudTrail charges per data event, but management events for one trail are delivered free, so disabling Bedrock data events while keeping management events preserves the audit of administrative actions at no extra charge. Deleting the trail loses all auditing, the destination does not change the per-data-event charge, and shortening retention does not reduce the per-event ingestion cost."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Under sudden load, an application receives intermittent ThrottlingException (HTTP 429) responses from Bedrock on-demand. The team wants maximum successful throughput without overwhelming the service or hammering it during outages. Which client behavior is the recommended best practice?",
+    "options": [
+      "Retry immediately in a tight loop until the request succeeds",
+      "Retry with exponential backoff and jitter, capping the number of attempts",
+      "Catch the 429 and fail the request immediately so the caller can resubmit later",
+      "Open a new connection per retry to spread load across endpoints"
+    ],
+    "correct": [1],
+    "explanation": "Exponential backoff with jitter spreads retries over time and prevents synchronized retry storms, which is AWS's recommended pattern for throttling. Tight-loop retries amplify the overload, failing immediately wastes recoverable requests, and opening new connections does not address the underlying rate limit."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A FinOps team wants to alert when a specific Bedrock model's token consumption spikes, so they can investigate runaway agents before the bill grows. Which CloudWatch metric, emitted by Bedrock, most directly supports this alarm?",
+    "options": [
+      "Invocations and InputTokenCount / OutputTokenCount dimensions for the model in the AWS/Bedrock namespace",
+      "BillingEstimatedCharges in the AWS/Billing namespace filtered by model ARN",
+      "CPUUtilization for the Bedrock fleet",
+      "Number of items in the S3 invocation-log bucket"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock publishes Invocations and token-count metrics (InputTokenCount, OutputTokenCount) to the AWS/Bedrock namespace per model, which is the direct signal for usage spikes. Billing alarms are coarse and not broken down by model ARN, there is no CPU metric exposed for the managed fleet, and counting S3 log objects is an indirect proxy that depends on logging being enabled."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "You must compare two candidate models for a summarization use case using your own labeled reference summaries and quantitative metrics, with no human reviewers and a repeatable score. Which Bedrock feature fits best?",
+    "options": [
+      "Bedrock model evaluation, automatic evaluation job using your custom prompt dataset and built-in metrics",
+      "Bedrock model evaluation, human evaluation job with an internal work team",
+      "Bedrock Guardrails configured with contextual grounding checks",
+      "A SageMaker Ground Truth labeling job"
+    ],
+    "correct": [0],
+    "explanation": "Automatic model evaluation runs algorithmic metrics against your dataset to produce repeatable, quantitative scores without human raters, exactly matching the requirement. Human evaluation introduces reviewers you explicitly want to avoid, Guardrails enforce policy at runtime rather than comparing models, and Ground Truth is for data labeling, not model scoring."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A legal team needs to judge model outputs for tone, helpfulness, and brand voice, which are subjective and not captured by automated metrics, using their own staff as reviewers. Which Bedrock capability should be used?",
+    "options": [
+      "Bedrock model evaluation, human evaluation job using your own work team to rate responses",
+      "Bedrock model evaluation, automatic evaluation with the toxicity metric",
+      "Amazon A2I configured against the InvokeModel endpoint",
+      "CloudWatch anomaly detection on the OutputTokenCount metric"
+    ],
+    "correct": [0],
+    "explanation": "Human evaluation in Bedrock model evaluation lets you bring your own work team to rate responses on subjective dimensions, which automated metrics cannot capture. Automatic toxicity metrics measure only specific algorithmic properties, A2I is a general human-review service not integrated as a Bedrock evaluation job, and CloudWatch metrics describe usage, not output quality."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "multiple",
+    "question": "A security review requires that Bedrock model invocation logging be reliable and the log destination protected. Logging delivers request/response payloads to an S3 bucket and a CloudWatch log group. Which two configurations are required or strongly recommended? (Select TWO.)",
+    "options": [
+      "Grant Bedrock a service role / resource policy permission to write to the chosen S3 bucket and CloudWatch log group",
+      "Enable SSE-KMS on the S3 bucket and grant the Bedrock logging principal access to the KMS key",
+      "Make the S3 logging bucket public so Bedrock can deliver logs without credentials",
+      "Disable bucket versioning to prevent Bedrock from creating duplicate log objects",
+      "Store logs only in CloudWatch because S3 cannot receive invocation payloads"
+    ],
+    "correct": [0, 1],
+    "explanation": "Bedrock needs explicit write permission to the destinations, and if the bucket uses SSE-KMS the Bedrock logging principal must be granted use of the key or delivery fails. Public buckets are a serious risk and unnecessary, versioning is unrelated to duplicates, and S3 is a fully supported invocation-logging destination."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "An organization wants central control so that only approved Bedrock foundation models can be used across all member accounts, regardless of individual account IAM policies. Which mechanism enforces this most effectively?",
+    "options": [
+      "An AWS Organizations Service Control Policy (SCP) that denies bedrock:InvokeModel except on the approved model ARNs",
+      "An IAM permissions boundary applied manually in each account's roles",
+      "A resource-based policy on each foundation model restricting principals",
+      "A tag policy requiring an 'approved' tag on models"
+    ],
+    "correct": [0],
+    "explanation": "An SCP sets a permission ceiling across every account in the org and cannot be overridden by local IAM, making it the right central guardrail for restricting models. Permissions boundaries must be applied per-role and can be missed, foundation models do not expose customer-editable resource policies, and tag policies govern tagging conventions rather than enforce invocation restrictions."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A workload's traffic is bursty: long idle periods with occasional short, sharp spikes that briefly exceed on-demand limits. The team wants to avoid both throttling-induced failures and paying for idle reserved capacity. Which strategy balances cost and reliability best?",
+    "options": [
+      "Use on-demand inference with exponential backoff plus a request queue to smooth spikes, and request quota increases if sustained limits are hit",
+      "Purchase the largest Provisioned Throughput commitment to cover the peak spikes",
+      "Run everything through Batch inference to eliminate spikes",
+      "Provision a small committed Provisioned Throughput tier sized to the peak and let it sit idle between spikes"
+    ],
+    "correct": [0],
+    "explanation": "On-demand with backoff and a smoothing queue charges only for tokens used and handles transient spikes, which fits bursty, mostly-idle traffic without paying for reserved capacity. Provisioned Throughput bills for committed model-unit time whether or not it is used, wasting money on idle periods, and Batch cannot serve interactive spike traffic."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A developer's IAM policy allows bedrock:InvokeModel on the model ARN, but calls fail with AccessDenied while the application also tries to use a customer managed KMS key to decrypt prompts stored in S3. The Bedrock action itself is permitted. What is the most likely missing permission?",
+    "options": [
+      "The principal lacks kms:Decrypt on the customer managed key used to encrypt the S3 objects",
+      "The principal needs bedrock:CreateFoundationModel on the model ARN",
+      "The model ARN must be added to a security group",
+      "The KMS key must be an AWS managed key, not customer managed, for Bedrock to work"
+    ],
+    "correct": [0],
+    "explanation": "Reading SSE-KMS encrypted objects requires kms:Decrypt on the key in addition to S3 read and Bedrock permissions, and its absence produces AccessDenied even though InvokeModel is allowed. CreateFoundationModel is not a real customer action, security groups govern network not API authorization, and Bedrock fully supports customer managed KMS keys."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Token billing for Bedrock on-demand text models is based on which dimension, and what is the cost implication for a verbose application?",
+    "options": [
+      "Input plus output tokens are billed, typically at different per-token rates, so reducing verbose outputs and trimming prompts both lower cost",
+      "Only the number of API calls is billed, so token length is irrelevant to cost",
+      "Only input tokens are billed, so long completions are free",
+      "A flat monthly fee per enabled model regardless of usage"
+    ],
+    "correct": [0],
+    "explanation": "On-demand text models bill for both input and output tokens, often at distinct rates with output usually more expensive, so controlling both prompt size and response length reduces spend. Billing is not per-call, output tokens are not free, and on-demand has no flat per-model fee."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "multiple",
+    "question": "A company must keep all Bedrock inference traffic private and prevent data exfiltration to non-approved AWS accounts or models even if a credential leaks. Which combination of controls best meets these goals? (Select THREE.)",
+    "options": [
+      "An interface VPC endpoint for bedrock-runtime with an endpoint policy restricting the allowed actions and model ARNs",
+      "An IAM identity-policy or SCP condition on aws:SourceVpce so credentials only work via the endpoint",
+      "Disabling Bedrock model invocation logging to reduce data stored",
+      "A VPC endpoint policy that allows only the organization's account IDs / approved model ARNs",
+      "Making the interface endpoint accessible from the public internet for redundancy"
+    ],
+    "correct": [0, 1, 3],
+    "explanation": "An interface endpoint with a restrictive endpoint policy, an aws:SourceVpce condition forcing all calls through that endpoint, and an endpoint policy limited to approved accounts/models together create private, exfiltration-resistant access. Disabling logging removes audit evidence without improving security, and exposing the endpoint publicly defeats the private-connectivity requirement."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A team commits to Provisioned Throughput for a base model. Mid-term they realize they actually need a fine-tuned custom version of that model with the same guaranteed throughput. What is the correct understanding of Provisioned Throughput here?",
+    "options": [
+      "Provisioned Throughput can be purchased for custom (fine-tuned) models as well as base models, and is required to deploy a custom model for inference at guaranteed capacity",
+      "Provisioned Throughput applies only to base models; custom models must always run on-demand",
+      "Custom models are billed per API call with no throughput option",
+      "You must delete the custom model and re-import it as a base model to use Provisioned Throughput"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned Throughput supports custom/fine-tuned models, and deploying a customized model for production inference generally requires purchasing model units for it. The claim that custom models run only on-demand or per-call is incorrect, and there is no need to convert a custom model into a base model."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Your finance team sees rising Bedrock costs and asks for per-team, per-application cost attribution within a single shared account. Which approach gives the most accurate breakdown?",
+    "options": [
+      "Apply cost allocation tags to taggable Bedrock resources (e.g., provisioned models, evaluation/customization jobs) and use AWS Cost Explorer / CUR grouped by tag",
+      "Read the Invocations CloudWatch metric and multiply by a fixed assumed price",
+      "Split the total Bedrock line item evenly across all teams each month",
+      "Enable CloudTrail management events and count API calls per IAM user"
+    ],
+    "correct": [0],
+    "explanation": "Cost allocation tags surfaced in Cost Explorer and the Cost and Usage Report provide accurate, billing-grounded attribution for taggable Bedrock resources. Metric-times-assumed-price ignores per-token rate differences, even splits are inaccurate, and counting API calls does not reflect token-based pricing."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A new application is approved but InvokeModel calls fail because the account has never been granted access to the requested Claude model. What must an administrator do before invocation succeeds, and what permission governs it?",
+    "options": [
+      "Request model access for that foundation model in the Bedrock console / via the appropriate API, an action gated by IAM permissions such as those for managing model access",
+      "Open a support case to AWS to physically provision GPUs in the account",
+      "Increase the on-demand token quota, which automatically enables the model",
+      "Attach the model's ARN to the VPC route table"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock requires explicitly enabling access to specific foundation models for the account before they can be invoked, and that administrative step is itself controlled by IAM permissions. No GPU provisioning is involved, a quota increase does not grant model access, and route tables have nothing to do with model entitlement."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "An incident requires correlating a suspicious Bedrock configuration change (a guardrail being disabled) with the identity that made it. Which CloudTrail event category captures this, and at what cost?",
+    "options": [
+      "CloudTrail management events capture the guardrail configuration change and are recorded free for one trail per account",
+      "CloudTrail data events are required and are free of charge",
+      "Only Bedrock model invocation logging records guardrail changes",
+      "AWS Config is the only service that records who disabled the guardrail"
+    ],
+    "correct": [0],
+    "explanation": "Administrative/control-plane changes like disabling a guardrail are management events, which a single trail records at no additional charge along with the calling identity. Data events are billed per event and cover invocation-level activity, invocation logging stores payloads not config-change identity, and Config records resource state but management events directly capture the actor."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "multiple",
+    "question": "To minimize Bedrock spend without hurting user experience for an interactive assistant, which optimizations are sound? (Select TWO.)",
+    "options": [
+      "Enable prompt caching for the large static instruction/context prefix reused across turns",
+      "Right-size the model, routing simple requests to a smaller/cheaper model and only escalating hard ones",
+      "Switch all interactive traffic to Batch inference for the lower token price",
+      "Disable streaming so output tokens are not billed",
+      "Always use the largest available model to reduce the number of retries"
+    ],
+    "correct": [0, 1],
+    "explanation": "Prompt caching cuts the cost of repeated prefixes and model right-sizing avoids paying premium rates for easy queries, both lowering cost while preserving interactivity. Batch is asynchronous and unsuitable for live chat, streaming does not change token billing, and defaulting to the largest model raises cost rather than lowering it."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A multi-account organization wants member accounts to share a single set of Provisioned Throughput model units to avoid each buying its own commitment, while still centralizing the spend. Which approach is most appropriate?",
+    "options": [
+      "Centralize Bedrock inference in a shared services account that owns the Provisioned Throughput, and let member accounts invoke it via cross-account roles or a private endpoint",
+      "Buy separate Provisioned Throughput in every account so each is isolated",
+      "Use a single SCP to automatically pool unused model units across accounts",
+      "Enable Bedrock cross-account model unit sharing in the Organizations console"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned Throughput is owned by the account that purchases it, so centralizing inference in a shared services account and granting cross-account/endpoint access lets teams share one commitment and consolidates spend. Buying per-account commitments fragments and wastes capacity, SCPs cannot pool capacity, and there is no Organizations feature that automatically shares model units."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A team wants to detect, in near real time, when a particular Bedrock model starts returning elevated client or server errors so they can fail over. Which is the most direct operational signal?",
+    "options": [
+      "Create CloudWatch alarms on the InvocationClientErrors / InvocationServerErrors (and InvocationThrottles) metrics in the AWS/Bedrock namespace",
+      "Parse the S3 invocation logs hourly with Athena and alert on error strings",
+      "Poll CloudTrail every minute for failed InvokeModel events",
+      "Watch the Billing metric for a sudden drop in charges"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock emits client-error, server-error, and throttle metrics to CloudWatch, so alarms on them give near-real-time error detection for failover. Athena over S3 logs is hourly and slow, CloudTrail polling is delayed and not designed for live alarms, and billing changes are a lagging, indirect indicator."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "A data-privacy officer asks whether enabling Bedrock model invocation logging changes how Bedrock uses prompts and completions, and where the logged content resides. What is the accurate statement?",
+    "options": [
+      "Invocation logging stores prompts/completions only in the customer's own S3 bucket and/or CloudWatch log group; it does not cause AWS to use that content to train base models",
+      "Enabling logging opts your data into base-model training",
+      "Logged content is stored in an AWS-owned account accessible to model providers",
+      "Logging automatically shares prompts with the foundation model provider for quality review"
+    ],
+    "correct": [0],
+    "explanation": "Invocation logs are delivered to the customer's own S3 bucket and/or CloudWatch log group, and Bedrock does not use customer prompts or completions to train base models. Logging is an audit feature, not a consent to training, and the content is not exposed to AWS-owned accounts or model providers."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Your application's per-account on-demand request and token-per-minute quotas for a model are consistently the binding constraint at peak, but traffic is steady all day. Comparing remedies, which is the most cost-effective long-term fix?",
+    "options": [
+      "Move the steady high-volume portion to Provisioned Throughput, which provides guaranteed capacity independent of on-demand account quotas",
+      "Repeatedly request on-demand quota increases as traffic grows",
+      "Shard the workload across many IAM users to multiply the quotas",
+      "Add more retries with longer backoff to push more through the existing quota"
+    ],
+    "correct": [0],
+    "explanation": "For steady, high, predictable volume, Provisioned Throughput supplies guaranteed capacity decoupled from on-demand account quotas and is the durable, cost-effective fix. Quota increases are not guaranteed and lag growth, on-demand quotas are account/model-scoped so splitting across IAM users does not multiply them, and more backoff only slows requests without adding capacity."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "An evaluation job must score models on a sensitive internal dataset that cannot leave a specific encrypted S3 location, and the results report must also be encrypted with the team's KMS key. When configuring a Bedrock model evaluation job, what should you ensure?",
+    "options": [
+      "Reference the dataset in the approved S3 location, grant the evaluation service role read access and KMS decrypt, and specify the customer managed KMS key for the output results",
+      "Copy the dataset to a public bucket so the evaluation service can read it",
+      "Disable encryption on the output bucket because evaluation results are not sensitive",
+      "Embed the dataset inline in the job request to avoid using S3 at all"
+    ],
+    "correct": [0],
+    "explanation": "The evaluation job's service role needs read access and KMS decrypt for the source data, and you can specify a customer managed KMS key to encrypt the output, keeping sensitive data and results protected. Public buckets violate the constraint, disabling output encryption exposes results, and inline datasets are not how evaluation jobs ingest data."
+  },
+  {
+    "category": "Security, Cost & Operations",
+    "type": "single",
+    "question": "Two teams debate IAM design: Team A proposes one broad role with bedrock:* used by all services; Team B proposes per-service roles each limited to specific actions and model ARNs with conditions. For a security-sensitive, audited environment, which is correct and why?",
+    "options": [
+      "Team B, because per-service least-privilege roles limit blast radius, make CloudTrail attribution clear per service, and prevent unintended model or admin actions",
+      "Team A, because a single shared role simplifies CloudTrail since all activity appears under one identity",
+      "Team A, because bedrock:* is required for InvokeModel to function",
+      "Team B is wrong because IAM conditions cannot reference model ARNs"
+    ],
+    "correct": [0],
+    "explanation": "Distinct least-privilege roles scoped to required actions and model ARNs minimize blast radius and produce clear, per-service CloudTrail attribution, which is essential in an audited environment. A shared bedrock:* role grants far more than needed and muddies attribution, bedrock:* is not required for InvokeModel, and IAM resource ARNs/conditions do support scoping to specific models."
+  }
+]

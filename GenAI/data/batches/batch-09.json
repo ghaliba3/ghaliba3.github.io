@@ -1,0 +1,398 @@
+[
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team deploys a fine-tuned Llama 3 8B model behind a SageMaker real-time endpoint to serve an internal chat tool. Traffic is highly intermittent: heavy use during business hours and essentially zero overnight and on weekends. They want to minimize GPU cost without manually stopping the endpoint, and a few seconds of cold-start latency on the first request after idle is acceptable. Which approach BEST meets these requirements?",
+    "options": [
+      "Configure application autoscaling on the real-time endpoint with a target-tracking policy and a minimum capacity of zero instances (scale to zero)",
+      "Use a Serverless Inference endpoint with provisioned concurrency set to match peak business-hour traffic",
+      "Deploy on a single g5.2xlarge instance and rely on the endpoint's built-in idle shutdown after 15 minutes",
+      "Use Asynchronous Inference so the endpoint scales the backing instances to zero when the queue is empty"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker real-time endpoints now support scaling in to zero instances via application autoscaling, which eliminates GPU cost during idle periods while tolerating cold-start latency on the first request. Serverless Inference does not support GPU-backed large LLMs and provisioned concurrency would keep paying for capacity; there is no built-in 15-minute idle shutdown for real-time endpoints."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A company must run inference on a 70B-parameter open-weights model that does not fit in the memory of a single GPU. They want the lowest engineering effort to shard the model across multiple GPUs on one instance and maximize throughput under concurrent requests. Which SageMaker option is the BEST fit?",
+    "options": [
+      "The Large Model Inference (LMI) container with tensor parallelism and continuous batching on a multi-GPU instance such as p4d.24xlarge",
+      "A custom Flask container that loads the full model into a single A10G GPU with FP16 weights",
+      "Multi-Model Endpoints with one model artifact per GPU and lazy loading",
+      "Batch Transform jobs split across multiple ml.g5.xlarge instances"
+    ],
+    "correct": [0],
+    "explanation": "The LMI Deep Learning Container provides built-in tensor parallelism to shard a 70B model across the 8 GPUs of a p4d instance and continuous (rolling) batching to maximize throughput, with minimal configuration. A single A10G cannot hold a 70B model, Multi-Model Endpoints are for serving many small models not sharding one large model, and Batch Transform is offline rather than concurrent real-time serving."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A media firm needs to summarize 500,000 archived documents overnight. There is no online latency requirement; the only goals are lowest total cost and completing the job within an 8-hour window. The summarization model is a 13B LLM. Which deployment option BEST fits?",
+    "options": [
+      "Batch Transform with the LMI container, splitting the input across multiple GPU instances that terminate when the job completes",
+      "A real-time endpoint with autoscaling that the team invokes in a tight loop from a script",
+      "Asynchronous Inference, submitting 500,000 individual requests to the input queue",
+      "Serverless Inference with maximum concurrency to fan out all documents at once"
+    ],
+    "correct": [0],
+    "explanation": "Batch Transform is purpose-built for large-scale offline inference: it provisions instances only for the duration of the job and tears them down afterward, minimizing cost for a bounded overnight workload. A persistent real-time endpoint would incur cost beyond the job, Asynchronous Inference is designed for large individual payloads rather than millions of small ones, and Serverless does not support 13B GPU models."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "An application sends inference requests with very large payloads (up to 800 MB of audio per request) to a generative transcription-plus-summarization model. Individual requests can take several minutes to process, and the client cannot hold an open HTTP connection that long. Which SageMaker inference option is MOST appropriate?",
+    "options": [
+      "Asynchronous Inference, which queues requests, processes large payloads in the background, and returns results via Amazon S3 with SNS notifications",
+      "Real-time inference with an increased invocation timeout and keep-alive enabled",
+      "Serverless Inference with a 6 GB memory configuration",
+      "Batch Transform invoked once per incoming request"
+    ],
+    "correct": [0],
+    "explanation": "Asynchronous Inference is designed for large payloads (up to 1 GB) and long processing times; it queues requests and writes results to S3 with optional SNS notification, decoupling the client from the long-running call. Real-time endpoints have a hard 60-second invocation timeout and payload limits, Serverless caps payloads and memory, and spinning up a Batch Transform job per request is inefficient."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A SaaS company hosts 200 customer-specific LoRA fine-tunes of the same 7B base model. Only a handful of tenants are active at any moment, and per-tenant traffic is low and unpredictable. They want to avoid provisioning 200 always-on endpoints while still serving any tenant on demand. Which approach BEST balances cost and flexibility?",
+    "options": [
+      "A Multi-Model Endpoint that dynamically loads each tenant's adapter/model artifact from S3 on demand and unloads idle ones",
+      "200 separate single-model real-time endpoints, one per tenant",
+      "One real-time endpoint per tenant using Serverless Inference",
+      "A single Batch Transform job that processes all tenants' requests every 5 minutes"
+    ],
+    "correct": [0],
+    "explanation": "Multi-Model Endpoints share a fleet and load model artifacts from S3 into memory on demand, evicting idle ones, which is ideal for many low-traffic variants of a similar size and avoids paying for 200 idle endpoints. Per-tenant endpoints (real-time or serverless) multiply fixed cost, and a periodic Batch Transform cannot serve interactive on-demand requests."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "An ML platform team wants to co-locate a 7B chat model and a smaller embeddings model on the same GPU endpoint, scale each independently, and update one without redeploying the other. Which SageMaker capability is designed for this?",
+    "options": [
+      "Inference Components on a single endpoint, each with its own model, compute requirements, and autoscaling policy",
+      "Multi-Model Endpoints with both artifacts in the same S3 prefix",
+      "Two production variants on one endpoint with a traffic-splitting rule",
+      "A multi-container endpoint in serial inference-pipeline mode"
+    ],
+    "correct": [0],
+    "explanation": "Inference Components let you deploy multiple distinct models onto a shared endpoint/fleet, each with independently configured compute, copies, and autoscaling, and you can update or scale one component without touching others. Multi-Model Endpoints assume same-framework artifacts loaded dynamically and lack per-model autoscaling; production variants are for A/B traffic splitting of the same logical model; inference pipelines run containers in sequence."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A workload serving a 13B model on g5.12xlarge (4x A10G) has a strict p99 latency SLA but bursty traffic. During traffic spikes, individual request latency degrades because long requests block shorter ones. Which LMI configuration change MOST directly addresses head-of-line blocking and improves throughput under concurrency?",
+    "options": [
+      "Enable continuous (iteration-level) batching so new requests join the running batch each decoding step instead of waiting for the batch to finish",
+      "Disable batching entirely and process requests strictly one at a time",
+      "Increase the model's max sequence length to allow longer generations",
+      "Switch the container's tensor-parallel degree from 4 to 1"
+    ],
+    "correct": [0],
+    "explanation": "Continuous (rolling) batching schedules at the token/iteration level so newly arriving requests are admitted into the in-flight batch without waiting for the slowest request to complete, reducing head-of-line blocking and raising GPU utilization. Disabling batching kills throughput, raising max sequence length worsens latency, and dropping tensor parallelism to 1 would no longer shard the model across the 4 GPUs."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A startup wants the fastest path to a production chat assistant using a managed foundation model. They have no ML ops team, need automatic model updates and built-in guardrails, and prefer per-token pricing over managing GPU instances. They only need standard prompting and RAG, no custom fine-tuning of open weights. Which choice is BEST?",
+    "options": [
+      "Use Amazon Bedrock, which provides fully managed FMs with on-demand token pricing, guardrails, and no instance management",
+      "Deploy a JumpStart model to a SageMaker real-time endpoint and manage autoscaling themselves",
+      "Train a model from scratch using SageMaker training jobs on p4d instances",
+      "Host an open-weights model on EC2 with a custom inference server"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock is fully managed with token-based on-demand pricing, built-in Guardrails, and no infrastructure to operate, matching a team with no ML ops that needs standard prompting and RAG. Hosting JumpStart on SageMaker requires managing endpoints, instances, and scaling; training from scratch or self-hosting on EC2 adds far more operational burden than needed."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team must serve a 7B model with the LOWEST cost per inference at steady high throughput and is willing to compile/optimize the model. They are comparing accelerator families. Which instance choice generally gives the best price-performance for high-volume inference of a model that fits within its memory?",
+    "options": [
+      "inf2 instances (AWS Inferentia2) with the model compiled via the Neuron SDK / Optimum Neuron",
+      "p4d.24xlarge instances (A100) running the uncompiled model",
+      "trn1 instances (AWS Trainium) used in inference mode",
+      "g5.48xlarge instances kept at low utilization for latency headroom"
+    ],
+    "correct": [0],
+    "explanation": "Inferentia2 (inf2) is purpose-built for cost-efficient inference and, after compiling with the Neuron SDK, typically delivers the best price-performance for high-volume serving of models that fit its memory. A100 (p4d) is powerful but expensive and oriented to training/very large models, Trainium (trn1) is optimized for training rather than inference economics, and deliberately underutilized g5 wastes money."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "An engineer is unsure which instance type and how many instances to provision for a new JumpStart LLM endpoint that must meet a 200 ms p99 latency target at 50 requests/second. They want data-driven recommendations rather than manual trial and error. Which SageMaker feature should they use?",
+    "options": [
+      "SageMaker Inference Recommender, which runs load tests across candidate instance types and returns latency, throughput, and cost recommendations",
+      "SageMaker Model Monitor with a custom latency baseline",
+      "SageMaker Clarify bias and explainability reports",
+      "SageMaker Debugger profiling rules"
+    ],
+    "correct": [0],
+    "explanation": "Inference Recommender automates load testing across instance types and configurations and reports latency, throughput, and cost so you can pick a configuration that meets an SLA without manual benchmarking. Model Monitor watches data/quality drift, Clarify handles bias/explainability, and Debugger profiles training, none of which size inference endpoints."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "A team is moving a real-time LLM endpoint to a scale-to-zero autoscaling configuration to cut idle GPU cost. Which considerations are valid trade-offs or requirements they must account for? (Select TWO.)",
+    "options": [
+      "The first request after scaling in to zero will incur a cold-start delay while a new instance and model are provisioned",
+      "They should configure a step or target-tracking scaling policy plus an appropriate cooldown to avoid thrashing on bursty traffic",
+      "Scale to zero removes the need to choose an instance type for the endpoint",
+      "Scale to zero converts the endpoint to Serverless Inference automatically",
+      "Latency-sensitive synchronous traffic with no tolerance for cold starts is an ideal fit for scale to zero"
+    ],
+    "correct": [0, 1],
+    "explanation": "Scaling in to zero saves cost but means the first request after idle pays a cold-start penalty, and you still tune scaling policies and cooldowns so bursty traffic does not cause rapid scale in/out thrash. You still select an instance type, the endpoint remains real-time (not converted to Serverless), and strictly latency-sensitive traffic that cannot tolerate cold starts is a poor fit."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A regulated bank wants to fine-tune an open-weights 8B model on sensitive proprietary data, keep full control of the weights, and host it in their own VPC with no data leaving their account boundary. They have an ML platform team. Bedrock or SageMaker?",
+    "options": [
+      "SageMaker: fine-tune via JumpStart/training jobs and host on a VPC-attached endpoint, retaining the model artifacts in their own S3",
+      "Bedrock on-demand with a system prompt that instructs the model to follow bank policies",
+      "Bedrock with Provisioned Throughput for any base FM and no fine-tuning",
+      "A third-party hosted API gated behind a firewall rule"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker lets the bank fine-tune open weights, keep the resulting artifacts in their own account, and deploy to a VPC-isolated endpoint, satisfying control and data-residency requirements. Bedrock abstracts away weight ownership and not all FMs are customizable; a system prompt does not provide weight control or true data isolation, and a third-party API moves data outside the account."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A model owner deploys a 34B code model with the LMI container on a single ml.g5.48xlarge (8x A10G, 192 GB GPU memory total). Generation throughput is far below expectations and GPU utilization is low. Inspecting the config, tensor_parallel_degree is set to 1. What is the BEST fix?",
+    "options": [
+      "Increase tensor_parallel_degree to 8 so the model is sharded across all eight GPUs and utilizes the full instance",
+      "Reduce the batch size to 1 to lower memory pressure",
+      "Switch to a CPU instance to avoid GPU contention",
+      "Disable continuous batching to simplify scheduling"
+    ],
+    "correct": [0],
+    "explanation": "With tensor_parallel_degree=1 the LMI container loads the model on a single GPU and ignores the other seven, causing low aggregate utilization and throughput; setting it to 8 shards the model across all GPUs of the instance. Reducing batch size, moving to CPU, or disabling continuous batching would all further hurt throughput."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A product has predictable, steady production traffic for a 7B model 24/7 and wants to reduce hosting cost below standard on-demand SageMaker hosting pricing, while keeping the same managed endpoint. Which option is the BEST cost lever?",
+    "options": [
+      "Purchase a SageMaker Savings Plan committing to a consistent hourly compute spend for a 1- or 3-year term",
+      "Move the workload to Serverless Inference to pay only per request",
+      "Enable scale to zero so the endpoint is free overnight",
+      "Switch to Asynchronous Inference to batch the steady traffic"
+    ],
+    "correct": [0],
+    "explanation": "For steady, always-on usage, a SageMaker Savings Plan provides the deepest discount on hosting compute in exchange for a term commitment, directly lowering cost without changing the architecture. Serverless cannot host a 7B GPU model and is not cheaper at sustained high utilization, scale to zero gives no benefit on 24/7 traffic, and Async does not reduce per-hour instance cost for steady demand."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "An architect is choosing between Amazon Bedrock and self-hosting on SageMaker for a new generative feature. Which factors specifically favor choosing SageMaker over Bedrock? (Select TWO.)",
+    "options": [
+      "The required base model is an open-weights model not offered in the Bedrock catalog and must be heavily customized",
+      "The team needs fine-grained control over inference server internals such as LMI batching, tensor parallelism, and quantization",
+      "They want zero infrastructure management and per-token billing with no idle cost",
+      "They need built-in, fully managed Guardrails with no custom container work",
+      "They want the fastest possible time-to-first-prototype with no ML ops staff"
+    ],
+    "correct": [0, 1],
+    "explanation": "SageMaker is favored when you must host an open-weights model outside Bedrock's catalog and when you need low-level control of the serving stack (LMI batching, tensor parallelism, quantization). Zero infra management, per-token billing, managed Guardrails, and fastest no-ops prototyping all favor Bedrock instead."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team serves a fine-tuned 7B model and wants to A/B test a new fine-tune against the current production model on live traffic, gradually shifting traffic and rolling back instantly if quality drops, all behind a single endpoint URL. Which SageMaker feature is the BEST fit?",
+    "options": [
+      "Two production variants on one endpoint with weighted traffic splitting that can be adjusted or rolled back without changing the client",
+      "Two separate endpoints with a client-side coin flip to route traffic",
+      "A Multi-Model Endpoint loading both variants by model name",
+      "Shadow testing with the new variant receiving 100% of traffic"
+    ],
+    "correct": [0],
+    "explanation": "Production variants on a single endpoint let you assign and dynamically adjust traffic weights for A/B testing and instantly shift back to the stable variant, all transparent to the client. Client-side routing pushes logic to callers, Multi-Model Endpoints are for many distinct models rather than weighted experiments, and a shadow test does not serve a controlled live split."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "A real-time LLM endpoint must autoscale on signals that reflect actual GPU saturation rather than CPU or simple request count, because invocations vary widely in token length. Which autoscaling choices are appropriate? (Select TWO.)",
+    "options": [
+      "Target-tracking on a per-copy concurrent-requests metric that correlates with GPU load",
+      "Target-tracking on a custom CloudWatch GPU-utilization metric emitted by the container",
+      "Target-tracking on CPUUtilization of the hosting instances",
+      "A fixed scheduled scaling action that adds one instance every hour regardless of load",
+      "Scaling on the endpoint's InvocationsPerInstance count alone, ignoring concurrency"
+    ],
+    "correct": [0, 1],
+    "explanation": "For GPU LLM serving, scaling on a per-copy concurrent-requests metric or a custom GPU-utilization metric tracks real saturation, since both correlate with GPU load under variable token lengths. Raw CPUUtilization is a poor proxy, scheduled-only scaling cannot react to demand, and invocation count alone misses long-running requests."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A company wants to quickly evaluate and deploy a popular open-weights LLM with a pre-validated, optimized serving container and a one-click deploy, while still retaining the option to fine-tune it later on their own data. Which SageMaker capability is the BEST starting point?",
+    "options": [
+      "SageMaker JumpStart, which offers curated foundation models with pre-built deploy and fine-tune workflows and optimized containers",
+      "Building a custom Docker container from scratch and registering it in ECR",
+      "Amazon Bedrock custom model import only",
+      "SageMaker Canvas no-code predictions"
+    ],
+    "correct": [0],
+    "explanation": "JumpStart provides curated foundation models with one-click deployment using optimized containers and built-in fine-tuning recipes, giving the fastest validated path that still supports later customization. Building a container from scratch is slow, Bedrock custom import is a different managed path without JumpStart's catalog/fine-tune UX, and Canvas targets no-code tabular/AutoML use cases."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "An LMI deployment of a 13B model on inf2 (Inferentia2) is being prepared. Which statements about serving on Inferentia2 are correct considerations? (Select TWO.)",
+    "options": [
+      "The model must be compiled to Neuron format (via the Neuron SDK / Optimum Neuron or AOT compilation) before or at endpoint startup",
+      "Inferentia2 is generally chosen for cost-efficient, high-throughput inference rather than as a training accelerator",
+      "Inferentia2 instances run unmodified CUDA kernels with no compilation step",
+      "Inferentia2 cannot be used with the LMI container and requires a fully custom container",
+      "Trainium (trn1) is the recommended choice over inf2 specifically to minimize inference cost"
+    ],
+    "correct": [0, 1],
+    "explanation": "Models must be compiled to the Neuron format to run on Inferentia2, which is purpose-built for cost-efficient, high-throughput inference. Inferentia2 does not run CUDA kernels, it is supported by LMI/Neuron DLCs (not a mandatory fully custom container), and Trainium is optimized for training, not minimizing inference cost."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A 7B model endpoint experiences brief but sharp traffic spikes a few times per day; standard instance autoscaling cannot launch GPU instances fast enough to absorb the spike, causing throttling. The team wants to react to spikes faster than instance launch time. Which approach BEST mitigates this within SageMaker hosting?",
+    "options": [
+      "Use Inference Components and scale the number of model copies/components, combined with provisioned headroom, to absorb spikes faster than full instance scale-out",
+      "Set the autoscaling cooldown to several minutes to smooth the spikes",
+      "Reduce the minimum instance count to zero to save money during the spikes",
+      "Switch the endpoint to Batch Transform during spike windows"
+    ],
+    "correct": [0],
+    "explanation": "Inference Components allow scaling at the model-copy level on already-provisioned compute and maintaining headroom, reacting faster than waiting for new GPU instances to launch. A long cooldown delays reaction, scaling to zero worsens cold-start during spikes, and Batch Transform is offline and cannot serve real-time spike traffic."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team needs to host a 175B-parameter model that exceeds the GPU memory of any single instance type. They want a managed SageMaker path that shards the model across multiple GPUs within the largest available instance and uses an optimized inference engine. Which configuration is MOST appropriate?",
+    "options": [
+      "LMI container with a high tensor_parallel_degree on a p4d/p4de/p5-class instance, using an optimized backend such as vLLM or TensorRT-LLM",
+      "Serverless Inference with the maximum 6 GB memory setting",
+      "A Multi-Model Endpoint loading shards as separate models on demand",
+      "A single ml.g5.2xlarge with 8-bit quantization"
+    ],
+    "correct": [0],
+    "explanation": "A 175B model requires sharding across many high-memory GPUs, which the LMI container does via tensor parallelism on p4d/p4de/p5-class instances with optimized engines like vLLM or TensorRT-LLM. Serverless caps at small CPU/memory, Multi-Model Endpoints do not shard one model across GPUs, and a single g5.2xlarge has nowhere near enough memory even quantized."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A developer wants the simplest serverless-style hosting for a small generative text-classification model (under 4 GB, CPU-capable) with unpredictable, infrequent traffic and no desire to manage instances or pay for idle time. The model does not require a GPU. Which option fits BEST?",
+    "options": [
+      "SageMaker Serverless Inference, which auto-provisions compute per request and charges only for usage with no idle cost",
+      "A real-time endpoint on ml.g5.xlarge with scale to zero",
+      "Asynchronous Inference on a p4d instance",
+      "Batch Transform triggered on a 1-minute schedule"
+    ],
+    "correct": [0],
+    "explanation": "Serverless Inference is ideal for small, CPU-friendly models with intermittent traffic: it scales compute per request and charges only for actual usage with no idle cost or instance management. A GPU real-time endpoint is overkill and costlier, Async on p4d is wasteful for a tiny model, and a scheduled Batch Transform cannot serve interactive unpredictable requests."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "A team is deciding between SageMaker Multi-Model Endpoints (MME) and Inference Components for hosting many models on shared GPUs. Which statements correctly distinguish them? (Select TWO.)",
+    "options": [
+      "Inference Components support per-model autoscaling and independent compute allocation, whereas MME dynamically loads/unloads same-framework artifacts without per-model scaling policies",
+      "MME is well suited to a very large catalog of similar, individually low-traffic models loaded on demand from S3",
+      "Multi-Model Endpoints provide independent autoscaling for each hosted model",
+      "Inference Components require all models to share identical resource needs and a single scaling policy",
+      "Both options require a separate endpoint per model"
+    ],
+    "correct": [0, 1],
+    "explanation": "Inference Components give each model its own compute footprint and autoscaling, while MME excels at large catalogs of similar, low-traffic models lazily loaded from S3 but without per-model scaling. MME does not offer independent per-model autoscaling, Inference Components do allow differing resource needs per component, and neither requires a separate endpoint per model."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "An endpoint serving a 7B model with LMI shows acceptable median latency but very high tail latency and occasional out-of-memory errors during traffic bursts. The current config uses a large static batch size and waits to fill the batch. Which single change BEST reduces both tail latency and OOM risk?",
+    "options": [
+      "Switch from static batching to continuous batching with a bounded max number of concurrent sequences and a max running-batch token budget",
+      "Increase the static batch size further to amortize per-request overhead",
+      "Raise the max_new_tokens limit so requests finish in fewer iterations",
+      "Disable tensor parallelism to free scheduling overhead"
+    ],
+    "correct": [0],
+    "explanation": "Static batching causes requests to wait for the batch to fill (tail latency) and can over-commit memory; continuous batching with a bounded concurrent-sequence and token budget admits requests dynamically and caps memory pressure, lowering tail latency and OOM risk. Larger static batches worsen waiting and OOM, raising max_new_tokens increases work, and disabling tensor parallelism reduces available GPU memory for the model."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A company runs a generative document-processing pipeline where each request can take up to 10 minutes and arrives in unpredictable bursts of tens of thousands. They want automatic queuing, scale-out under load, and scale-in to zero when the backlog clears to avoid paying for idle GPUs. Which SageMaker option natively provides this?",
+    "options": [
+      "Asynchronous Inference, which queues requests, autoscales the backing instances on queue depth, and can scale to zero when the queue is empty",
+      "Real-time inference with a client-side retry queue",
+      "Serverless Inference with 10-minute timeouts",
+      "Batch Transform scheduled every minute"
+    ],
+    "correct": [0],
+    "explanation": "Asynchronous Inference has a built-in request queue, supports autoscaling on the ApproximateBacklogSizePerInstance metric, and can scale the fleet to zero when the queue drains, matching long, bursty jobs that should not pay for idle GPUs. Real-time has a 60-second timeout, Serverless cannot run 10-minute GPU jobs, and a per-minute Batch Transform is operationally clumsy and not queue-driven."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team fine-tuned a Llama model with JumpStart and now wants to deploy it cost-effectively for moderate, steady real-time traffic that comfortably fits on one A10G GPU. They want the simplest reliable hosting with predictable latency. Which choice is BEST?",
+    "options": [
+      "A single-model real-time endpoint on ml.g5.xlarge (A10G) with modest target-tracking autoscaling",
+      "A Multi-Model Endpoint even though only one model is served",
+      "Asynchronous Inference to queue the steady real-time requests",
+      "Batch Transform invoked continuously to emulate real-time"
+    ],
+    "correct": [0],
+    "explanation": "For one model with moderate steady real-time traffic that fits on an A10G, a single-model real-time endpoint on g5.xlarge with light autoscaling is the simplest, most predictable, and cost-appropriate option. MME adds needless complexity for a single model, Async introduces queuing latency unsuited to interactive traffic, and abusing Batch Transform for real-time is an anti-pattern."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "multiple",
+    "question": "An organization is selecting accelerator families for different generative workloads on SageMaker. Which recommendations are the BEST general-purpose fits? (Select THREE.)",
+    "options": [
+      "g5 (A10G) for cost-effective real-time inference of small-to-mid models that fit in 24 GB per GPU",
+      "p4d/p5 (A100/H100) for hosting very large models requiring high GPU memory and bandwidth, or large-scale training",
+      "inf2 (Inferentia2) for cost-optimized, high-throughput inference after Neuron compilation",
+      "trn1 (Trainium) as the default choice for latency-critical single-request real-time inference",
+      "Serverless GPU inference for hosting 70B models with no instance management"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "g5/A10G suits cost-effective serving of smaller models, p4d/p5 (A100/H100) suits very large models and heavy training, and inf2/Inferentia2 targets cost-efficient high-throughput inference after Neuron compilation. Trainium is built for training rather than latency-critical single-request serving, and SageMaker Serverless does not offer GPU hosting for 70B models."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team wants to optimize a JumpStart foundation model for faster, cheaper inference by applying techniques like speculative decoding, quantization, and compilation, packaged for deployment, without hand-building the optimization pipeline. Which SageMaker capability is designed for this?",
+    "options": [
+      "SageMaker inference optimization toolkit (model optimization jobs) that applies quantization, speculative decoding, and compilation to produce an optimized deployable artifact",
+      "SageMaker Model Monitor data-quality jobs",
+      "SageMaker Feature Store online serving",
+      "SageMaker Clarify explainability jobs"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker provides an inference optimization toolkit that applies quantization, speculative decoding, and compilation to foundation models to improve price-performance and outputs a deployable optimized artifact. Model Monitor, Feature Store, and Clarify address monitoring, feature serving, and explainability respectively, not inference acceleration."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A solution must keep an interactive 7B model warm 24/7 with sub-200 ms p99 latency, but the team also wants to cap cost. Traffic is steady during the day and a low but nonzero trickle at night. Which autoscaling configuration BEST balances the SLA and cost?",
+    "options": [
+      "Target-tracking autoscaling with a minimum of one instance (never zero) to preserve warm capacity, scaling out during the day and in to the minimum at night",
+      "Scale to zero at night, accepting cold starts on the first nighttime request",
+      "Fixed provisioning at peak daytime capacity around the clock",
+      "Serverless Inference to avoid managing any minimum capacity"
+    ],
+    "correct": [0],
+    "explanation": "Because there is nonzero nighttime traffic and a strict latency SLA, a minimum of one warm instance preserves the p99 target while target-tracking scales out for daytime load and in at night to cap cost. Scale to zero would violate the SLA on the first nighttime request, fixed peak capacity overpays at night, and Serverless cannot host the 7B GPU model with this latency guarantee."
+  },
+  {
+    "category": "SageMaker for Generative AI",
+    "type": "single",
+    "question": "A team self-hosts a fine-tuned open-weights LLM on a SageMaker real-time endpoint and must enforce content safety policies on both inputs and outputs equivalent to a managed service. They do not want to build and maintain a custom moderation model. Which AWS approach BEST adds guardrails to a self-hosted SageMaker endpoint?",
+    "options": [
+      "Invoke Amazon Bedrock Guardrails independently via the ApplyGuardrail API to screen prompts and completions around the SageMaker endpoint call",
+      "Enable a built-in Guardrails toggle on the SageMaker real-time endpoint configuration",
+      "Rely on the LMI container's native prompt-injection filter",
+      "Use SageMaker Model Monitor to block unsafe responses in real time"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Guardrails can be applied to any model, including self-hosted SageMaker endpoints, via the standalone ApplyGuardrail API to screen inputs and outputs without building a custom moderation model. SageMaker real-time endpoints have no built-in Guardrails toggle, the LMI container has no native injection filter, and Model Monitor detects drift offline rather than blocking responses inline."
+  }
+]

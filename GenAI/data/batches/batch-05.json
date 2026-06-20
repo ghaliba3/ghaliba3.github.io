@@ -1,0 +1,399 @@
+[
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A retailer must serve semantic product search over 4 billion vectors with p99 latency under 30 ms and the ability to add hundreds of thousands of new products per hour without full reindexing. Recall of ~95% is acceptable. Which vector store and index configuration is the best fit?",
+    "options": [
+      "Amazon OpenSearch Serverless vector engine using an HNSW (Lucene/faiss) kNN index with incremental document ingestion",
+      "Amazon Aurora PostgreSQL with pgvector using an IVFFlat index and periodic REINDEX jobs",
+      "Amazon S3 storing raw embeddings queried with Athena and a UDF for cosine similarity",
+      "Amazon DynamoDB with embeddings stored as binary attributes and a Lambda scanning for nearest neighbors"
+    ],
+    "correct": [0],
+    "explanation": "OpenSearch Serverless vector engine with HNSW scales to billions of vectors, supports incremental ingestion without rebuilds, and delivers low-latency ANN at high recall. pgvector IVFFlat requires periodic reindexing as data grows and degrades on high insert rates, and S3/Athena and DynamoDB scans cannot meet 30 ms p99 at billion scale."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A team uses Amazon Titan Text Embeddings V2, which supports output dimensions of 256, 512, or 1024 via Matryoshka Representation Learning. They need to cut vector storage and memory cost by ~75% across a 2-billion-vector OpenSearch index while keeping recall acceptable. Which approach is most appropriate?",
+    "options": [
+      "Request 256-dimension embeddings from Titan V2 and rebuild the index, accepting a small recall trade-off",
+      "Keep 1024 dimensions but switch the metric from cosine to dot product",
+      "Keep 1024 dimensions and enable disk-based exact kNN to avoid the index",
+      "Pad the 1024-dimension vectors to 4096 and quantize to int8"
+    ],
+    "correct": [0],
+    "explanation": "Titan V2's Matryoshka training lets you request 256-dim vectors that retain most semantic quality, cutting storage and memory roughly proportionally to dimension count. Changing the similarity metric does not reduce storage, exact kNN raises latency, and padding increases size rather than reducing it."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "An architect wants to reduce OpenSearch vector-engine memory footprint for an HNSW index of 800 million 1024-dim float32 vectors while keeping query latency low. Which techniques directly reduce in-memory size? (Select TWO.)",
+    "options": [
+      "Enable scalar (e.g., int8/FP16) quantization on the kNN vectors",
+      "Reduce embedding dimensionality using Titan V2 Matryoshka outputs",
+      "Increase the HNSW ef_search parameter at query time",
+      "Switch the engine from faiss/Lucene to a SQL store",
+      "Add more replica shards to the index"
+    ],
+    "correct": [0, 1],
+    "explanation": "Quantizing float32 vectors to int8/FP16 and lowering dimensionality both shrink the per-vector byte size that must reside in memory. Raising ef_search increases recall but also work per query, replicas multiply memory, and a SQL store does not by itself reduce HNSW memory."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A financial app already runs Amazon Aurora PostgreSQL holding transactional metadata. It needs semantic search over ~5 million document chunks, with strict requirement that vector results be filtered by row-level tenant_id and joined to relational columns in a single transaction. Which option best meets this?",
+    "options": [
+      "Use pgvector in the existing Aurora PostgreSQL with an HNSW index and SQL WHERE filters on tenant_id",
+      "Move all data into OpenSearch Serverless and replicate relational tables for joins",
+      "Use Amazon MemoryDB vector search and call Aurora separately per result",
+      "Use Amazon Neptune Analytics and model the documents as a graph"
+    ],
+    "correct": [0],
+    "explanation": "pgvector in the existing Aurora lets vector similarity, tenant filtering, and relational joins all run in one SQL transaction with transactional consistency. Splitting into OpenSearch or MemoryDB breaks the single-transaction join requirement, and Neptune Analytics targets graph workloads, not relational joins."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A real-time recommendation service needs vector similarity lookups with single-digit-millisecond p99 latency on a working set of 20 million item embeddings that update continuously, and the team wants durability and a Redis-compatible API. Which AWS service is the best choice?",
+    "options": [
+      "Amazon MemoryDB with vector search",
+      "Amazon OpenSearch Serverless vector engine",
+      "Amazon Aurora PostgreSQL with pgvector",
+      "Amazon S3 Vectors"
+    ],
+    "correct": [0],
+    "explanation": "MemoryDB is an in-memory, durable, Redis-compatible store whose vector search delivers single-digit-millisecond latency, ideal for real-time recommendations with frequent updates. OpenSearch and pgvector add more latency, and S3 Vectors is optimized for cost at large scale, not millisecond real-time serving."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A knowledge base contains 50 billion archival embeddings queried only a few hundred times per day for analytics. Latency of a second or two is acceptable, but the team wants the lowest possible storage and query cost and minimal infrastructure to manage. Which vector store fits best?",
+    "options": [
+      "Amazon S3 Vectors as a native vector store with sub-second query support",
+      "Amazon OpenSearch with a provisioned cluster of memory-optimized nodes",
+      "Amazon MemoryDB sized to hold all 50 billion vectors in memory",
+      "Amazon Aurora PostgreSQL with pgvector and IVFFlat"
+    ],
+    "correct": [0],
+    "explanation": "S3 Vectors is purpose-built for very large, infrequently queried vector sets at the lowest cost, trading some latency for dramatic storage savings and no cluster to manage. Provisioned OpenSearch and in-memory MemoryDB at 50 billion vectors are far more expensive, and Aurora pgvector does not scale cost-effectively to that size."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "A search team must implement hybrid search that blends BM25 lexical relevance with semantic (vector) similarity in Amazon OpenSearch, returning a single fused ranking. Which capabilities should they use? (Select TWO.)",
+    "options": [
+      "A k-NN (vector) query combined with a BM25 text query and normalization/combination of scores",
+      "OpenSearch search pipelines with a normalization processor to fuse lexical and vector scores",
+      "A pure IVF index with exact brute-force fallback to avoid lexical matching",
+      "Replacing BM25 entirely with cosine similarity to simplify ranking",
+      "Storing only embeddings and discarding the original text fields"
+    ],
+    "correct": [0, 1],
+    "explanation": "Hybrid search runs both a BM25 lexical query and a k-NN vector query, then uses a search pipeline normalization processor to combine their scores into one ranking. Dropping BM25 or the text fields eliminates the lexical signal hybrid search is meant to preserve."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "An engineer is choosing the similarity metric for Amazon Titan Text Embeddings used in semantic search. Titan embeddings are normalized to unit length. Which configuration gives correct ranking with the least computation?",
+    "options": [
+      "Use dot product (inner product), since for unit-normalized vectors it is equivalent to cosine similarity but cheaper",
+      "Use Euclidean (L2) distance because it is the only metric supported for normalized vectors",
+      "Use Hamming distance after binarizing the vectors",
+      "Use cosine similarity but first L2-normalize the vectors a second time at query time"
+    ],
+    "correct": [0],
+    "explanation": "For already unit-normalized embeddings, dot product equals cosine similarity and avoids the redundant normalization step, so it ranks identically with less work. Re-normalizing is wasteful, L2 is not the only option, and Hamming distance applies to binary codes, not float embeddings."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A RAG pipeline retrieves the top 100 candidates from an OpenSearch vector index but answer quality is poor because the most relevant passage is often ranked 20th. The team cannot retrain the embedding model. What is the most effective improvement?",
+    "options": [
+      "Add a reranking step (e.g., Cohere Rerank or Amazon Bedrock rerank) over the top 100 candidates before passing to the LLM",
+      "Increase the embedding dimension count and re-embed everything",
+      "Switch the kNN metric from cosine to Euclidean",
+      "Raise the HNSW M parameter to 64 to densify the graph"
+    ],
+    "correct": [0],
+    "explanation": "A cross-encoder reranker rescores the retrieved candidates with deeper query-document interaction, promoting the truly relevant passage above the noisier first-stage results. Changing dimensions, metric, or graph density tweaks recall slightly but does not address fine-grained ranking the way a reranker does."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A multilingual support portal indexes documents in 15 languages and must match a query in one language to relevant content in another. Which embedding strategy on AWS best supports cross-lingual semantic retrieval?",
+    "options": [
+      "Use Amazon Titan Text Embeddings V2 (multilingual) so queries and docs in different languages map into a shared semantic space",
+      "Train one separate single-language embedding model per language and keep 15 isolated indexes",
+      "Use BM25 lexical search only, since it is language-agnostic",
+      "Translate everything to English with Amazon Translate, embed only English, and discard originals"
+    ],
+    "correct": [0],
+    "explanation": "Titan Text Embeddings V2 supports many languages in a shared embedding space, so a query in one language retrieves semantically equivalent content in another without translation. Isolated per-language indexes break cross-lingual matching, BM25 cannot bridge languages semantically, and translate-then-embed adds latency and loses fidelity."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "A team is deciding between HNSW and IVF index types for an OpenSearch/faiss vector index. Which statements correctly describe the trade-offs they should weigh? (Select TWO.)",
+    "options": [
+      "HNSW generally offers higher recall and lower query latency but uses more memory",
+      "IVF can use less memory and train faster but typically requires a representative training set and tuning of nlist/nprobe",
+      "IVF always provides exact nearest-neighbor results with no recall loss",
+      "HNSW requires a pre-training phase over a sample before any inserts",
+      "HNSW cannot support incremental inserts and must be rebuilt for every new vector"
+    ],
+    "correct": [0, 1],
+    "explanation": "HNSW favors recall and latency at higher memory cost, while IVF trades some recall for lower memory but needs a training set and nlist/nprobe tuning. IVF is approximate (not exact), HNSW supports incremental inserts, and it is IVF (not HNSW) that requires a training phase."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A fraud-investigation team must traverse relationships among entities (accounts, devices, transactions) AND perform semantic similarity over entity descriptions to power a GraphRAG application. Which AWS service is purpose-built for combining graph traversal with vector similarity?",
+    "options": [
+      "Amazon Neptune Analytics with its integrated vector search capability",
+      "Amazon OpenSearch Serverless vector engine alone",
+      "Amazon MemoryDB vector search alone",
+      "Amazon Aurora PostgreSQL with pgvector alone"
+    ],
+    "correct": [0],
+    "explanation": "Neptune Analytics combines fast graph analytics and traversal with built-in vector similarity search, making it the native choice for GraphRAG over connected entities. The other stores provide vector search but lack the integrated graph traversal needed for relationship-aware retrieval."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A company wants a fully managed enterprise search experience over SharePoint, S3, and Confluence with built-in connectors, document ACL enforcement, and natural-language answers, without building an embedding/indexing pipeline. Which service should they choose over a raw vector store?",
+    "options": [
+      "Amazon Kendra, which provides managed connectors, ACL-aware retrieval, and semantic ranking out of the box",
+      "Amazon OpenSearch Serverless vector engine with custom ingestion code",
+      "Amazon Aurora pgvector with a custom crawler",
+      "Amazon MemoryDB vector search with manual document chunking"
+    ],
+    "correct": [0],
+    "explanation": "Kendra is a managed intelligent search service with native data-source connectors, document-level ACL enforcement, and semantic ranking, removing the need to build embedding and indexing pipelines. The vector-store options require building connectors, chunking, embedding, and access control manually."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A legal compliance use case requires that nearest-neighbor results be guaranteed correct (no approximation error) over a small, slowly changing corpus of 200,000 vectors. Latency budget is generous. Which approach is most appropriate?",
+    "options": [
+      "Use exact (brute-force) kNN, since at 200k vectors it returns guaranteed-correct neighbors within the latency budget",
+      "Use HNSW with a very high ef_search to approximate exact results closely enough",
+      "Use IVF with nprobe equal to nlist to force exactness",
+      "Use S3 Vectors with default ANN settings"
+    ],
+    "correct": [0],
+    "explanation": "At 200k vectors with a generous latency budget, exact brute-force kNN guarantees correct neighbors, satisfying the compliance requirement deterministically. HNSW remains approximate regardless of ef_search, and IVF with nprobe=nlist scans all lists but is more complex than simply doing exact search at this modest scale."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "When tuning an HNSW index in OpenSearch for a recall-vs-cost target, which parameter changes will increase recall (at some cost)? (Select TWO.)",
+    "options": [
+      "Increasing ef_search at query time",
+      "Increasing M (max connections per node) at index build time",
+      "Decreasing ef_construction during index build",
+      "Reducing the number of dimensions in the embeddings",
+      "Lowering the number of segments by force-merging only"
+    ],
+    "correct": [0, 1],
+    "explanation": "Higher ef_search explores more candidates per query and higher M builds a denser graph, both raising recall at the cost of latency or memory. Decreasing ef_construction lowers build quality (and recall), and reducing dimensions tends to lose information, lowering recall."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A startup embeds documents with Amazon Titan Text Embeddings and stores them in pgvector. As the corpus grows past 10 million rows, IVFFlat query recall drifts down over time even though no parameters changed. What is the most likely cause and best fix?",
+    "options": [
+      "IVFFlat centroids no longer reflect the data distribution after heavy inserts; rebuild the index (or migrate to pgvector HNSW) to restore recall",
+      "Titan embeddings expire and must be regenerated weekly",
+      "Cosine distance becomes invalid above 10 million rows; switch to L2",
+      "PostgreSQL automatically lowers recall to save disk; disable autovacuum"
+    ],
+    "correct": [0],
+    "explanation": "IVFFlat clusters vectors around centroids computed at build time; as new data shifts the distribution, those centroids become stale and recall degrades until the index is rebuilt, or you move to pgvector's HNSW which adapts incrementally. Embeddings do not expire, the metric remains valid, and autovacuum does not control recall."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "An OpenSearch vector workload mixes semantic retrieval with frequent strict metadata filters (e.g., department='HR' AND region='EU'), and the team sees poor recall when filters are very selective. Which technique best preserves recall under selective filtering?",
+    "options": [
+      "Use OpenSearch efficient/Lucene filtered k-NN (filter applied during graph traversal) rather than post-filtering ANN results",
+      "Increase the embedding dimension to compensate for filtering",
+      "Switch from HNSW to a flat float store with no filtering",
+      "Apply the metadata filter only after retrieving the global top-k and dropping non-matches"
+    ],
+    "correct": [0],
+    "explanation": "Filtered k-NN integrates the metadata predicate into graph traversal so the top-k is drawn from matching documents, avoiding the empty-result problem of post-filtering a globally selected top-k. Post-filtering after a global top-k is exactly the failure mode causing low recall, and changing dimensions does not address it."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A team needs image-to-image and text-to-image semantic search in one shared vector space (e.g., find images by description and find similar images). Which Amazon Bedrock embedding model is designed for this multimodal use case?",
+    "options": [
+      "Amazon Titan Multimodal Embeddings",
+      "Amazon Titan Text Embeddings V2",
+      "Cohere Embed English (text-only)",
+      "Amazon Titan Image Generator"
+    ],
+    "correct": [0],
+    "explanation": "Titan Multimodal Embeddings places text and images into a shared embedding space, enabling cross-modal search such as text-to-image and image-to-image. Titan Text Embeddings and Cohere Embed handle text only, and Titan Image Generator produces images rather than embeddings."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "Cohere Embed models on Amazon Bedrock require specifying an input_type. Which input_type values should be used for an asymmetric retrieval setup, and why? (Select TWO.)",
+    "options": [
+      "Use search_document when embedding the corpus passages to be indexed",
+      "Use search_query when embedding the user's query at retrieval time",
+      "Use classification for both queries and documents to maximize recall",
+      "Use the same input_type for queries and documents to keep vectors comparable",
+      "Use clustering for queries so similar queries group together"
+    ],
+    "correct": [0, 1],
+    "explanation": "Cohere Embed uses asymmetric input types: search_document for indexed passages and search_query for user queries, which optimizes retrieval relevance. Using classification or clustering input types, or forcing identical types for both sides, ignores the asymmetric retrieval design these models are tuned for."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A team must store 1024-dim Titan embeddings for 100 million documents and is comparing exact vs ANN. They need ~90% recall, sub-100 ms latency, and predictable memory budget. Which combination best balances these constraints?",
+    "options": [
+      "ANN with HNSW plus int8 scalar quantization to fit memory while meeting ~90% recall and sub-100 ms latency",
+      "Exact kNN over all 100 million float32 vectors per query",
+      "ANN with IVF and nprobe=1 to minimize memory regardless of recall",
+      "Store vectors only in S3 as Parquet and compute similarity in Spark per query"
+    ],
+    "correct": [0],
+    "explanation": "HNSW with int8 quantization delivers the target ~90% recall and sub-100 ms latency while cutting memory roughly 4x versus float32. Exact kNN over 100 million vectors blows the latency budget, IVF with nprobe=1 sacrifices too much recall, and Spark-over-S3 cannot meet interactive latency."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A Bedrock Knowledge Base is being created and the team wants AWS to provision and manage the vector store automatically with no separate cluster to operate, suitable for moderate corpora. Which default vector store does Bedrock Knowledge Bases offer for this?",
+    "options": [
+      "Amazon OpenSearch Serverless (the default managed vector store option for Bedrock Knowledge Bases)",
+      "A self-managed OpenSearch cluster on EC2 that the team patches",
+      "Amazon Redshift with a vector extension",
+      "Amazon DynamoDB global tables"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Knowledge Bases can automatically create and manage an OpenSearch Serverless vector collection, so the team has no cluster to operate. A self-managed EC2 cluster contradicts the no-ops requirement, and Redshift and DynamoDB are not the managed default vector stores for Knowledge Bases."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "An ML team observes that dot-product similarity over their custom (non-normalized) embeddings is biased toward documents with large vector magnitudes rather than semantic relevance. What is the most correct remedy?",
+    "options": [
+      "L2-normalize the embeddings (or use cosine similarity) so magnitude no longer dominates ranking",
+      "Switch to Euclidean distance, which is unaffected by magnitude",
+      "Increase top-k so the relevant low-magnitude docs eventually appear",
+      "Multiply every vector by a constant to equalize magnitudes"
+    ],
+    "correct": [0],
+    "explanation": "Normalizing to unit length (equivalently, using cosine similarity) removes magnitude bias so ranking reflects directional/semantic similarity. Euclidean distance is also magnitude-sensitive, a larger top-k masks rather than fixes the bias, and scaling all vectors by a constant does not change relative magnitudes."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "A platform team must choose between Amazon Kendra and a self-built vector-store RAG pipeline. Which factors favor selecting Kendra over building a custom vector pipeline? (Select TWO.)",
+    "options": [
+      "They need many out-of-the-box enterprise data-source connectors with managed crawling",
+      "They require built-in document-level access control (ACL) filtering tied to user identity",
+      "They need full control over the embedding model, chunking strategy, and index parameters",
+      "They want the absolute lowest per-query infrastructure cost at billion-vector scale",
+      "They need a Redis-compatible API for millisecond serving"
+    ],
+    "correct": [0, 1],
+    "explanation": "Kendra shines when teams want managed connectors and identity-aware ACL filtering without building infrastructure. Needing fine control over embeddings/chunking/index params, lowest-cost billion-vector serving, or a Redis API all point toward a custom vector store such as OpenSearch, S3 Vectors, or MemoryDB instead."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A streaming app must reflect newly published articles in semantic search within seconds of publication, over a 300-million-vector index, while keeping query latency low. Which OpenSearch design best supports near-real-time updates without periodic full rebuilds?",
+    "options": [
+      "Use an HNSW kNN index with incremental document ingestion and a short refresh interval",
+      "Use an IVF index and retrain centroids on every new document",
+      "Batch all new articles and rebuild the entire index nightly",
+      "Disable index refresh and rely on a daily snapshot restore"
+    ],
+    "correct": [0],
+    "explanation": "HNSW supports incremental inserts and, with a short refresh interval, makes new documents searchable within seconds without rebuilding. Retraining IVF centroids per document is prohibitively expensive, and nightly rebuilds or daily snapshots fail the seconds-level freshness requirement."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A cost-optimization review finds an OpenSearch vector cluster is over-provisioned: it holds 600 million vectors but receives bursty, infrequent query traffic with relaxed latency SLAs. Which change most reduces cost while still serving queries?",
+    "options": [
+      "Migrate to Amazon S3 Vectors, trading some latency for substantially lower storage and query cost on infrequent access",
+      "Add more hot data nodes to the existing cluster",
+      "Convert the index to exact kNN to remove the HNSW graph",
+      "Increase replica count for higher availability"
+    ],
+    "correct": [0],
+    "explanation": "For large, infrequently queried vector sets with relaxed latency, S3 Vectors dramatically lowers cost versus keeping everything in memory on provisioned nodes. Adding nodes or replicas raises cost, and exact kNN over 600 million vectors increases per-query work rather than saving money."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A team wants to shrink 1024-dim float32 vectors to roughly 1/32 of their size for an HNSW index while accepting a recall hit, and plans to rerank survivors for precision. Which quantization is the most aggressive appropriate choice?",
+    "options": [
+      "Binary quantization (1 bit per dimension) with a reranking pass over the top candidates",
+      "FP16 quantization, which halves size but not by 32x",
+      "int8 scalar quantization, which gives about 4x reduction",
+      "No quantization, since float32 is required for HNSW"
+    ],
+    "correct": [0],
+    "explanation": "Binary quantization stores one bit per dimension (~32x smaller than float32) and pairs well with a reranking pass that restores precision over the coarse candidate set. FP16 (~2x) and int8 (~4x) do not reach 32x, and HNSW does not require float32."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "multiple",
+    "question": "An architect must pick vector stores for two workloads: (A) sub-millisecond personalized ranking on a 15-million hot working set with constant updates, and (B) lowest-cost retrieval over 30 billion rarely queried archival vectors. Which two selections are best? (Select TWO.)",
+    "options": [
+      "Use Amazon MemoryDB vector search for workload A",
+      "Use Amazon S3 Vectors for workload B",
+      "Use Amazon S3 Vectors for workload A",
+      "Use Amazon MemoryDB for workload B by sharding across many in-memory nodes",
+      "Use Aurora pgvector IVFFlat for both workloads"
+    ],
+    "correct": [0, 1],
+    "explanation": "MemoryDB's in-memory engine fits the millisecond, high-update workload A, while S3 Vectors fits the massive, low-frequency archival workload B at lowest cost. Swapping them is wrong: S3 Vectors cannot serve millisecond ranking and holding 30 billion vectors in MemoryDB would be enormously expensive, while pgvector does not scale cost-effectively to either extreme."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A RAG system embeds long documents but retrieval returns whole documents that overflow the LLM context and dilute relevance. The embedding model and vector store are fixed. What change most improves retrieval granularity and answer quality?",
+    "options": [
+      "Chunk documents into smaller passages (with overlap) and embed each chunk so retrieval returns focused, relevant segments",
+      "Increase the vector dimension count to capture more of each document",
+      "Switch the similarity metric from cosine to dot product",
+      "Lower top-k to 1 so only the single closest document is returned"
+    ],
+    "correct": [0],
+    "explanation": "Embedding smaller overlapping chunks lets retrieval return focused passages that fit the context window and raise relevance, the standard fix for whole-document overflow. Changing dimensions or metric does not address granularity, and returning a single whole document still overflows context and may miss the relevant section."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "A team compares Amazon Kendra's semantic ranking with a DIY OpenSearch vector index for FAQ search. They value managed relevance tuning and connectors but are blocked because they need a domain-specific fine-tuned embedding model and custom HNSW parameters. Which conclusion is correct?",
+    "options": [
+      "Choose the OpenSearch vector index, because Kendra abstracts away the embedding model and index parameters they need to control",
+      "Choose Kendra, because it lets you upload arbitrary custom embedding models and set HNSW M/ef",
+      "Choose Kendra, because vector indexes cannot perform semantic ranking",
+      "Choose neither; semantic search requires Amazon Neptune Analytics"
+    ],
+    "correct": [0],
+    "explanation": "Kendra is a managed service that does not expose custom embedding models or HNSW index parameters, so a team needing that control should use OpenSearch's vector engine. Kendra cannot accept arbitrary custom embedding models or HNSW tuning, vector indexes do perform semantic ranking, and Neptune Analytics is for graph workloads."
+  },
+  {
+    "category": "Embeddings & Vector Stores",
+    "type": "single",
+    "question": "An e-commerce search team gets good lexical matches for exact SKUs but misses paraphrased natural-language queries; pure vector search, conversely, sometimes ignores exact product codes. They want one ranking that captures both. Which design is best?",
+    "options": [
+      "Implement hybrid search combining BM25 and k-NN with score normalization in an OpenSearch search pipeline",
+      "Use only k-NN vector search and drop BM25 to simplify the stack",
+      "Use only BM25 and rely on synonyms files for paraphrases",
+      "Run BM25 and k-NN as two separate apps and show users two result lists"
+    ],
+    "correct": [0],
+    "explanation": "Hybrid search fuses BM25 (great for exact codes/SKUs) with k-NN semantic matching (great for paraphrases) into a single normalized ranking, capturing both strengths. Pure vector or pure lexical each drops one capability, and showing two separate lists harms user experience instead of producing one ranking."
+  }
+]

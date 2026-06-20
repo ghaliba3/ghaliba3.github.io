@@ -1,0 +1,398 @@
+[
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A fintech company is building a real-time chatbot on Amazon Bedrock that must support multiple foundation models (Anthropic Claude and Meta Llama) behind a single internal abstraction. The team wants one consistent request/response shape, native multi-turn conversation handling, and tool use, without writing per-model JSON body formatting. Which approach is the MOST operationally efficient?",
+    "options": [
+      "Use the Converse API (Converse/ConverseStream) with a unified message structure across all supported models",
+      "Use InvokeModel and maintain a per-model adapter layer that builds each provider's native request body",
+      "Deploy each model to a SageMaker endpoint and route through a custom inference handler",
+      "Use InvokeModelWithResponseStream and parse each provider's distinct streaming chunk format"
+    ],
+    "correct": [0],
+    "explanation": "The Converse API provides a single, consistent interface across supported Bedrock models including multi-turn messages and tool use, eliminating per-provider body formatting. InvokeModel works but forces the team to maintain provider-specific request/response adapters, which is exactly the operational overhead they want to avoid."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A customer support application processes 2 million product reviews overnight to generate sentiment summaries. There is no latency requirement; results are needed within several hours and cost is the primary concern. The team currently calls InvokeModel synchronously in a loop and is hitting throttling. What is the MOST cost-effective and operationally efficient approach?",
+    "options": [
+      "Submit the work as a Bedrock batch inference job using CreateModelInvocationJob with input/output in Amazon S3",
+      "Request a service quota increase for on-demand InvokeModel requests per minute and add exponential backoff",
+      "Purchase Provisioned Throughput for the model to guarantee synchronous capacity",
+      "Spread the InvokeModel calls across multiple regions to parallelize the load"
+    ],
+    "correct": [0],
+    "explanation": "Batch inference via CreateModelInvocationJob is designed for large, latency-tolerant workloads, reads/writes from S3, and is offered at a 50% discount versus on-demand pricing, making it the most cost-effective fit. Raising on-demand quotas or buying Provisioned Throughput both cost more and add operational complexity for work that is not latency-sensitive."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A media company runs a high-traffic summarization service on Anthropic Claude in Amazon Bedrock and frequently sees on-demand requests fail with throttling during peak hours. They have a predictable, sustained baseline of traffic and a strict P99 latency SLA. Which option BEST guarantees consistent throughput and avoids throttling for the baseline load?",
+    "options": [
+      "Purchase Provisioned Throughput with a committed model units term for the model",
+      "Implement client-side exponential backoff with jitter on every InvokeModel call",
+      "Switch all traffic to the asynchronous CreateModelInvocationJob batch API",
+      "Enable cross-region inference profiles to spread requests across regions"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned Throughput reserves dedicated model units, delivering guaranteed, consistent throughput that is not subject to on-demand throttling, which directly satisfies a sustained-baseline SLA. Backoff only smooths transient spikes, batch inference is asynchronous and violates the latency SLA, and cross-region inference reduces throttling but still draws from shared on-demand capacity without a hard guarantee."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A global SaaS provider wants to reduce on-demand throttling errors for Anthropic Claude in Bedrock during unpredictable traffic spikes, without committing to Provisioned Throughput and without changing application logic that already uses the Converse API. They are willing to have requests served from any of several US regions. What is the MOST appropriate approach?",
+    "options": [
+      "Invoke a cross-region inference profile (system-defined) so Bedrock can route requests across multiple regions",
+      "Manually implement region failover in the SDK by catching errors and retrying against a hard-coded second region",
+      "Move the workload to batch inference to absorb the spikes asynchronously",
+      "Request a per-region on-demand quota increase in only the primary region"
+    ],
+    "correct": [0],
+    "explanation": "A cross-region inference profile lets Bedrock automatically route on-demand traffic across a defined set of regions, increasing burst capacity and reducing throttling with no application change beyond using the profile's model ID. Hand-rolled failover duplicates what the profile does natively, batch is asynchronous, and a single-region quote bump does not add cross-region capacity."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A developer is streaming token output to a web UI using InvokeModelWithResponseStream. Occasionally the response is cut off and the client logic does not detect why. What is the MOST reliable way to determine that generation stopped because the model reached the maximum token limit rather than completing naturally?",
+    "options": [
+      "Inspect the stop reason field in the final streamed event (for example, the message stop / metadata chunk) for a max-tokens indicator",
+      "Measure the elapsed wall-clock time and assume truncation if it exceeds a threshold",
+      "Count the characters received and compare against a fixed expected length",
+      "Re-issue the request with InvokeModel and compare the two outputs"
+    ],
+    "correct": [0],
+    "explanation": "The streamed response includes a stop reason in its terminating events that distinguishes natural completion (end turn) from hitting the max token cap, which is the authoritative signal. Timing and character counting are heuristic and unreliable, and re-issuing the request wastes tokens without giving a definitive reason."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "An enterprise must keep all foundation model invocation inputs and outputs auditable for compliance. They invoke models via the Bedrock runtime and need a durable, queryable record of every prompt and completion delivered to a destination they control. What is the MOST operationally efficient native approach?",
+    "options": [
+      "Enable Bedrock model invocation logging and route logs to Amazon S3 and/or CloudWatch Logs",
+      "Wrap every InvokeModel call in application code that writes prompts and completions to a custom database",
+      "Enable AWS CloudTrail data events for the Bedrock runtime to capture full request and response bodies",
+      "Use VPC flow logs on the Bedrock VPC endpoint to reconstruct prompts and completions"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock model invocation logging captures full request and response data and delivers it to S3 and/or CloudWatch Logs as a managed feature, requiring no custom code. CloudTrail records the API management event metadata but not the prompt/completion payloads, and VPC flow logs only record network-level data, not message content."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team building a coding assistant needs the model to call external functions (look up documentation, run a linter) during a conversation on Amazon Bedrock, using a model-agnostic interface that returns structured tool-call requests the application can execute. Which API capability should they use?",
+    "options": [
+      "The Converse API tool use (toolConfig with tool specifications) feature",
+      "InvokeModel with a custom prompt template that asks the model to emit JSON, parsed by regex",
+      "Bedrock Agents only, since tool use is not available through the runtime APIs",
+      "CreateModelInvocationJob with a tools manifest in the S3 input"
+    ],
+    "correct": [0],
+    "explanation": "The Converse API supports tool use via toolConfig, returning structured tool-use blocks in a standardized shape across supported models so the application can execute the function and return results. Prompting for JSON and regex-parsing is brittle and not standardized, tool use is not exclusive to Agents, and batch jobs do not provide interactive tool-call round trips."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "An architecture review flags that a Python service calling Bedrock is creating a new boto3 client on every request and is not handling throttling. The service uses both the runtime (InvokeModel) and the control plane (listing models). Which two changes BEST improve reliability and efficiency? (Select TWO.)",
+    "options": [
+      "Reuse a single long-lived bedrock-runtime client (and a separate bedrock client for control-plane calls) across requests",
+      "Configure the SDK retry mode (for example, adaptive/standard) with an appropriate max attempts to handle throttling",
+      "Create one client per request to ensure fresh credentials on every invocation",
+      "Use the bedrock-runtime client for ListFoundationModels to reduce the number of clients",
+      "Disable SDK retries and rely solely on the load balancer to retry failed calls"
+    ],
+    "correct": [0, 1],
+    "explanation": "Bedrock splits the data plane (bedrock-runtime: InvokeModel/Converse) from the control plane (bedrock: ListFoundationModels, job management), so you reuse long-lived clients of each kind, and configuring SDK retry mode handles throttling gracefully. Creating a client per request adds overhead, ListFoundationModels is not on the runtime client, and disabling retries removes the primary throttling defense."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A latency-sensitive voice assistant must begin speaking the model's answer as soon as possible to minimize perceived response time, while still using the model-agnostic message interface. Which Bedrock runtime call is the BEST fit?",
+    "options": [
+      "ConverseStream, to receive incremental output as it is generated",
+      "Converse, then chunk the full text client-side for playback",
+      "InvokeModel with a reduced max token setting to force a faster full response",
+      "CreateModelInvocationJob with near-real-time polling of the S3 output"
+    ],
+    "correct": [0],
+    "explanation": "ConverseStream returns tokens incrementally through the unified Converse interface, letting the assistant start playback before generation completes, minimizing time-to-first-token. Converse returns only the complete response, reducing max tokens still waits for the full body, and batch inference is asynchronous and unsuitable for real-time voice."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A company wants to use a cross-region inference profile for Anthropic Claude to improve burst capacity. During an IAM review, the security team asks which permissions the calling principal needs. What is correct about invoking through a cross-region inference profile?",
+    "options": [
+      "The principal needs InvokeModel permission for the inference profile ARN and for the underlying foundation model ARNs in each region the profile can route to",
+      "Only InvokeModel on the single primary-region model ARN is required; the profile handles all other permissions implicitly",
+      "Cross-region inference requires no IAM changes because routing is performed by an AWS-managed service role",
+      "The principal must assume a role in each destination region before each invocation"
+    ],
+    "correct": [0],
+    "explanation": "When invoking a cross-region inference profile, the IAM policy must allow the action on the inference profile resource as well as on the foundation model resources in the regions the profile can route to. Permitting only the primary-region model ARN will cause access-denied errors when Bedrock routes to another region, and there is no implicit waiver or per-call role assumption."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A data team submits a batch inference job with CreateModelInvocationJob and finds it stuck in a validation/failed state immediately. The most common cause in their case is the input file. Which requirement MUST the input satisfy for a Bedrock batch job?",
+    "options": [
+      "It must be JSONL in Amazon S3, with each line a record whose modelInput matches the target model's expected request body, and meet the job's minimum record count",
+      "It must be a single JSON array uploaded to a DynamoDB table referenced by ARN",
+      "It must be CSV with one prompt per row stored in an EFS volume",
+      "It must be plaintext prompts concatenated into one file with newline separators only"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock batch inference reads JSONL from S3 where each line contains a recordId and a modelInput conforming to the chosen model's request schema, and jobs must meet a minimum number of records. DynamoDB, EFS, CSV, and undelimited plaintext are not valid input sources or formats for CreateModelInvocationJob."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "A platform team is standardizing on the Converse API but still has legacy code paths that call InvokeModel directly. They want to document the practical differences so engineers choose correctly. Which two statements accurately describe trade-offs between Converse and InvokeModel? (Select TWO.)",
+    "options": [
+      "Converse provides a unified message and inference-parameter structure across models, while InvokeModel requires model-specific request/response bodies",
+      "Converse natively supports multi-turn message arrays and tool use through a single consistent schema",
+      "InvokeModel is the only runtime operation that supports streaming output",
+      "Converse cannot be used with cross-region inference profiles, whereas InvokeModel can",
+      "InvokeModel automatically normalizes all provider responses into a single content schema"
+    ],
+    "correct": [0, 1],
+    "explanation": "Converse abstracts away provider-specific bodies with one message/parameter schema and natively models multi-turn conversations and tool use, which is its core advantage over InvokeModel. Both APIs have streaming variants and both work with inference profiles, and it is Converse (not InvokeModel) that normalizes responses across providers."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "An application using ConverseStream must accumulate the full assistant message for storage after streaming it to the user. The developer wants to do this with minimal custom parsing. What is the BEST approach with the streaming response?",
+    "options": [
+      "Process the stream's contentBlockDelta events to append text, and read the final messageStop and metadata events for stop reason and token usage",
+      "Ignore the deltas and issue a second non-streaming Converse call to retrieve the complete message",
+      "Concatenate the raw bytes of every event payload and store them verbatim as the message",
+      "Rely on the first chunk only, since ConverseStream sends the entire message in the initial event"
+    ],
+    "correct": [0],
+    "explanation": "ConverseStream emits structured events including contentBlockDelta for incremental text and a terminating messageStop plus metadata carrying stopReason and usage, which together reconstruct the full message and its metadata. Issuing a second call doubles cost, concatenating raw event bytes stores framing artifacts, and the message is not delivered whole in the first chunk."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A healthcare company requires that Bedrock runtime traffic never traverse the public internet and stays within their VPC for compliance. They invoke models from private subnets with no internet gateway. What is the correct way to enable connectivity to the Bedrock runtime?",
+    "options": [
+      "Create an interface VPC endpoint (AWS PrivateLink) for the bedrock-runtime service and call it from the private subnets",
+      "Attach a NAT gateway so the private subnets can reach the public Bedrock endpoint securely",
+      "Use a gateway VPC endpoint, the same type used for Amazon S3, for the Bedrock runtime",
+      "Peer the VPC with an AWS-managed Bedrock VPC to route traffic privately"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock runtime is reachable privately via an interface VPC endpoint powered by AWS PrivateLink, keeping traffic on the AWS network without an internet gateway. A NAT gateway still routes to the public endpoint over the internet, Bedrock does not offer a gateway endpoint (those are limited to S3 and DynamoDB), and there is no customer VPC peering construct for Bedrock."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team needs deterministic, repeatable outputs for a regression test suite that calls a model through the Converse API. They want to constrain randomness using the unified inference configuration. Which Converse field should they set, and what is the realistic expectation?",
+    "options": [
+      "Set inferenceConfig.temperature to a low value (for example 0); outputs become more deterministic but exact reproducibility is not guaranteed",
+      "Set inferenceConfig.seed to a fixed integer, which guarantees byte-identical outputs on every call",
+      "Set inferenceConfig.maxTokens to 1 so the model cannot vary its output",
+      "Set a stopSequence equal to the expected answer so the model always returns it"
+    ],
+    "correct": [0],
+    "explanation": "Lowering temperature via inferenceConfig reduces output variability and is the supported knob for more deterministic generations, though Bedrock does not promise byte-for-byte reproducibility. A universal seed parameter is not guaranteed across all Converse models, capping maxTokens at 1 just truncates output, and a stop sequence does not force a specific answer."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "An analytics team wants to invoke an Amazon Bedrock model from an AWS Lambda function. Reviewers note the function imports a heavyweight third-party HTTP client to sign requests manually. What is the MOST operationally efficient recommendation?",
+    "options": [
+      "Use the AWS SDK's bedrock-runtime client, which handles SigV4 signing and retries via the function's IAM execution role",
+      "Keep the manual signing code but cache the SigV4 signature across invocations to save time",
+      "Call the Bedrock REST endpoint with unsigned requests since Lambda is inside AWS",
+      "Embed long-term IAM access keys in the function environment to simplify signing"
+    ],
+    "correct": [0],
+    "explanation": "The AWS SDK's bedrock-runtime client performs SigV4 signing and retry handling automatically using the Lambda execution role's temporary credentials, removing the need for any custom signing code. Caching signatures is incorrect (they are request-specific), Bedrock requires authenticated signed requests, and embedding static keys is a security anti-pattern when a role is available."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "A company is preparing to invoke a newly released foundation model in Bedrock for the first time and keeps getting AccessDenied even though IAM looks correct. Which two account/region-level conditions are commonly required before on-demand InvokeModel will succeed? (Select TWO.)",
+    "options": [
+      "Model access for that specific model must be granted/enabled in the account for the region being used",
+      "The model must be available (offered) in the AWS region the request targets",
+      "A Provisioned Throughput commitment must be purchased before any on-demand call",
+      "The model must first be copied into the account via CreateModelInvocationJob",
+      "A SageMaker domain must exist in the account to host Bedrock models"
+    ],
+    "correct": [0, 1],
+    "explanation": "On-demand invocation requires that model access is enabled for that model in the account and that the model is actually offered in the target region, both of which are common causes of access errors. Provisioned Throughput is optional, batch jobs do not provision models into an account, and Bedrock does not depend on a SageMaker domain."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team observes intermittent ThrottlingException errors during traffic bursts on on-demand InvokeModel calls, even though average utilization is well below their quota. They want the simplest change that improves success rates without buying capacity. What should they do FIRST?",
+    "options": [
+      "Implement retries with exponential backoff and jitter on throttling responses",
+      "Increase max tokens so each request does more work and fewer requests are sent",
+      "Switch immediately to Provisioned Throughput for all traffic",
+      "Move every request to a different region permanently"
+    ],
+    "correct": [0],
+    "explanation": "On-demand limits are enforced over short windows, so bursts can throttle even at low average load; retries with exponential backoff and jitter let transient throttles succeed on retry and is the standard first mitigation. Larger max tokens does not reduce request-rate throttling, Provisioned Throughput is a cost commitment that is premature here, and relocating to one fixed region does not inherently add capacity."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A multi-tenant application must attribute Bedrock token usage and invocation costs to individual customers for chargeback. They invoke models with the runtime APIs. What is the MOST effective native mechanism to enable this attribution?",
+    "options": [
+      "Read the token usage returned in each response's metadata/usage field and tag/segment invocations per tenant in your own records (optionally with separate inference profiles per tenant for cost allocation)",
+      "Rely on AWS Cost Explorer to break down spend by individual prompt automatically",
+      "Use the request ID alone to derive per-tenant token counts after the fact",
+      "Enable per-tenant Provisioned Throughput as the only way to measure usage"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock responses include token usage in the response metadata, which the application can record per tenant; application inference profiles can further attach cost-allocation tags for spend tracking. Cost Explorer cannot attribute spend to individual prompts, a request ID does not by itself carry token counts, and Provisioned Throughput is a capacity feature, not a metering requirement."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "An application sends a very large document plus instructions to a Bedrock model and receives a validation error indicating the input is too large. The model itself supports a large context window. What is the MOST likely cause and correct remediation?",
+    "options": [
+      "The request exceeded the model's context window (input plus requested output tokens); reduce input size, summarize/chunk, or lower maxTokens to fit within the limit",
+      "Bedrock caps every request body at 1 KB; compress the JSON to fit",
+      "The error is transient throttling; retry the identical request with backoff",
+      "Streaming is required for large inputs; resend with InvokeModelWithResponseStream unchanged"
+    ],
+    "correct": [0],
+    "explanation": "Total tokens (prompt input plus the maxTokens you reserve for output) must fit within the model's context window; exceeding it produces a validation error that you fix by trimming input, chunking, or lowering maxTokens. There is no 1 KB body cap, the error is not throttling, and switching to streaming does not increase the context window."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team wants to enforce content safety policies (block certain topics, filter PII, deny prompt-injection attempts) consistently across both Converse and InvokeModel calls, ideally without rebuilding logic in every microservice. What is the MOST operationally efficient native Bedrock capability?",
+    "options": [
+      "Create a Bedrock Guardrail and apply it to runtime invocations via the guardrail identifier/version parameters",
+      "Write a custom regex prefilter in each microservice that runs before every model call",
+      "Use IAM policies to deny requests that contain disallowed words",
+      "Rely on the model provider's built-in safety and disable any additional filtering"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Guardrails provide configurable content filters, denied topics, PII handling, and prompt-attack protection that can be referenced by ID/version on Converse and InvokeModel calls, centralizing policy enforcement. Per-service regex duplicates logic and is brittle, IAM cannot inspect prompt content, and relying solely on provider defaults gives no centralized, configurable control."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A workload reads from a Bedrock batch inference job's output in S3. The team needs to correlate each output record with its original input record reliably, even though records may be processed out of order. What is the correct mechanism?",
+    "options": [
+      "Match on the recordId field that is carried from each input JSONL record to its corresponding output record",
+      "Assume output line N corresponds to input line N because order is always preserved",
+      "Use the S3 object's LastModified timestamp to order and pair records",
+      "Re-run the job in single-record mode so ordering is guaranteed"
+    ],
+    "correct": [0],
+    "explanation": "Each batch input record carries a recordId that Bedrock echoes in the matching output record, which is the reliable way to join inputs and outputs regardless of processing order. Positional matching is unsafe because order is not guaranteed, timestamps do not identify records, and single-record jobs are not a supported way to enforce ordering."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "A platform team is choosing between on-demand, Provisioned Throughput, and batch inference for several Bedrock workloads. Which two statements correctly match a workload characteristic to the BEST pricing/throughput mode? (Select TWO.)",
+    "options": [
+      "A large nightly job over millions of records with no latency requirement is best served by batch inference for its lower per-token cost",
+      "A steady, high-volume production endpoint with a strict latency SLA is best served by Provisioned Throughput for guaranteed capacity",
+      "An unpredictable, low-volume prototype is best served by Provisioned Throughput to avoid any throttling",
+      "A latency-critical real-time feature is best served by batch inference to reduce cost",
+      "On-demand should never be used in production under any circumstances"
+    ],
+    "correct": [0, 1],
+    "explanation": "Batch fits large latency-tolerant jobs at a discount, while Provisioned Throughput fits steady high-volume latency-sensitive endpoints needing guaranteed capacity. Buying Provisioned Throughput for a low-volume prototype wastes a commitment, batch cannot serve latency-critical real-time features, and on-demand is perfectly valid in production for variable or moderate traffic."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A developer calling ConverseStream wants the model to stop generating as soon as it produces a specific delimiter used by downstream parsing, to save output tokens. Using the unified inference configuration, which setting achieves this?",
+    "options": [
+      "Provide the delimiter in inferenceConfig.stopSequences so generation halts when the sequence is produced",
+      "Set inferenceConfig.temperature to 0 so the model always stops at the delimiter",
+      "Set a low topP value to force the model to emit the delimiter early",
+      "Append the delimiter to the system prompt, which causes the runtime to truncate at that string"
+    ],
+    "correct": [0],
+    "explanation": "stopSequences in the Converse inferenceConfig tells the model to stop generating when it emits one of the specified sequences, directly saving output tokens. Temperature and topP affect sampling randomness, not stopping behavior, and putting the delimiter in the system prompt does not configure a runtime stop condition."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "An organization fine-tuned a foundation model in Bedrock and must serve it for production inference with predictable throughput. Which two statements correctly describe how the customized model is provisioned and invoked? (Select TWO.)",
+    "options": [
+      "Serving the custom model for inference requires purchasing Provisioned Throughput (model units) for that model",
+      "You invoke the resulting provisioned custom model through the standard runtime APIs once model units are active",
+      "A custom model is invoked on-demand exactly like a base model with no additional provisioning",
+      "A custom model can only be invoked through CreateModelInvocationJob batch jobs",
+      "A custom model must be exported to SageMaker before it can serve any inference"
+    ],
+    "correct": [0, 1],
+    "explanation": "In Bedrock, a customized (fine-tuned) model is served through Provisioned Throughput: you purchase model units and then invoke the provisioned custom model through the normal runtime APIs. On-demand invocation of arbitrary custom models is not the general path, batch is not the only option, and Bedrock does not require exporting the custom model to SageMaker to serve it."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team integrating tool use with the Converse API receives a response whose stopReason indicates the model wants to call a tool. Their code currently treats this like a normal end-of-turn and returns the text to the user. What is the CORRECT handling pattern?",
+    "options": [
+      "Detect the tool_use stop reason, execute the requested tool, then send the result back as a toolResult content block in a follow-up Converse call to continue the turn",
+      "Ignore the tool request and re-send the same prompt until the model answers without a tool call",
+      "Return the partial text immediately because tool use is only advisory in Converse",
+      "Switch to InvokeModel, since tool-use continuation is not supported by Converse"
+    ],
+    "correct": [0],
+    "explanation": "When Converse returns a tool_use stop reason, the application must run the tool and pass the output back as a toolResult in a subsequent Converse request so the model can complete its response. Re-sending the prompt ignores the model's request, returning partial text breaks the interaction, and tool-use continuation is fully supported within Converse."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A company already encrypts S3 inputs/outputs for Bedrock batch jobs with a customer-managed AWS KMS key. Batch jobs fail with an access/permission error related to encryption. What is the MOST likely fix?",
+    "options": [
+      "Grant the Bedrock batch job's service role (and the KMS key policy) permission to use the KMS key for decrypt/encrypt on the input and output objects",
+      "Disable KMS encryption on the buckets because Bedrock cannot read encrypted objects",
+      "Move the data to a public bucket so Bedrock can access it without KMS",
+      "Switch the bucket to SSE-S3 only, since customer-managed keys are unsupported by Bedrock"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock batch jobs run under an IAM service role that must be allowed to use the customer-managed KMS key (via both IAM permissions and the key policy) to read inputs and write outputs. Disabling encryption or making data public violates the compliance posture, and customer-managed KMS keys are supported, so the issue is missing key permissions, not key type."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A service must call Bedrock from an account that uses Service Control Policies (SCPs) and a permissions boundary. After granting the runtime IAM policy, calls still fail with AccessDenied at the org level. Which is the MOST likely cause?",
+    "options": [
+      "An SCP in the organization denies or does not allow the Bedrock action/region, overriding the account-level IAM permission",
+      "The bedrock-runtime client must be recreated for each request to refresh org permissions",
+      "Bedrock cannot be used in any account that has SCPs attached",
+      "The model ARN must be added to a Provisioned Throughput commitment to satisfy SCPs"
+    ],
+    "correct": [0],
+    "explanation": "SCPs set the maximum available permissions for an account, so even a correct identity policy is overridden if an SCP denies the Bedrock action or the target region. Recreating clients does not change evaluated permissions, SCPs do not categorically block Bedrock, and Provisioned Throughput is unrelated to organizational policy evaluation."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "single",
+    "question": "A team wants to discover, at runtime, which foundation models are available in a region and which inference modes (on-demand, provisioned) and modalities they support, so their deployment pipeline can validate model IDs before invoking. Which API should they call, and on which client?",
+    "options": [
+      "ListFoundationModels (and GetFoundationModel) on the control-plane bedrock client",
+      "ListFoundationModels on the bedrock-runtime client used for InvokeModel",
+      "InvokeModel with a special discovery prompt to enumerate models",
+      "CreateModelInvocationJob with an empty input to return the model catalog"
+    ],
+    "correct": [0],
+    "explanation": "Model discovery is a control-plane operation: ListFoundationModels and GetFoundationModel live on the bedrock client and return model IDs, supported inference types, and modalities. The bedrock-runtime client only handles invocation (InvokeModel/Converse), and there is no discovery-via-prompt or discovery-via-batch mechanism."
+  },
+  {
+    "category": "Amazon Bedrock Fundamentals",
+    "type": "multiple",
+    "question": "A team is migrating an image-and-text (multimodal) feature from per-model InvokeModel bodies to the Converse API and wants to confirm what Converse handles natively. Which two capabilities are provided by Converse that reduce their custom code? (Select TWO.)",
+    "options": [
+      "A unified content-block structure that can include both text and image blocks in a single message",
+      "A system prompt field and inferenceConfig that apply consistently across supported models",
+      "Automatic batch processing of millions of multimodal records without a separate job",
+      "Guaranteed dedicated throughput without purchasing Provisioned Throughput",
+      "Built-in storage of conversation history so the client need not resend prior turns"
+    ],
+    "correct": [0, 1],
+    "explanation": "Converse models messages as content blocks that can mix text and images, and exposes a consistent system prompt and inferenceConfig across supported models, both of which remove provider-specific code. Converse is synchronous (not a batch service), does not grant dedicated throughput on its own, and is stateless, so the client must still resend prior turns each request."
+  }
+]

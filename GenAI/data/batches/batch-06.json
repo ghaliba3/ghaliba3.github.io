@@ -1,0 +1,398 @@
+[
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A bank has 800 labeled examples of how its support agents should classify and respond to customer complaints in a regulated tone. A base Bedrock model gets the format right but uses the wrong terminology and tone. Latency must stay low and the dataset will not grow much. Which approach is the BEST first choice?",
+    "options": [
+      "Fine-tune the model on the 800 labeled prompt-completion pairs",
+      "Run continued pre-training on the bank's unlabeled complaint corpus",
+      "Build a RAG pipeline that retrieves past complaint resolutions at inference time",
+      "Distill a larger teacher model into a smaller student model"
+    ],
+    "correct": [0],
+    "explanation": "A modest set of high-quality labeled prompt-completion pairs that teach a specific tone and terminology is the textbook use case for fine-tuning, and it keeps inference latency low. Continued pre-training needs large unlabeled corpora and teaches knowledge rather than task behavior, while RAG adds retrieval latency and does not change tone."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A company fine-tunes a Bedrock model and the job completes successfully. When they try to invoke the custom model with on-demand InvokeModel calls, the request fails. What must they do before they can serve the custom model?",
+    "options": [
+      "Purchase Provisioned Throughput for the custom model to host it",
+      "Re-run the fine-tuning job with on-demand inference enabled",
+      "Enable cross-region inference for the custom model",
+      "Convert the custom model to a SageMaker JumpStart endpoint"
+    ],
+    "correct": [0],
+    "explanation": "Custom (fine-tuned or continued pre-trained) Bedrock models cannot be invoked on-demand; they require Provisioned Throughput to be purchased, which provisions dedicated capacity to host the model. There is no on-demand inference toggle on a training job, and converting to JumpStart is unrelated."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A pharmaceutical firm wants a Bedrock model to deeply understand domain vocabulary from millions of unlabeled internal research documents before any task-specific tuning. They have no labeled examples yet. Which customization method fits this stage?",
+    "options": [
+      "Continued pre-training on the unlabeled corpus",
+      "Fine-tuning on synthetic prompt-completion pairs",
+      "Prompt engineering with few-shot examples",
+      "Agents for Amazon Bedrock with action groups"
+    ],
+    "correct": [0],
+    "explanation": "Continued pre-training consumes large volumes of unlabeled domain text to adapt the model's representation of specialized vocabulary and knowledge, which matches having millions of unlabeled documents and no labels. Fine-tuning and few-shot prompting both require labeled or example data the firm does not yet have."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "An ML engineer is preparing data to fine-tune a Bedrock text model. Which describes the correct data format and storage requirement?",
+    "options": [
+      "JSONL files in Amazon S3, each line a record with prompt and completion fields",
+      "CSV files uploaded directly through the Bedrock console",
+      "Parquet files registered in the AWS Glue Data Catalog",
+      "Plain text files streamed from Amazon Kinesis"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock fine-tuning expects training data as JSONL files stored in Amazon S3, where each line is a JSON object containing the prompt and the desired completion. CSV, Parquet/Glue, and Kinesis are not the supported input mechanisms for Bedrock customization jobs."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A startup needs a chatbot that answers questions about its constantly changing product catalog and pricing. Accuracy on the latest data is critical and content changes daily. Which customization strategy is MOST appropriate?",
+    "options": [
+      "Retrieval Augmented Generation (RAG) over an up-to-date knowledge base",
+      "Fine-tune the model nightly on the new catalog data",
+      "Continued pre-training whenever the catalog changes",
+      "Increase the temperature so the model generates more varied answers"
+    ],
+    "correct": [0],
+    "explanation": "RAG injects current data at inference time from an external store, so daily catalog and price changes are reflected immediately without retraining. Nightly fine-tuning or repeated continued pre-training is slow, expensive, and risks stale or hallucinated facts, and temperature does nothing for factual freshness."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "After fine-tuning, a team observes near-perfect accuracy on their training set but markedly worse results on a held-out validation set. What is the MOST likely problem and the appropriate response?",
+    "options": [
+      "Overfitting; reduce epochs and/or add more diverse training data",
+      "Underfitting; increase the learning rate aggressively",
+      "Data leakage; switch from fine-tuning to continued pre-training",
+      "Insufficient Provisioned Throughput; buy more model units"
+    ],
+    "correct": [0],
+    "explanation": "A large gap between high training accuracy and poor validation accuracy is the classic signature of overfitting, addressed by reducing epochs, regularizing, or adding more varied data. Underfitting would show poor training accuracy too, and Provisioned Throughput affects serving capacity, not generalization."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "A company wants the accuracy of a large foundation model for a narrow classification task but cannot afford its inference cost at scale. Which characteristics make Bedrock Model Distillation the right fit here? (Select TWO.)",
+    "options": [
+      "It trains a smaller, cheaper-to-serve student model that approximates the larger teacher's task accuracy",
+      "It is well suited to a narrow, well-defined task rather than open-ended general capability",
+      "It removes the requirement to use Provisioned Throughput for the resulting custom model",
+      "It guarantees the student model outperforms the teacher across all tasks",
+      "It eliminates the need for representative prompts during data generation"
+    ],
+    "correct": [0, 1],
+    "explanation": "Distillation produces a smaller, cheaper student that retains much of the teacher's accuracy and is most effective on a narrow, well-defined task. The resulting custom model still needs Provisioned Throughput, a student does not surpass the teacher everywhere, and representative prompts remain essential for good distillation data."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team can fine-tune in either Amazon Bedrock or Amazon SageMaker JumpStart. They want full control over the training script, custom hyperparameters, and the ability to deploy the model to a self-managed endpoint with specific instance types. Which option best meets these needs?",
+    "options": [
+      "SageMaker JumpStart fine-tuning with a managed training job and SageMaker endpoint",
+      "Bedrock fine-tuning, which exposes full training-script customization",
+      "Bedrock continued pre-training with custom containers",
+      "Bedrock Model Distillation with a custom student architecture"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker JumpStart gives lower-level control over training jobs, hyperparameters, and choice of instance types for self-managed endpoints, which suits teams needing that flexibility. Bedrock customization is intentionally managed and abstracts away the training script and infrastructure choices."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "An organization needs to add proprietary, slowly changing internal knowledge to model responses while keeping inference latency minimal and avoiding per-call retrieval infrastructure. They have a large unlabeled corpus. Which approach trades off best for this requirement?",
+    "options": [
+      "Continued pre-training to bake the domain knowledge into the model weights",
+      "RAG with a vector store queried on every request",
+      "Fine-tuning on a few dozen labeled examples",
+      "Few-shot prompting with the entire corpus in the context window"
+    ],
+    "correct": [0],
+    "explanation": "When knowledge is large, unlabeled, and slowly changing, continued pre-training embeds it into the weights so no retrieval step is needed at inference, minimizing latency. RAG adds per-call retrieval latency and infrastructure, a few labeled examples are too sparse, and stuffing a large corpus into context is infeasible."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "A team is deciding between fine-tuning and RAG for a use case. Which scenarios genuinely favor fine-tuning over RAG? (Select TWO.)",
+    "options": [
+      "Enforcing a consistent brand tone, style, and output structure across responses",
+      "Teaching the model a specialized task behavior from many labeled examples",
+      "Answering questions about documents that are updated several times per day",
+      "Providing verifiable source citations for every factual claim",
+      "Reducing the number of model parameters to cut hosting cost"
+    ],
+    "correct": [0, 1],
+    "explanation": "Fine-tuning is best when you need to shape behavior, tone, style, or task performance using labeled examples, since that adjusts the model itself. Frequently changing data and source-citation needs favor RAG, and reducing parameter count is the goal of distillation, not fine-tuning."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team fine-tuned a Bedrock model and wants to objectively decide whether the custom model is better than the base model for their task before committing to Provisioned Throughput. Which step is MOST appropriate?",
+    "options": [
+      "Run a model evaluation comparing custom and base models on a held-out test set with task-relevant metrics",
+      "Deploy both to Provisioned Throughput and compare production traffic for a month",
+      "Compare the final training loss values reported by each job",
+      "Pick the model that produced more tokens during validation"
+    ],
+    "correct": [0],
+    "explanation": "Evaluating both models on a held-out test set with metrics tied to the task gives an objective, low-cost comparison before paying for hosting. Provisioning both for a month is wasteful, training loss is not comparable across models, and token count is not a quality signal."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team's fine-tuning dataset contains many duplicated, mislabeled, and inconsistent prompt-completion pairs. They are tempted to just add more epochs to compensate. What is the BEST course of action?",
+    "options": [
+      "Clean and de-duplicate the data and fix labels before training, prioritizing quality over volume",
+      "Increase epochs so the model sees the noisy data more times",
+      "Switch to continued pre-training because it tolerates noisy labels",
+      "Raise the learning rate to help the model overcome bad labels"
+    ],
+    "correct": [0],
+    "explanation": "Fine-tuning quality is driven far more by clean, consistent, correctly labeled data than by volume, so cleaning and de-duplicating is the right first step. More epochs on noisy data amplifies the errors and overfits, and raising the learning rate or changing methods does not fix mislabeled targets."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A regulated insurer must ensure that no customer data leaves its VPC during Bedrock fine-tuning, training data is encrypted with its own keys, and access is auditable. Which combination of measures supports these governance requirements?",
+    "options": [
+      "Store JSONL in an encrypted S3 bucket with a customer-managed KMS key, access Bedrock via a VPC endpoint, and log API calls with CloudTrail",
+      "Email the JSONL files to AWS support to run the job on the insurer's behalf",
+      "Disable encryption to speed up the training job and rely on IAM only",
+      "Make the S3 training bucket public so Bedrock can reach it reliably"
+    ],
+    "correct": [0],
+    "explanation": "Encrypting training data in S3 with a customer-managed KMS key, reaching Bedrock through a VPC endpoint, and auditing with CloudTrail addresses encryption, network isolation, and auditability together. Disabling encryption or exposing the bucket publicly violates the governance requirements outright."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "A team is tuning hyperparameters for a Bedrock fine-tuning job to avoid overfitting on a small dataset. Which adjustments are reasonable mitigations? (Select TWO.)",
+    "options": [
+      "Reduce the number of epochs so the model passes over the data fewer times",
+      "Hold out a validation split to monitor for divergence between train and validation metrics",
+      "Maximize epochs to force the loss as close to zero as possible",
+      "Remove the validation set so all data can be used for training",
+      "Set the learning rate to the largest value the service allows"
+    ],
+    "correct": [0, 1],
+    "explanation": "On a small dataset, fewer epochs and watching a held-out validation split are standard ways to detect and limit overfitting. Maximizing epochs to drive loss to zero, removing validation data, and using the largest learning rate all increase overfitting or hide it."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A company has only about 50 labeled examples and a tight deadline. The base model already performs adequately with detailed instructions. They want better consistency without the cost and effort of training. What should they try FIRST?",
+    "options": [
+      "Prompt engineering with clear instructions and a few well-chosen examples",
+      "Fine-tuning on the 50 examples",
+      "Continued pre-training on the 50 examples",
+      "Bedrock Model Distillation using the 50 examples"
+    ],
+    "correct": [0],
+    "explanation": "With very few examples, a tight deadline, and an already-adequate base model, prompt engineering with few-shot examples is the fastest, cheapest path and often sufficient. Fifty examples are too few for reliable fine-tuning, continued pre-training needs large unlabeled corpora, and distillation requires a teacher and far more data."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team wants to combine customization techniques. They have a fine-tuned model that reliably produces the right tone and format, but it occasionally states outdated facts about inventory. Which addition resolves the factual issue without retraining?",
+    "options": [
+      "Add RAG so the model retrieves current inventory data at inference time",
+      "Run continued pre-training every hour on inventory snapshots",
+      "Increase the fine-tuning epochs to memorize inventory",
+      "Lower the temperature to zero to eliminate outdated facts"
+    ],
+    "correct": [0],
+    "explanation": "Combining a fine-tuned model with RAG lets the model keep its learned tone and format while grounding factual answers in current retrieved data, with no retraining. Hourly continued pre-training is impractical and costly, more epochs only memorize stale data, and temperature changes do not refresh facts."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "An organization plans to keep a fine-tuned Bedrock model serving steady, predictable production traffic 24/7 for a year. Which hosting and cost decision is MOST appropriate?",
+    "options": [
+      "Purchase Provisioned Throughput with a longer-term commitment to lower the hourly rate",
+      "Rely on on-demand invocation of the custom model to avoid commitment",
+      "Re-create the model from the training job for each request",
+      "Host the custom model on a public Bedrock shared pool"
+    ],
+    "correct": [0],
+    "explanation": "Custom models must use Provisioned Throughput, and for steady year-long traffic a longer-term commitment reduces the effective hourly cost. On-demand invocation is not available for custom models, recreating the model per request is nonsensical, and there is no shared public pool for custom models."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team's fine-tuned model performs well on examples resembling its training distribution but poorly on slightly different real-world inputs. Training accuracy was high. Beyond reducing epochs, which data action would MOST improve generalization?",
+    "options": [
+      "Expand the training set with more diverse, representative examples covering the real input distribution",
+      "Duplicate the existing examples to increase dataset size",
+      "Remove all hard examples so training loss drops faster",
+      "Switch the output format to JSON to reduce variance"
+    ],
+    "correct": [0],
+    "explanation": "Poor performance on inputs unlike the training data points to a training set that is not representative; adding diverse, real-world-like examples improves generalization. Duplicating data adds no new information and worsens overfitting, and dropping hard examples or changing output format does not broaden coverage."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "A team must choose customization methods for two needs: (a) the model should respond in a strict legal-clause format learned from examples, and (b) it must cite specific clauses from a frequently updated contract repository. Which two methods map correctly to these needs? (Select TWO.)",
+    "options": [
+      "Fine-tuning for the strict legal-clause output format",
+      "RAG for citing clauses from the frequently updated repository",
+      "Continued pre-training for the strict legal-clause output format",
+      "Prompt caching for citing clauses from the repository",
+      "Provisioned Throughput for the strict legal-clause output format"
+    ],
+    "correct": [0, 1],
+    "explanation": "A strict, learnable output format is best taught by fine-tuning on labeled examples, while citing from a frequently updated repository is exactly what RAG provides at inference. Continued pre-training teaches broad knowledge rather than a precise format, prompt caching only reuses context, and Provisioned Throughput is a hosting concern, not a customization method."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team uses Bedrock Model Distillation. To generate high-quality training data for the student, they can supply their own prompts and let Bedrock produce teacher responses, or provide their own prompt-response pairs. Which statement best reflects a key benefit of this distillation workflow?",
+    "options": [
+      "It produces a smaller, lower-latency, lower-cost model that approximates the teacher's task performance",
+      "It eliminates the need for any Provisioned Throughput to serve the resulting model",
+      "It guarantees the student model exceeds the teacher's accuracy on all tasks",
+      "It removes the need for representative prompts because the teacher fixes data quality"
+    ],
+    "correct": [0],
+    "explanation": "Distillation's core value is a smaller, cheaper, faster student model that retains much of the teacher's quality on the targeted task. The resulting custom model still needs Provisioned Throughput, a student does not surpass its teacher across the board, and representative prompts remain essential for good distillation data."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A company wants to fine-tune a Bedrock model but is unsure whether the model family they want supports fine-tuning and what data volume is needed. What is the MOST reliable way to proceed?",
+    "options": [
+      "Check the per-model customization support and documented data requirements, since support and minimums vary by model",
+      "Assume every Bedrock model supports both fine-tuning and continued pre-training",
+      "Use a single example to fine-tune any model and scale later",
+      "Fine-tune only models that lack Provisioned Throughput support"
+    ],
+    "correct": [0],
+    "explanation": "Not every Bedrock model supports every customization method, and minimum/recommended data volumes differ by model, so consulting the per-model support matrix and requirements is the reliable approach. Assuming universal support, using a single example, or tying the choice to Provisioned Throughput availability are all incorrect."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A retailer fine-tuned a model on last year's seasonal sales scripts. This year's tone guidelines changed significantly. The fine-tuned model keeps producing last year's tone. What is the correct remediation?",
+    "options": [
+      "Create a new fine-tuning job using a dataset that reflects the updated tone guidelines",
+      "Add a system prompt and rely on it to fully override the learned tone",
+      "Buy more Provisioned Throughput units to refresh the model's behavior",
+      "Lower the temperature so the old tone appears less often"
+    ],
+    "correct": [0],
+    "explanation": "Behavior learned during fine-tuning is encoded in the weights, so the reliable fix for changed tone guidelines is to fine-tune again with data reflecting the new tone. A system prompt may not fully override strongly learned behavior, and provisioning or temperature changes do not alter learned tone."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "An ML lead is reviewing a JSONL dataset prepared for Bedrock fine-tuning. Which data-quality practices should they enforce before launching the job? (Select THREE.)",
+    "options": [
+      "Ensure each record is valid JSON on its own line with the required prompt and completion fields",
+      "Remove duplicates and resolve contradictory labels for similar prompts",
+      "Hold out a representative validation subset rather than training on everything",
+      "Pad every completion to the maximum token length to standardize size",
+      "Include as many near-identical examples as possible to inflate the dataset"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "Valid per-line JSONL with required fields, de-duplicated and non-contradictory labels, and a held-out validation set are all sound preparation practices. Padding completions to maximum length wastes tokens and distorts learning, and inflating the set with near-identical examples encourages overfitting without adding signal."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team needs a domain-adapted model and is weighing continued pre-training versus fine-tuning. They have a 5 GB unlabeled domain corpus and 300 labeled task examples, and want both broad domain understanding and strong task behavior. Which sequencing is MOST effective?",
+    "options": [
+      "Continued pre-training on the unlabeled corpus, then fine-tuning on the labeled examples",
+      "Fine-tuning on the labeled examples, then continued pre-training to overwrite task behavior",
+      "Continued pre-training only, skipping the labeled examples",
+      "Fine-tuning only, discarding the unlabeled corpus"
+    ],
+    "correct": [0],
+    "explanation": "Continued pre-training first instills broad domain knowledge from the unlabeled corpus, and subsequent fine-tuning on labeled examples shapes the specific task behavior on top of that foundation. Reversing the order risks the later pre-training washing out the task tuning, and doing only one step misses either knowledge or task adaptation."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A cost-conscious team has bursty, unpredictable traffic and considered fine-tuning, but the base model with good prompting already meets quality bars. Why might avoiding a custom model be the better economic decision here?",
+    "options": [
+      "Custom models require always-on Provisioned Throughput, which is costly for bursty, low-utilization traffic",
+      "Custom models cannot be invoked via API at all",
+      "Fine-tuning permanently increases on-demand token prices for the account",
+      "Provisioned Throughput automatically scales to zero when idle"
+    ],
+    "correct": [0],
+    "explanation": "Because custom models must run on Provisioned Throughput, which is billed for committed capacity rather than per request, bursty low-utilization workloads pay for idle capacity, making on-demand base-model usage cheaper. Custom models can be invoked, fine-tuning does not change account-wide token pricing, and Provisioned Throughput does not scale to zero."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team wants to measure whether fine-tuning reduced hallucinations and improved task accuracy versus the base model, using both automated metrics and human judgment on a curated set. Which Bedrock feature best supports this?",
+    "options": [
+      "Amazon Bedrock model evaluation with automatic and human-based evaluation options",
+      "Bedrock Guardrails configured with denied topics",
+      "Provisioned Throughput dashboards in CloudWatch",
+      "S3 access logs on the training data bucket"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock model evaluation supports both automatic metrics and human evaluation workflows, which is exactly what is needed to compare custom and base models on accuracy and hallucination. Guardrails enforce content policy at runtime, and CloudWatch or S3 logs measure operations, not model quality."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A team fine-tuned a model and now wants to fine-tune again to incorporate new examples without losing the prior adaptation. Which approach aligns with Bedrock's custom-model workflow?",
+    "options": [
+      "Run a new customization job using a previously customized model as the base where supported, with a combined or extended dataset",
+      "Append new JSONL lines to the original S3 file and the model auto-updates",
+      "Edit the deployed Provisioned Throughput model weights directly",
+      "Increase model units, which retrains the model on new data"
+    ],
+    "correct": [0],
+    "explanation": "Iterative improvement is achieved by launching a new customization job, where supported using a prior custom model as the base, with an updated dataset; weights are not edited in place. Appending to S3 does not retrain anything, and adding model units only changes serving capacity, not the model's knowledge."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "multiple",
+    "question": "A solutions architect is advising when continued pre-training is the right tool versus other techniques. In which situations is continued pre-training the BEST fit? (Select TWO.)",
+    "options": [
+      "Adapting a model to a large body of specialized, unlabeled domain text",
+      "Teaching the model an industry's jargon and writing conventions at scale without labels",
+      "Enforcing a precise output schema from a few hundred labeled pairs",
+      "Providing the model with documents that change every few hours",
+      "Returning answers with explicit citations to source passages"
+    ],
+    "correct": [0, 1],
+    "explanation": "Continued pre-training shines when adapting a model to large, unlabeled domain corpora and absorbing specialized jargon and conventions without labels. Precise schemas from labeled pairs call for fine-tuning, and rapidly changing documents or citation requirements are RAG use cases."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "During a SageMaker JumpStart fine-tuning project on a foundation model, the team needs reproducibility, experiment tracking, and the ability to tune learning rate and batch size across runs. Which practice best supports this?",
+    "options": [
+      "Use SageMaker training jobs with explicit hyperparameters and track runs with SageMaker Experiments",
+      "Run training manually on a laptop and record results in a spreadsheet",
+      "Use Bedrock fine-tuning, which exposes the same low-level hyperparameter controls",
+      "Avoid setting hyperparameters so JumpStart can pick random values each run"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker training jobs let you specify hyperparameters like learning rate and batch size explicitly, and SageMaker Experiments tracks runs for reproducibility and comparison. Bedrock abstracts away most low-level hyperparameters, and manual or random approaches undermine reproducibility."
+  },
+  {
+    "category": "Model Customization & Fine-Tuning",
+    "type": "single",
+    "question": "A company wants to reduce hosting cost of a custom Bedrock model while preserving most of its accuracy on a single well-defined task, and they can produce many representative prompts. Comparing fine-tuning the base model again versus distillation, which is the stronger fit for the cost goal?",
+    "options": [
+      "Distillation, to produce a smaller student model that is cheaper to serve on Provisioned Throughput",
+      "Fine-tuning a larger base model again, which inherently lowers serving cost",
+      "Continued pre-training, which reduces the model's parameter count",
+      "Adding more Provisioned Throughput units to the existing large model"
+    ],
+    "correct": [0],
+    "explanation": "Distillation yields a smaller student model that is cheaper to host while retaining most accuracy on the narrow task, directly addressing the cost goal given plentiful representative prompts. Fine-tuning or continued pre-training does not shrink the model, and adding model units increases, not decreases, hosting cost."
+  }
+]
