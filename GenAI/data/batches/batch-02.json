@@ -1,0 +1,399 @@
+[
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A legal-tech firm needs to summarize and answer questions over single contracts that frequently exceed 150,000 tokens, in one pass, without chunking. Quality on long-document reasoning is the top priority and the workload is low-volume but latency-tolerant. Which Amazon Bedrock model is the best fit?",
+    "options": [
+      "Anthropic Claude 3.5 Sonnet (200K context window)",
+      "Meta Llama 3 8B Instruct (8K context window)",
+      "Amazon Titan Text Express (8K context window)",
+      "Mistral 7B Instruct (32K context window)"
+    ],
+    "correct": [0],
+    "explanation": "Claude 3.5 Sonnet offers a 200K-token context window and strong long-document reasoning, allowing the full contract to be processed in a single pass. The other options have context windows far below 150K tokens, forcing chunking that degrades cross-document reasoning quality."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A consumer chat app must serve millions of simple, short-turn conversational requests per day at the lowest possible cost per token, while keeping response latency minimal. Sophisticated multi-step reasoning is not required. Which Bedrock model best meets the cost and latency objectives?",
+    "options": [
+      "Anthropic Claude 3 Opus",
+      "Anthropic Claude 3 Haiku",
+      "Meta Llama 3 70B Instruct",
+      "Mistral Large"
+    ],
+    "correct": [1],
+    "explanation": "Claude 3 Haiku is Anthropic's fastest and lowest-cost model in the Claude 3 family, ideal for high-volume, latency-sensitive, low-complexity workloads. Claude 3 Opus and Mistral Large prioritize reasoning quality at much higher cost and latency, which is unnecessary here."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A retailer wants to extract structured attributes (color, defect, category) from product photographs uploaded by customers, combining image understanding with text generation in a single Bedrock model call. Which model should be selected?",
+    "options": [
+      "Cohere Command R+ (text only)",
+      "Amazon Titan Text Premier (text only)",
+      "Anthropic Claude 3 Sonnet (multimodal vision)",
+      "Mistral 7B Instruct (text only)"
+    ],
+    "correct": [2],
+    "explanation": "Claude 3 Sonnet accepts image inputs natively and can reason over them to produce structured text output in one call. The other listed models are text-only and cannot process the product images directly."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "An enterprise must run a customer-support assistant with a strict 1-second p99 latency SLA and a fixed monthly budget, serving steady, predictable high throughput. Which two choices best balance the latency, cost, and predictability requirements? (Select TWO.)",
+    "options": [
+      "Select a small, fast model such as Claude 3 Haiku or Amazon Titan Text Lite",
+      "Always select Claude 3 Opus to maximize answer quality",
+      "Purchase Provisioned Throughput to guarantee consistent capacity and latency for the steady load",
+      "Rely solely on on-demand inference with no capacity reservation",
+      "Select Mistral Large for every request regardless of complexity"
+    ],
+    "correct": [0, 2],
+    "explanation": "A small, fast model meets the tight latency SLA at low cost, and Provisioned Throughput reserves dedicated capacity that delivers predictable latency and cost for steady high-volume traffic. Large models like Opus or Mistral Large raise latency and cost, and on-demand alone offers no latency guarantee under sustained load."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A startup needs an embeddings model on Bedrock to power semantic search and RAG retrieval, with multilingual document support across 100+ languages. Which model is the most appropriate?",
+    "options": [
+      "Cohere Embed Multilingual",
+      "Anthropic Claude 3 Haiku",
+      "Stability AI SDXL",
+      "Meta Llama 3 8B Instruct"
+    ],
+    "correct": [0],
+    "explanation": "Cohere Embed Multilingual is purpose-built for generating text embeddings across 100+ languages, ideal for multilingual semantic search and RAG. Claude and Llama are generative text models, not embeddings models, and Stability AI SDXL generates images."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A marketing team needs to generate high-resolution promotional images from text prompts within an application built on Amazon Bedrock. Which model should they choose?",
+    "options": [
+      "Amazon Titan Text Premier",
+      "Stability AI Stable Diffusion XL (SDXL)",
+      "Cohere Command R",
+      "Meta Llama 3 70B"
+    ],
+    "correct": [1],
+    "explanation": "Stability AI SDXL is a text-to-image generation model available on Bedrock, designed exactly for producing high-quality images from text prompts. The other options are text-generation or text-embedding models and cannot produce images."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A global SaaS company plans to standardize on a single Bedrock text model but must ensure the model is available in both the eu-central-1 (Frankfurt) and ap-southeast-2 (Sydney) regions to meet data-residency and latency goals. What is the most reliable way to confirm this before committing?",
+    "options": [
+      "Assume all Bedrock models are available in every commercial region",
+      "Verify the specific model's regional availability in the AWS Bedrock model-support documentation for each target region",
+      "Choose any Anthropic model because Anthropic models are globally available",
+      "Select the newest model since newer models always launch in all regions first"
+    ],
+    "correct": [1],
+    "explanation": "Bedrock model availability varies by region and by model, so the only reliable approach is to verify each model's supported regions in AWS documentation. The assumptions in the other options are incorrect because not all models are available in all regions, and launch dates and providers do not guarantee regional coverage."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A team building an open-weights solution wants a model whose license permits broad commercial use and self-hosting flexibility, while still being accessible through Bedrock for managed inference. Which model family best satisfies the open-weights and permissive-license preference?",
+    "options": [
+      "Anthropic Claude 3 (proprietary, API-only)",
+      "Meta Llama 3 (open weights, community license permitting commercial use)",
+      "Amazon Titan (proprietary, Bedrock-only)",
+      "Cohere Command (proprietary, API-only)"
+    ],
+    "correct": [1],
+    "explanation": "Meta Llama 3 is released with open weights under a community license that permits commercial use and self-hosting, while also being available on Bedrock. Claude, Titan, and Cohere Command are proprietary and do not provide open weights for self-hosting."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "A fintech needs a Bedrock model for agentic workflows: it must reliably call external tools/functions, handle multi-step reasoning, and support RAG with a large context. Which two models are well suited for tool-use and agentic retrieval scenarios? (Select TWO.)",
+    "options": [
+      "Anthropic Claude 3.5 Sonnet (strong tool use and 200K context)",
+      "Cohere Command R+ (optimized for tool use and RAG)",
+      "Stability AI SDXL",
+      "Amazon Titan Image Generator",
+      "Meta Llama 3 8B (8K context, limited tool-use tuning)"
+    ],
+    "correct": [0, 1],
+    "explanation": "Claude 3.5 Sonnet provides strong tool-use/function-calling and a 200K context for RAG, and Cohere Command R+ is specifically optimized for tool use and retrieval-augmented generation. The image models are irrelevant, and Llama 3 8B has a small context window and weaker tool-use tuning for demanding agentic workflows."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A company runs a stable, very high-volume summarization pipeline and wants the lowest sustained inference cost with guaranteed throughput, accepting a longer-term commitment. Which Bedrock purchasing and model strategy is optimal?",
+    "options": [
+      "On-demand pricing with Claude 3 Opus for maximum quality",
+      "Provisioned Throughput with a 1-month or longer commitment on a right-sized model such as Claude 3 Haiku",
+      "On-demand pricing switching models randomly per request",
+      "Provisioned Throughput on Stability AI SDXL"
+    ],
+    "correct": [1],
+    "explanation": "For stable high-volume workloads, Provisioned Throughput with a term commitment lowers per-unit cost and guarantees throughput, and a right-sized model like Haiku minimizes cost while meeting summarization needs. On-demand pricing with Opus is far more expensive, and SDXL is an image model unsuited to summarization."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A medical-research application must reason over very long clinical literature reviews (up to 180K tokens) AND interpret embedded charts and figures within the documents. Which single Bedrock model best satisfies both the long-context and multimodal requirements?",
+    "options": [
+      "Anthropic Claude 3.5 Sonnet (200K context, vision-capable)",
+      "Cohere Command R+ (128K context, text only)",
+      "Mistral Large (text only)",
+      "Amazon Titan Text Premier (text only)"
+    ],
+    "correct": [0],
+    "explanation": "Claude 3.5 Sonnet combines a 200K-token context window with native vision, so it can ingest the full document and interpret embedded charts in one model. Command R+ has a smaller context and, like Mistral Large and Titan, is text-only and cannot process the figures."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A team must deploy a small generative model directly on resource-constrained edge devices with no network connectivity, requiring open weights they can quantize and run locally. Bedrock is not usable at inference time. Which model family is the most appropriate starting point?",
+    "options": [
+      "Anthropic Claude 3 Haiku via Bedrock API",
+      "Meta Llama 3 8B (open weights, quantizable for local deployment)",
+      "Amazon Titan Text Express (Bedrock-only managed model)",
+      "Cohere Command R+ via Bedrock API"
+    ],
+    "correct": [1],
+    "explanation": "On-device, offline inference requires open weights that can be downloaded and quantized; Llama 3 8B is open-weights and small enough for edge deployment. Claude, Titan, and Cohere on Bedrock are managed API-only services that require network connectivity and cannot run offline on the device."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "A platform team wants to reduce the latency and cost of repeatedly answering questions against the same large reference manual that is sent on every request. Which two Bedrock-level techniques most directly address the repeated-context overhead? (Select TWO.)",
+    "options": [
+      "Enable prompt caching to reuse the static manual context across requests",
+      "Switch to a smaller, faster model tier where quality permits",
+      "Always upgrade to the largest available model",
+      "Send the full manual uncompressed on every single request as-is",
+      "Generate images of the manual with SDXL"
+    ],
+    "correct": [0, 1],
+    "explanation": "Prompt caching reuses the repeated static context so it is not reprocessed and billed each time, cutting latency and cost, and selecting a smaller model tier further reduces per-token cost where quality allows. Upgrading to the largest model and resending uncompressed context worsen cost and latency, and image generation is irrelevant."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "An application has unpredictable, spiky traffic and a workload that occasionally needs the strongest reasoning but is mostly simple. The team wants to avoid paying for reserved capacity. Which Bedrock approach best fits the bursty, mixed-complexity pattern?",
+    "options": [
+      "Provisioned Throughput on Claude 3 Opus sized for peak load",
+      "On-demand inference with model routing: a small model for simple requests and a larger model only for complex ones",
+      "Provisioned Throughput on the largest model at all times",
+      "A single mid-tier model with Provisioned Throughput sized for average load"
+    ],
+    "correct": [1],
+    "explanation": "On-demand inference scales with spiky traffic without paying for idle reserved capacity, and routing simple requests to a small model while escalating only complex requests to a larger model optimizes cost and quality. Provisioned Throughput sized for peak wastes money during troughs, and sizing for average load fails during spikes."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A European bank requires that its generative-AI workload run entirely within an EU region and prefers a model whose data-handling and regional support align with that constraint, while still providing strong reasoning. What is the correct selection criterion?",
+    "options": [
+      "Pick the cheapest model regardless of which regions support it",
+      "Confirm the candidate model is available in an EU Bedrock region and meets the reasoning needs, then deploy there",
+      "Deploy in us-east-1 since it has the most models, and accept cross-region data transfer",
+      "Select an image-generation model because it processes less sensitive data"
+    ],
+    "correct": [1],
+    "explanation": "Data-residency in the EU requires choosing a model that is actually available in an EU Bedrock region and meets the reasoning requirements, then deploying there. Deploying in us-east-1 violates residency, choosing by price alone ignores the residency constraint, and an image model does not meet the reasoning need."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A customer's production app uses an older Bedrock foundation model that AWS has announced will reach end-of-life. The team wants to minimize disruption while moving to a supported model with similar or better capability. What is the recommended approach?",
+    "options": [
+      "Ignore the deprecation notice and continue using the model indefinitely",
+      "Plan a migration to a current-generation model from the same or comparable family, re-validate prompts and outputs, and cut over before the EOL date",
+      "Immediately switch to an image-generation model",
+      "Disable the application until AWS reverses the deprecation"
+    ],
+    "correct": [1],
+    "explanation": "Bedrock models follow a lifecycle, so a deprecated model must be replaced before its EOL date with a current-generation model of comparable capability, after re-validating prompts and outputs to manage behavioral differences. Ignoring deprecation leads to outages, and the other options are unrelated to the migration need."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A team wants to run a high-traffic application against a model in a region where that model is not yet available, but does not want to manage routing logic or maintain separate deployments. Which Bedrock capability best addresses this?",
+    "options": [
+      "Cross-region inference (inference profiles) to automatically route requests to supported regions",
+      "Manually deploying separate stacks in every region",
+      "Forcing all traffic to a single region regardless of model availability",
+      "Provisioned Throughput in the unsupported region"
+    ],
+    "correct": [0],
+    "explanation": "Cross-region inference via inference profiles lets Bedrock automatically route requests to regions where the model is available, increasing throughput and resilience without custom routing. Manually maintaining per-region stacks is operationally heavy, and Provisioned Throughput cannot be purchased where the model is not offered."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "A company is choosing between Claude 3 Haiku, Claude 3 Sonnet, and Claude 3 Opus for different parts of its product. Which two statements correctly characterize the cost/latency/quality trade-offs within the Claude 3 family? (Select TWO.)",
+    "options": [
+      "Haiku offers the lowest latency and cost, suited to high-volume simple tasks",
+      "Opus offers the highest reasoning quality at the highest cost and latency",
+      "Sonnet is cheaper and faster than Haiku for every task",
+      "Opus is the lowest-cost option in the family",
+      "Haiku provides higher reasoning quality than Opus"
+    ],
+    "correct": [0, 1],
+    "explanation": "Within Claude 3, Haiku is the fastest and cheapest tier for simple high-volume work, while Opus delivers the highest reasoning quality at the highest cost and latency, with Sonnet in between. The other statements invert these well-established relationships."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A support team must classify millions of short tickets per day into categories. Accuracy on this narrow task is already excellent with a small model, and the dominant concern is per-request cost at massive scale. Which selection is most cost-effective?",
+    "options": [
+      "Claude 3 Opus for maximum classification accuracy",
+      "A small, low-cost model such as Amazon Titan Text Lite or Claude 3 Haiku",
+      "Mistral Large for all classifications",
+      "Stability AI SDXL"
+    ],
+    "correct": [1],
+    "explanation": "When a small model already achieves the needed accuracy on a narrow classification task, choosing the lowest-cost small model minimizes spend at massive scale. Opus and Mistral Large add cost and latency without meaningful accuracy gains for this simple task, and SDXL is an image model."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A developer needs strong code generation and reasoning at a moderate price point, with a large context window to include multiple source files, and prefers an open-weights model available on Bedrock. Which choice best fits?",
+    "options": [
+      "Amazon Titan Text Lite (small context, proprietary)",
+      "Mistral Large (strong code/reasoning, large context, available on Bedrock)",
+      "Stability AI SDXL",
+      "Cohere Embed English"
+    ],
+    "correct": [1],
+    "explanation": "Mistral Large provides strong code generation and reasoning with a large context window suitable for multi-file inputs and is available on Bedrock from a provider known for open-weights releases. Titan Lite has a small context, SDXL is an image model, and Cohere Embed produces embeddings rather than code."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "An architect must justify why a single 'best' foundation model rarely fits an entire product portfolio. Which two principles correctly support a multi-model selection strategy? (Select TWO.)",
+    "options": [
+      "Different tasks have different optimal trade-offs among cost, latency, quality, and context length",
+      "Routing simpler tasks to smaller models and complex tasks to larger models reduces overall cost while preserving quality",
+      "The largest model is always the cheapest per request",
+      "Context-window needs are identical across all use cases",
+      "Multimodality is never required, so vision capability is irrelevant to selection"
+    ],
+    "correct": [0, 1],
+    "explanation": "Model selection is task-dependent because tasks differ in their cost/latency/quality/context trade-offs, and routing by complexity optimizes total cost without sacrificing quality on hard tasks. The other statements are false: larger models cost more, context needs vary widely, and many use cases genuinely require multimodality."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A media company needs to generate marketing copy in 10 European languages with consistent quality, and wants strong multilingual generation rather than English-centric output. Which Bedrock text model is the strongest fit for multilingual generation?",
+    "options": [
+      "Amazon Titan Text Lite (primarily English-optimized)",
+      "Mistral Large (strong multilingual support including major European languages)",
+      "Stability AI SDXL",
+      "Cohere Embed Multilingual"
+    ],
+    "correct": [1],
+    "explanation": "Mistral Large provides strong native multilingual generation across major European languages, fitting the multilingual copy requirement. Titan Lite is more English-centric, SDXL is an image model, and Cohere Embed Multilingual produces embeddings rather than generated copy."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A team must decide between purchasing Provisioned Throughput and using on-demand inference for a new feature whose traffic volume is unknown and may stay low for months. Which choice minimizes financial risk during this uncertain period?",
+    "options": [
+      "Commit to a 6-month Provisioned Throughput term immediately",
+      "Use on-demand (pay-per-use) inference until traffic patterns are understood, then evaluate Provisioned Throughput",
+      "Buy Provisioned Throughput sized for hypothetical peak traffic",
+      "Use Provisioned Throughput for an image model to be safe"
+    ],
+    "correct": [1],
+    "explanation": "On-demand inference charges only for actual usage, avoiding wasted spend while traffic is unknown or low, and Provisioned Throughput can be adopted later once steady demand is established. Committing to reserved capacity up front risks paying for idle reserved units."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A document-processing pipeline needs to read scanned PDFs containing images of tables and handwritten notes, then output extracted text and structured JSON. The team wants a single Bedrock generative model to handle both vision and structured text output. Which model is most suitable?",
+    "options": [
+      "Cohere Command R (text only)",
+      "Anthropic Claude 3.5 Sonnet (multimodal vision with strong structured output)",
+      "Amazon Titan Embeddings",
+      "Mistral 7B Instruct (text only)"
+    ],
+    "correct": [1],
+    "explanation": "Claude 3.5 Sonnet can ingest images of tables and handwriting and produce structured JSON output in a single call, matching both the vision and structured-output needs. The text-only models cannot interpret the scanned images, and Titan Embeddings produces vectors, not extracted text."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A real-time voice assistant requires sub-second first-token latency and concise responses, with quality sufficient for everyday Q&A but not deep analysis. Cost matters at scale. Which model selection best matches the latency-first requirement?",
+    "options": [
+      "Claude 3 Opus for the best possible answers",
+      "Claude 3 Haiku for its low latency and low cost",
+      "Mistral Large for its reasoning depth",
+      "Stability AI SDXL for fast generation"
+    ],
+    "correct": [1],
+    "explanation": "Claude 3 Haiku is optimized for low latency and low cost, making it well suited to a real-time voice assistant doing everyday Q&A at scale. Opus and Mistral Large add latency and cost in pursuit of reasoning depth that this use case does not require, and SDXL is an image model."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "An enterprise is building a RAG system and must select both a generation model and an embeddings model on Bedrock. Which two selections form a coherent, cost-aware pairing for multilingual retrieval with strong grounded answers? (Select TWO.)",
+    "options": [
+      "Cohere Embed Multilingual for the retrieval/embeddings stage",
+      "Claude 3.5 Sonnet or Cohere Command R+ for grounded, citable generation with tool use",
+      "Stability AI SDXL for the embeddings stage",
+      "Amazon Titan Image Generator for the generation stage",
+      "An image model for both retrieval and generation"
+    ],
+    "correct": [0, 1],
+    "explanation": "A coherent RAG stack pairs a strong multilingual embeddings model (Cohere Embed Multilingual) for retrieval with a capable, grounding-oriented generation model such as Claude 3.5 Sonnet or Cohere Command R+. Image-generation models like SDXL and Titan Image Generator cannot perform text embedding or grounded text generation."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A team compares two text models on Bedrock: Model A has a 200K-token context window but higher per-token cost; Model B has a 32K context window at lower cost. The use case routinely processes 90K-token inputs that cannot be meaningfully chunked. Which model should be selected and why?",
+    "options": [
+      "Model B, because lower per-token cost always wins",
+      "Model A, because the 90K input exceeds Model B's context window and chunking is not viable",
+      "Model B, by truncating inputs to 32K and discarding the rest",
+      "Either model, since context window does not affect correctness"
+    ],
+    "correct": [1],
+    "explanation": "Because the 90K-token inputs exceed Model B's 32K window and cannot be chunked, only Model A's 200K window can process them correctly, so its higher cost is justified by feasibility. Truncating to 32K would discard essential content, and context window directly determines whether the input can be handled at all."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A company wants to fine-tune (customize) a foundation model on Bedrock using its own labeled data to improve domain performance, and prefers a model family that supports Bedrock fine-tuning. Which selection is appropriate?",
+    "options": [
+      "Choose a Bedrock model that supports customization/fine-tuning, such as Amazon Titan Text or supported Meta Llama/Cohere models",
+      "Choose any model, since all Bedrock models support fine-tuning identically",
+      "Choose Stability AI SDXL because image models are easiest to fine-tune for text tasks",
+      "Avoid fine-tuning entirely because it is never supported on Bedrock"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock supports fine-tuning/customization only for specific models, such as Amazon Titan Text and certain Meta Llama and Cohere models, so the selection must be one that supports customization. Not all models support fine-tuning, SDXL is an image model irrelevant to text tasks, and fine-tuning is in fact available for supported models."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "single",
+    "question": "A high-throughput batch job must score and rewrite tens of millions of records overnight, where latency per request is irrelevant but total cost and aggregate throughput are critical. Which Bedrock approach is most appropriate?",
+    "options": [
+      "Use Bedrock batch inference with a right-sized, cost-efficient model to maximize throughput at lower cost",
+      "Use synchronous on-demand calls one at a time with Claude 3 Opus",
+      "Use a real-time low-latency model tier even though latency does not matter",
+      "Use Stability AI SDXL to process the text records"
+    ],
+    "correct": [0],
+    "explanation": "For large offline workloads where latency does not matter, Bedrock batch inference paired with a cost-efficient model maximizes aggregate throughput at lower cost than synchronous calls. Serial Opus calls are slow and expensive, optimizing for latency is wasteful here, and SDXL is an image model."
+  },
+  {
+    "category": "Foundation Model Selection",
+    "type": "multiple",
+    "question": "An architect is finalizing model selection and must document the key decision factors for the review board. Which two factors are legitimately essential inputs to choosing a Bedrock foundation model for a given use case? (Select TWO.)",
+    "options": [
+      "Required context-window size versus the model's maximum context length",
+      "Whether the use case needs multimodality (e.g., image input) that the candidate model supports",
+      "The color scheme of the AWS Management Console",
+      "The number of letters in the model's name",
+      "Whether the model was the first one ever released on Bedrock"
+    ],
+    "correct": [0, 1],
+    "explanation": "Context-window requirements and multimodality needs are core technical inputs that determine whether a model can even handle the workload, alongside cost, latency, quality, licensing, and regional availability. The remaining options are irrelevant cosmetic or trivial attributes that have no bearing on fitness for the use case."
+  }
+]

@@ -1,0 +1,399 @@
+[
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A legal-tech company ingests 50,000 contracts into a Knowledge Base for Amazon Bedrock. Users complain that answers frequently cite a clause but the cited passage is truncated mid-sentence and omits the defined term that gives it meaning. The team currently uses fixed-size chunking at 300 tokens with no overlap. Which change is the BEST first remediation?",
+    "options": [
+      "Switch to semantic chunking so chunk boundaries align with topical/semantic shifts in the contract text",
+      "Reduce the fixed chunk size to 150 tokens to make each citation more precise",
+      "Disable chunking entirely so each document is a single chunk",
+      "Increase the number of retrieved results from 5 to 25 to compensate for fragmented chunks"
+    ],
+    "correct": [0],
+    "explanation": "Fixed-size chunking with no overlap cuts across sentence and clause boundaries, severing defined terms from their usage; semantic chunking places boundaries at coherent semantic units so a clause and its context stay together. Reducing chunk size worsens fragmentation, no-chunking blows past embedding token limits and dilutes relevance, and retrieving more fragments does not repair broken context."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A SaaS provider serves 400 customers from one Knowledge Base for Amazon Bedrock backed by Amazon OpenSearch Serverless. Each customer must only ever retrieve their own documents, and onboarding a new customer must not require provisioning new infrastructure. Which approach BEST meets these constraints?",
+    "options": [
+      "Attach a tenant_id metadata attribute to every document and apply a metadata filter equal to the caller's tenant on every Retrieve call",
+      "Create a separate Knowledge Base per customer so data is physically isolated",
+      "Rely on the embedding model to keep tenants separate because embeddings of different customers cluster apart",
+      "Store all tenants together and post-filter the returned chunks in application code after retrieval"
+    ],
+    "correct": [0],
+    "explanation": "Metadata filtering on a tenant_id attribute enforces isolation at query time within a single shared KB and OpenSearch collection, so onboarding is just adding documents with the right metadata. A KB-per-customer model isolates data but requires new infrastructure per tenant, embeddings provide no security guarantee, and post-filtering in app code leaks data into results and the LLM context before filtering."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "An engineering team builds a customer-support assistant. They want Bedrock to return only the relevant source passages so their own application can orchestrate prompt assembly, call a custom-tuned model, and render a bespoke UI with inline source links. Which Knowledge Base API fits this requirement?",
+    "options": [
+      "Retrieve",
+      "RetrieveAndGenerate",
+      "InvokeAgent",
+      "StartIngestionJob"
+    ],
+    "correct": [0],
+    "explanation": "Retrieve returns the matched chunks plus their location/metadata without generating an answer, leaving prompt construction and model invocation to the application. RetrieveAndGenerate performs the full managed RAG flow and returns a generated answer, which removes the orchestration control the team explicitly wants; InvokeAgent and StartIngestionJob serve unrelated purposes."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "A compliance team requires that every generated answer be traceable to the exact source document and that auditors can reproduce which passages informed each answer. They use RetrieveAndGenerate. Which TWO practices directly support this auditability requirement? (Select TWO.)",
+    "options": [
+      "Persist the citations array returned in the RetrieveAndGenerate response, including the S3 URIs and text spans of each referenced chunk",
+      "Store source document metadata (e.g., docId, version) so citations can be resolved to a specific document version",
+      "Increase the generation temperature so the model paraphrases sources more naturally",
+      "Disable citations to reduce response payload size and latency",
+      "Use a smaller chunk size of 50 tokens so citations are extremely granular regardless of context"
+    ],
+    "correct": [0, 1],
+    "explanation": "Citations returned by RetrieveAndGenerate carry the source location and text spans, and persisting them with document metadata/versions lets auditors reproduce exactly what informed each answer. Higher temperature reduces faithfulness to sources, disabling citations destroys traceability, and 50-token chunks fragment context and harm answer quality rather than aiding audit."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A team's product catalog has structured fields (brand, price, in_stock) plus long descriptions. Pure semantic (vector) search returns relevant descriptions but often surfaces out-of-stock or wrong-brand items because exact keyword/attribute matches are missed. They use a Knowledge Base on OpenSearch Serverless. What is the BEST retrieval improvement?",
+    "options": [
+      "Enable hybrid search (combining semantic and keyword/lexical matching) on the retrieval configuration",
+      "Switch the embedding model to a larger-dimension model",
+      "Re-ingest the catalog with much larger chunks so each product is one chunk",
+      "Lower the similarity threshold so more vector matches are returned"
+    ],
+    "correct": [0],
+    "explanation": "Hybrid search blends dense vector similarity with sparse keyword matching, which captures exact-term and attribute matches (brand names, exact phrases) that pure semantic search misses. A larger embedding model does not fix lexical exactness, oversized chunks dilute relevance, and lowering the threshold returns more noise without improving keyword precision; attribute correctness like in_stock is better enforced with metadata filtering."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A financial firm wants to add an AWS-managed reranking step to a Bedrock Knowledge Base so that the most relevant of the initially retrieved chunks are prioritized before generation, improving precision for nuanced regulatory queries. Which capability should they configure?",
+    "options": [
+      "A reranker model in the RetrieveAndGenerate / Retrieve configuration to reorder the candidate results by relevance",
+      "Increase numberOfResults and let the foundation model sort relevance during generation",
+      "Switch chunking to hierarchical chunking, which automatically reranks results",
+      "Enable guardrails, which reorder retrieved passages by safety relevance"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Knowledge Bases support a reranking step that uses a reranker model to reorder the candidate set by query relevance before it is passed to generation, raising precision. Simply retrieving more results pushes noise into context, hierarchical chunking changes ingestion structure but is not a reranker, and guardrails address safety/content policy, not relevance ranking."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A startup needs the cheapest way to stand up a Bedrock Knowledge Base for a proof of concept with a few thousand documents, wants vector storage created and managed automatically without operating a database, and is fine with default settings. Which vector store choice BEST fits?",
+    "options": [
+      "Let Bedrock quick-create an Amazon OpenSearch Serverless vector collection automatically",
+      "Provision an Amazon Aurora PostgreSQL cluster with pgvector and wire it up manually",
+      "Stand up a self-managed OpenSearch cluster on EC2",
+      "Use Amazon Neptune as the vector store"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock can quick-create and manage an OpenSearch Serverless vector collection for you, which is the lowest-effort path for a PoC. Aurora pgvector and self-managed EC2 OpenSearch require manual setup and operation, and Neptune is a graph database, not a supported Bedrock vector store for this purpose."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "A team must keep per-query vector storage costs low for a large but rarely-queried corpus while still using a Bedrock Knowledge Base. They are evaluating supported vector stores. Which TWO are valid supported vector store options for Knowledge Bases for Amazon Bedrock? (Select TWO.)",
+    "options": [
+      "Amazon Aurora PostgreSQL with the pgvector extension",
+      "Pinecone",
+      "Amazon DynamoDB with a GSI on the embedding vector",
+      "Amazon S3 buckets used directly as the vector index",
+      "Amazon ElastiCache for Memcached"
+    ],
+    "correct": [0, 1],
+    "explanation": "Knowledge Bases for Amazon Bedrock support Aurora PostgreSQL/pgvector and Pinecone (among others such as OpenSearch Serverless, Redis Enterprise, and MongoDB Atlas). DynamoDB is not a supported vector index, S3 holds source data rather than serving as the vector index, and ElastiCache for Memcached is not a supported vector store."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "An enterprise wikis team adds 2,000 new pages weekly to the S3 bucket that backs a Bedrock Knowledge Base, and deletes obsolete pages. Answers must reflect added and removed content within hours without re-embedding the entire corpus each time. What is the BEST ingestion approach?",
+    "options": [
+      "Run incremental ingestion jobs (sync) so only new, changed, and deleted objects are processed",
+      "Delete and recreate the Knowledge Base each week to guarantee freshness",
+      "Run a full re-ingestion of all documents on every change",
+      "Rely on the embedding model to automatically detect S3 changes in real time"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock ingestion (sync) is incremental: it processes only objects that were added, modified, or removed since the last sync, keeping the index fresh efficiently. Recreating the KB or full re-ingestion reprocesses everything and is costly and slow, and the embedding model does not watch S3 on its own; ingestion must be triggered."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A knowledge base over technical manuals returns answers that are factually correct but miss the broader procedure surrounding a step, because each chunk is a single paragraph. The team wants retrieval to match on fine-grained chunks yet feed the model the larger surrounding context. Which chunking strategy BEST achieves this?",
+    "options": [
+      "Hierarchical chunking, retrieving on child chunks but returning the parent chunk to the model",
+      "Fixed-size 100-token chunking with zero overlap",
+      "No chunking, sending whole manuals to the model",
+      "Semantic chunking with a very low breakpoint threshold producing tiny chunks"
+    ],
+    "correct": [0],
+    "explanation": "Hierarchical chunking indexes small child chunks for precise matching but returns the larger parent chunk to the model, giving both retrieval precision and surrounding context. Small fixed chunks lose context, sending whole manuals overruns context windows and dilutes relevance, and tiny semantic chunks reintroduce the very fragmentation the team is trying to avoid."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A company must decide between fine-tuning a model and using a Bedrock Knowledge Base for an assistant over an internal policy library that changes weekly and requires citing the exact source policy. Which approach BEST fits, and why?",
+    "options": [
+      "RAG with a Knowledge Base, because it keeps answers current as policies change and can cite specific source documents",
+      "Fine-tuning, because it permanently embeds the policies into the model weights for fastest inference",
+      "Fine-tuning, because it guarantees the model can cite exact source documents",
+      "Continued pre-training, because weekly policy edits are best learned through additional training epochs"
+    ],
+    "correct": [0],
+    "explanation": "RAG retrieves from an external, frequently updated corpus and returns citations, which directly matches weekly changes and source-attribution needs without retraining. Fine-tuning bakes knowledge into weights, so frequent changes require repeated retraining and it cannot natively cite source documents; continued pre-training is even more costly and unsuited to rapidly changing facts."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "Users querying a Bedrock Knowledge Base of regional product documentation often get answers mixing regions because documents from EU and US describe similar products. Each document is tagged with a region attribute during ingestion. What is the BEST way to ensure a user in the EU only retrieves EU documents?",
+    "options": [
+      "Apply a metadata filter region = EU in the retrieval configuration of the query",
+      "Create one giant chunk per region so the model can tell them apart",
+      "Increase numberOfResults so the correct region's documents are eventually included",
+      "Lower the embedding dimensionality to make regional documents more distinct"
+    ],
+    "correct": [0],
+    "explanation": "Metadata filtering restricts retrieval to documents whose region attribute matches EU, preventing cross-region contamination at query time. Giant per-region chunks harm relevance, retrieving more results still mixes regions, and embedding dimensionality changes do not enforce attribute constraints."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "An architect is choosing a vector store for a Bedrock Knowledge Base that already runs an Aurora PostgreSQL database for the application and wants to avoid introducing a new datastore, keep costs predictable, and reuse existing operational tooling. Which TWO statements are accurate considerations? (Select TWO.)",
+    "options": [
+      "Aurora PostgreSQL with pgvector is a supported Knowledge Base vector store and lets them consolidate on an existing relational engine",
+      "Using pgvector requires creating a table with a vector column and an appropriate index (e.g., HNSW) before connecting it to the Knowledge Base",
+      "Aurora with pgvector cannot be used by Bedrock Knowledge Bases and must be replaced by OpenSearch Serverless",
+      "pgvector stores embeddings as JSON strings in a standard text column with no special index needed",
+      "Choosing Aurora pgvector forces the application database and vector index to share the same table schema as the app's business tables"
+    ],
+    "correct": [0, 1],
+    "explanation": "Aurora PostgreSQL/pgvector is a supported KB vector store, enabling consolidation, and it requires a prepared table with a vector column and a suitable index such as HNSW. It is not unsupported, embeddings are stored in vector-typed columns with vector indexes (not plain JSON text), and the vector table is separate from business tables rather than forced to share their schema."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A high-traffic assistant uses RetrieveAndGenerate and the team finds p95 latency too high because the managed flow retrieves, builds the prompt, and generates in one call with a large model. They need to cut latency while keeping retrieval quality. Which change offers the BEST latency/quality trade-off?",
+    "options": [
+      "Reduce numberOfResults to a tighter, reranked top-k so the model processes fewer tokens, and select a faster generation model",
+      "Disable retrieval and answer from the model's parametric knowledge",
+      "Increase numberOfResults so the model has more context and stops re-querying",
+      "Switch from RetrieveAndGenerate to a workflow that re-embeds the entire corpus on each request"
+    ],
+    "correct": [0],
+    "explanation": "Sending a smaller, reranked top-k reduces input tokens and generation work, and pairing it with a faster model lowers latency while reranking preserves the most relevant context. Disabling retrieval defeats RAG, more results increases tokens and latency, and re-embedding the corpus per request is enormously slow and unnecessary."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A team notices that for queries needing information spread across many documents (e.g., 'summarize all incidents in Q3'), their Bedrock Knowledge Base returns only a few top chunks and the summary misses several incidents. Retrieval precision is fine for single-fact questions. What is the MOST appropriate adjustment?",
+    "options": [
+      "Increase the numberOfResults (top-k) for these aggregation-style queries so more relevant chunks reach the model",
+      "Decrease the chunk size to surface more distinct chunks automatically",
+      "Switch the embedding model to one with fewer dimensions",
+      "Enable a guardrail to force the model to be more comprehensive"
+    ],
+    "correct": [0],
+    "explanation": "Aggregation/summarization queries need broad coverage, so raising top-k brings more of the relevant incident chunks into context. Smaller chunks do not guarantee more of the relevant documents are retrieved, a lower-dimension embedding model can reduce retrieval quality, and guardrails enforce policy, not retrieval breadth."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A healthcare provider stores PHI documents in S3 and ingests them into a Bedrock Knowledge Base. Security requires that data at rest in the vector store be encrypted with a customer-managed key (CMK) and that ingestion not transit the public internet. Which configuration BEST satisfies this?",
+    "options": [
+      "Configure the vector store and KB with an AWS KMS customer-managed key and access Bedrock/data sources via VPC endpoints (PrivateLink)",
+      "Rely on default AWS-owned encryption keys and public Bedrock endpoints since traffic is TLS-encrypted",
+      "Encrypt only the S3 source bucket and leave the vector store with default encryption",
+      "Store the documents unencrypted but enable CloudTrail logging for access auditing"
+    ],
+    "correct": [0],
+    "explanation": "Using a KMS customer-managed key for the vector store/KB satisfies the CMK requirement, and VPC endpoints (PrivateLink) keep traffic off the public internet. Default keys do not meet the CMK requirement, encrypting only the source bucket leaves the vector store inadequately protected, and CloudTrail auditing does not provide encryption."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "A team builds metadata filtering into a Bedrock Knowledge Base by uploading a companion .metadata.json file for each document in S3. Which TWO statements about metadata filtering are correct? (Select TWO.)",
+    "options": [
+      "Each source file can have an associated metadata JSON file whose attributes become filterable at retrieval time",
+      "Filters can combine conditions (e.g., equals, greaterThan) and logical operators like andAll/orAll",
+      "Metadata is inferred automatically from document contents, so no metadata files are needed",
+      "Metadata filters are applied only after generation, on the final answer text",
+      "Metadata attributes can only be strings; numeric and boolean attributes are unsupported"
+    ],
+    "correct": [0, 1],
+    "explanation": "Knowledge Bases read a companion metadata file per source object to expose filterable attributes, and the filter syntax supports comparison operators and logical combinations (andAll/orAll). Metadata is not auto-inferred, filtering occurs at retrieval (not post-generation), and numeric and boolean attribute types are supported in addition to strings."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "An organization's RAG assistant gives confident but unsupported answers when the Knowledge Base contains no relevant passage for a query. They use RetrieveAndGenerate and want the model to say it doesn't have the information rather than fabricate. Which approach is MOST effective and appropriate?",
+    "options": [
+      "Customize the generation prompt template to instruct the model to answer only from the retrieved context and to state when it cannot find an answer",
+      "Lower the retrieval similarity threshold so something is always returned to ground the answer",
+      "Increase the generation temperature so the model is more willing to admit uncertainty",
+      "Remove citations so the model is not constrained by sources"
+    ],
+    "correct": [0],
+    "explanation": "Customizing the prompt template to constrain answers to retrieved context and to decline when no support exists directly reduces hallucination on out-of-corpus queries. Lowering the threshold returns weakly relevant noise that encourages grounding on irrelevant text, higher temperature increases fabrication, and removing citations loosens grounding."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A data source contains a mix of PDFs with multi-column layouts, embedded tables, and images of charts. A standard Bedrock Knowledge Base ingestion extracts the text poorly, scrambling column order and dropping table structure. Which Bedrock Knowledge Base capability BEST improves extraction quality from these complex documents?",
+    "options": [
+      "Enable an advanced/foundation-model-based parsing option for the data source to better interpret layout, tables, and visuals",
+      "Reduce the chunk size so the scrambled text is split into smaller pieces",
+      "Switch the vector store from OpenSearch Serverless to Pinecone",
+      "Increase numberOfResults to compensate for the poor extraction"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Knowledge Bases offer an advanced parsing option that uses a foundation model to interpret complex layouts, tables, and visual elements, producing far cleaner extracted text for chunking and embedding. Smaller chunks only fragment already-scrambled text, the vector store choice does not affect extraction, and retrieving more poorly-extracted chunks does not fix the root cause."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A multi-tenant analytics product uses one Bedrock Knowledge Base with tenant_id metadata filtering for isolation. A new enterprise tenant has a strict contractual requirement that their data never share storage or an index with any other customer. Which design change is the BEST fit for this single tenant while keeping the shared model for everyone else?",
+    "options": [
+      "Provision a dedicated Knowledge Base (and vector index) for that enterprise tenant while keeping the shared, metadata-filtered KB for all other tenants",
+      "Continue using only metadata filtering, since query-time filters are equivalent to physical isolation",
+      "Encrypt the enterprise tenant's documents with a separate key but keep them in the shared index",
+      "Move the enterprise tenant's data to a separate S3 prefix in the same data source and rely on prefix filtering"
+    ],
+    "correct": [0],
+    "explanation": "A contractual no-shared-storage requirement calls for physical isolation, which a dedicated KB and vector index provide, while other tenants stay on the cost-efficient shared, filtered KB. Metadata filtering is logical isolation, not physical, a separate key still leaves data co-resident in the shared index, and an S3 prefix does not separate the vector index where the embeddings actually live."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "An architect compares RAG via a Bedrock Knowledge Base against fine-tuning for an internal assistant. Which TWO scenarios favor RAG over fine-tuning? (Select TWO.)",
+    "options": [
+      "The underlying corpus changes daily and must always reflect the latest documents",
+      "Answers must cite the specific source document and passage for compliance",
+      "The goal is to change the model's tone and response format to match a brand voice",
+      "The task requires teaching the model a new output structure it cannot follow via prompting",
+      "The model must perform a specialized classification with consistent label formatting from limited examples"
+    ],
+    "correct": [0, 1],
+    "explanation": "RAG excels when knowledge changes frequently (no retraining needed) and when source citation/traceability is required, both of which it handles natively. Changing tone/format, teaching new output structures, and specialized classification with consistent formatting are behaviors better addressed by fine-tuning, since they concern how the model responds rather than supplying fresh, citable facts."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A team measures that retrieval recall is high (the right chunk is usually in the top 20) but answer quality is low because the relevant chunk is often ranked 12th and the generation step only effectively uses the first few chunks. Adding more documents has not helped. What is the MOST targeted fix?",
+    "options": [
+      "Add a reranking step so the truly relevant chunk is promoted to the top of the context before generation",
+      "Increase the chunk overlap to 50%",
+      "Switch to a different S3 data source layout",
+      "Re-run ingestion with a larger embedding batch size"
+    ],
+    "correct": [0],
+    "explanation": "The problem is ranking, not recall: the right chunk is retrieved but buried, so a reranker that reorders candidates by relevance puts it where generation will use it. Chunk overlap, S3 layout, and embedding batch size do not address the ordering of already-retrieved relevant chunks."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A company wants RetrieveAndGenerate to draw from two separate Bedrock Knowledge Bases (a product KB and a policy KB) and synthesize an answer across both within a single managed flow. Which capability supports querying multiple Knowledge Bases together?",
+    "options": [
+      "Use RetrieveAndGenerate in multi-data-source / multi-KB mode so the managed flow can retrieve across more than one knowledge base",
+      "Merge the two vector stores by copying all embeddings from one OpenSearch collection into the other manually",
+      "Make two independent RetrieveAndGenerate calls and discard one of the answers",
+      "Fine-tune a single model on both corpora so only one KB is needed"
+    ],
+    "correct": [0],
+    "explanation": "RetrieveAndGenerate supports retrieving across multiple knowledge bases in a single managed flow, letting the model synthesize across both corpora. Manually copying embeddings is brittle and error-prone, two separate calls do not synthesize a single grounded answer, and fine-tuning abandons the retrieval/citation benefits the scenario relies on."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "An assistant over support tickets returns chunks that are semantically similar to the query but from the wrong product line, because many products share boilerplate troubleshooting language. Documents include a product_line attribute. The team already uses hybrid search. What is the BEST additional change to raise precision?",
+    "options": [
+      "Apply a metadata filter on product_line so retrieval is scoped to the relevant product before ranking",
+      "Disable hybrid search and use vector-only search",
+      "Increase chunk size so boilerplate is averaged out",
+      "Raise the generation temperature to encourage broader answers"
+    ],
+    "correct": [0],
+    "explanation": "Boilerplate text makes products look similar to semantic and keyword matching alike, so the decisive lever is a metadata filter that scopes retrieval to the correct product_line. Disabling hybrid search reduces matching capability, larger chunks bury distinguishing details, and higher temperature degrades faithfulness rather than improving precision."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "A team is tuning chunking for a Bedrock Knowledge Base. Which TWO statements about chunking trade-offs are accurate? (Select TWO.)",
+    "options": [
+      "Larger chunks preserve more context but can dilute relevance and increase tokens sent to the model",
+      "Smaller chunks improve retrieval precision but risk losing surrounding context needed to answer",
+      "Adding chunk overlap always reduces total storage and cost",
+      "Fixed-size chunking guarantees boundaries never split sentences or clauses",
+      "Chunk size has no effect on embedding quality or retrieval relevance"
+    ],
+    "correct": [0, 1],
+    "explanation": "Larger chunks carry more context but dilute relevance and raise token usage, while smaller chunks sharpen precision but can strip needed context, which is the central chunking trade-off. Overlap increases storage rather than reducing it, fixed-size chunking commonly splits sentences/clauses, and chunk size materially affects retrieval relevance."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "After deleting hundreds of documents from the S3 bucket backing a Bedrock Knowledge Base, users still receive answers citing the deleted files. The team ran no operation after the deletion. What is the cause and correct fix?",
+    "options": [
+      "The vector index still holds embeddings for the deleted objects; run an ingestion sync so the KB removes vectors for objects no longer present",
+      "Embeddings are deleted immediately when S3 objects are removed; the issue is browser caching",
+      "Deleted documents can only be removed by recreating the entire Knowledge Base",
+      "Bedrock automatically reconciles the index every 60 seconds, so simply wait"
+    ],
+    "correct": [0],
+    "explanation": "Deleting source objects in S3 does not by itself remove their embeddings; an ingestion sync detects the removals and deletes the corresponding vectors. Embeddings are not removed instantly, recreating the whole KB is unnecessary and wasteful, and Bedrock does not auto-reconcile the index on a timer without a sync."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A team must support queries in both English and French over the same multilingual corpus in a Bedrock Knowledge Base, with users expecting French queries to retrieve relevant French documents. Retrieval currently uses an embedding model with weak multilingual support and recall is poor for French. What is the BEST remediation?",
+    "options": [
+      "Re-ingest the corpus using an embedding model with strong multilingual support so cross-lingual semantic similarity improves",
+      "Translate every French query to English in the application before retrieval and never store French embeddings",
+      "Increase numberOfResults so French documents eventually appear",
+      "Switch the vector store to Pinecone, which handles French automatically"
+    ],
+    "correct": [0],
+    "explanation": "Poor French recall stems from the embedding model's weak multilingual representation, so re-ingesting with a strong multilingual embedding model fixes the root cause for both languages. Forcing English-only translation adds a fragile, lossy step and discards native French embeddings, more results cannot surface what was never embedded well, and the vector store does not determine multilingual embedding quality."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A regulated bank needs an audit trail proving which specific document version grounded each customer-facing answer, and documents are reissued monthly with the same filename. Using a Bedrock Knowledge Base, what design BEST guarantees version-accurate citations?",
+    "options": [
+      "Store a version attribute in each document's metadata and persist the returned citation along with that version on every answer",
+      "Rely on the S3 object's LastModified timestamp at query time to infer the version",
+      "Keep only the latest file under the same key and trust that citations always reference the newest content",
+      "Disable citations and reconstruct provenance later from CloudTrail data-event logs"
+    ],
+    "correct": [0],
+    "explanation": "Embedding an explicit version attribute in metadata and persisting it with each answer's citation gives a durable, version-accurate audit trail even when filenames are reused. LastModified is mutable and not captured per answer, overwriting under the same key loses prior versions entirely, and CloudTrail logs API calls but does not record which document version grounded a given generated answer."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "multiple",
+    "question": "An architect wants to lower the cost of a Bedrock Knowledge Base serving a very large but infrequently queried corpus, without harming answer quality for the queries that do occur. Which TWO actions are sound cost optimizations? (Select TWO.)",
+    "options": [
+      "Choose a vector store option suited to large, low-traffic workloads and right-size capacity rather than over-provisioning an always-on cluster",
+      "Tune top-k and use reranking so fewer, higher-quality chunks are sent to the generation model, reducing input token costs",
+      "Increase chunk overlap to 90% to maximize recall regardless of storage growth",
+      "Always select the largest available foundation model for generation to be safe",
+      "Re-ingest the full corpus on a fixed hourly schedule to keep the index warm"
+    ],
+    "correct": [0, 1],
+    "explanation": "Right-sizing the vector store for a large, low-traffic corpus avoids paying for idle always-on capacity, and tuning top-k plus reranking cuts input tokens while preserving quality. Extreme overlap inflates storage cost, defaulting to the largest model raises generation cost unnecessarily, and hourly full re-ingestion wastes embedding compute for a rarely-changing, rarely-queried corpus."
+  },
+  {
+    "category": "RAG & Knowledge Bases",
+    "type": "single",
+    "question": "A team retrieves the right documents but RetrieveAndGenerate answers omit details that are present in lower-ranked retrieved chunks because their custom orchestration concatenates only the top 2 chunks into the prompt. They want a managed solution that reliably passes enough grounding context. Which change is BEST?",
+    "options": [
+      "Use the managed RetrieveAndGenerate flow with an appropriate numberOfResults instead of hand-truncating to the top 2 chunks",
+      "Lower the embedding model dimension to compress more chunks into the prompt",
+      "Disable citations so more prompt space is available for context",
+      "Reduce chunk overlap to zero so each chunk is unique"
+    ],
+    "correct": [0],
+    "explanation": "Hand-truncating to the top 2 chunks discards relevant grounding, so using the managed RetrieveAndGenerate flow with a properly sized numberOfResults reliably includes enough context. Lowering embedding dimension degrades retrieval quality, disabling citations does not increase usable grounding, and removing overlap does not add the missing detail back into the prompt."
+  }
+]

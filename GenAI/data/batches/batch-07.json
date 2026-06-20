@@ -1,0 +1,398 @@
+[
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A claims-processing agent must call an internal underwriting API that lives in a private VPC and can take 90-120 seconds to respond. The team wants to keep the agent's orchestration responsive and avoid Lambda timeouts. Which design best handles this long-running action?",
+    "options": [
+      "Use return of control so the calling application invokes the underwriting API asynchronously and posts the result back to the agent session when ready",
+      "Increase the action-group Lambda timeout to 15 minutes and call the API synchronously from the Lambda",
+      "Have the action-group Lambda poll the API in a tight loop until it responds, then return the body to the agent",
+      "Move the underwriting logic into the agent instruction prompt so no external call is needed"
+    ],
+    "correct": [0],
+    "explanation": "Return of control hands tool execution to your application, which can run the long async call (e.g., via Step Functions or a queue) without being bound by Lambda's 15-minute ceiling or blocking the agent loop, then return the result to the session. A synchronous Lambda risks timeouts and ties up concurrency; a polling loop wastes compute and still hits the same ceiling."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent's action group writes records to a downstream payments system. Because Bedrock may retry the model loop and the network, a single user request occasionally results in duplicate payment writes. What is the most robust fix?",
+    "options": [
+      "Make the Lambda handler idempotent by deriving a deterministic idempotency key (e.g., from sessionId plus a business identifier) and deduplicating before writing",
+      "Set the agent's max orchestration iterations to 1 so it can only act once",
+      "Disable retries on the Bedrock agent so the tool is never called twice",
+      "Add a 5-second sleep at the start of the Lambda to space out concurrent invocations"
+    ],
+    "correct": [0],
+    "explanation": "Idempotency at the side-effecting boundary is the durable solution: a deterministic key plus conditional write (e.g., DynamoDB condition expression) makes repeated invocations safe. Capping iterations breaks legitimate multi-step tasks, and you cannot reliably disable all sources of retry; sleeping does not prevent duplicates."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "A team is choosing between an OpenAPI schema and the simpler function-detail (function schema) definition for a new action group. Which statements correctly capture trade-offs they should weigh? (Select TWO.)",
+    "options": [
+      "Function schemas let you define parameters quickly without authoring a full OpenAPI document, which is good for straightforward tool calls",
+      "OpenAPI schemas can express richer request/response structures and reuse existing API contracts, which helps when wrapping established services",
+      "Function schemas support streaming partial tool results back to the model while OpenAPI schemas do not",
+      "OpenAPI schemas remove the need for any Lambda or return-of-control handler because Bedrock calls the HTTP endpoint directly",
+      "Function schemas require the foundation model to be fine-tuned on your API before they can be used"
+    ],
+    "correct": [0, 1],
+    "explanation": "Function schemas are a lighter way to declare parameters when you do not need a full OpenAPI contract, while OpenAPI shines when reusing or precisely modeling existing APIs. Neither calls HTTP endpoints directly (you still provide Lambda or return of control), neither streams partial tool results, and no model fine-tuning is required."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A production agent is fronted by an alias mapped to version 4. The team wants to roll out a new prompt and an added action group while guaranteeing zero downtime and instant rollback. What is the recommended approach?",
+    "options": [
+      "Make and test changes in the DRAFT/working version, create a new immutable version, then point the existing alias at the new version (and repoint to the prior version to roll back)",
+      "Edit the live alias's version in place so callers immediately get the new behavior",
+      "Delete the current version and recreate it with the new configuration",
+      "Update the agent and have all callers reference DRAFT directly so changes propagate automatically"
+    ],
+    "correct": [0],
+    "explanation": "Versions are immutable snapshots and aliases are the stable pointer callers use; you prepare a new version and atomically repoint the alias, with rollback being a one-step repoint to the previous version. Editing in place or pointing callers at DRAFT exposes untested changes to production traffic."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A support agent must remember a customer's prior tickets and preferences across separate conversations that occur days apart. The team wants this without building and maintaining their own session store. Which Bedrock Agents capability fits best?",
+    "options": [
+      "Enable agent memory, which retains a summarized record across sessions keyed by a memoryId the application supplies",
+      "Reuse the same sessionId forever so all turns share one session's short-term context",
+      "Store the full conversation transcript in the agent's instruction prompt before each call",
+      "Attach a Knowledge Base containing the model's chat history and query it each turn"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Agents memory persists a summarized cross-session record under a memoryId, giving long-term recall without a custom store. A single perpetual sessionId conflates unrelated conversations and grows unbounded; stuffing transcripts into the prompt is brittle and a Knowledge Base is for documents, not managed conversational memory."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent occasionally produces final answers that ignore the action group it should have called. The team needs to see the model's reasoning, which tools it considered, the inputs it sent, and the observations it received, for each step. What should they enable?",
+    "options": [
+      "Enable trace in the InvokeAgent request and inspect the orchestration, pre-processing, and action-group trace events",
+      "Turn on AWS X-Ray on the Lambda functions only",
+      "Increase CloudWatch log retention on the foundation model",
+      "Parse the final completion text and infer the steps from its wording"
+    ],
+    "correct": [0],
+    "explanation": "The agent trace exposes the rationale, tool selections, invocation inputs, and observations at each orchestration step, which is exactly the visibility needed to diagnose tool-selection problems. X-Ray on Lambda shows downstream calls but not the model's reasoning, and inferring from final text is unreliable."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "A regulated bank must enforce least privilege for a Bedrock agent that has three action-group Lambdas and one Knowledge Base. Which practices align with that goal? (Select TWO.)",
+    "options": [
+      "Grant each action-group Lambda its own execution role scoped to only the resources that function touches",
+      "Use a resource-based policy on each Lambda allowing invocation only from the specific agent/alias ARN via the bedrock.amazonaws.com principal",
+      "Give the agent's service role full administrative access so it can call any future action group without changes",
+      "Embed long-lived IAM access keys in the agent instruction so the Lambdas can authenticate",
+      "Disable the Knowledge Base IAM controls and rely solely on the agent prompt to restrict data access"
+    ],
+    "correct": [0, 1],
+    "explanation": "Per-function scoped execution roles and Lambda resource policies that permit invocation only from the specific agent/alias are core least-privilege controls. Admin access, embedded static keys, and prompt-only data restrictions all violate least privilege and create real security exposure."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A travel agent must (1) search flights, (2) hold a seat, (3) charge a card, and (4) email a confirmation, with strict ordering, retries on transient failures, and compensating actions if the charge fails after the hold. The team wants durable, auditable orchestration. What is the best pattern?",
+    "options": [
+      "Have the Bedrock agent decide intent, then invoke a Step Functions state machine (via an action group) that implements the ordered workflow with retries and Saga-style compensation",
+      "Let the Bedrock agent's ReAct loop call each Lambda in turn and rely on the model to retry and compensate as needed",
+      "Put all four steps into a single Lambda invoked by one action group",
+      "Use agent memory to record progress and let the user re-prompt the agent if a step fails"
+    ],
+    "correct": [0],
+    "explanation": "Deterministic, ordered, transactional workflows with retries and compensation belong in Step Functions, which the agent triggers once intent is clear; this gives durability and an audit trail. Relying on the LLM loop to enforce ordering and compensation is non-deterministic and unauditable, and a monolithic Lambda lacks built-in retry/compensation and risks timeouts."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "Using the Converse API directly (not Bedrock Agents), a developer sends a request with a toolConfig. The model returns stopReason \"tool_use\". What must the application send next to keep the conversation valid?",
+    "options": [
+      "Append the assistant message containing the toolUse block, then send a new user message with a toolResult block referencing the same toolUseId",
+      "Send only the raw tool output as plain text with role user",
+      "Re-send the original prompt with the tool output appended to the system field",
+      "Call a dedicated SubmitToolResult API endpoint with the toolUseId"
+    ],
+    "correct": [0],
+    "explanation": "Converse requires the message history to include the assistant's toolUse block followed by a user message containing a matching toolResult (keyed by toolUseId); otherwise the conversation is malformed. There is no separate SubmitToolResult endpoint, and dropping the toolUseId linkage or stuffing results into system breaks the contract."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent must answer policy questions strictly from an approved corpus and also perform live account lookups. The team finds the agent sometimes invents policy details. Which combination most directly improves grounding while keeping live lookups?",
+    "options": [
+      "Associate a Knowledge Base for the policy corpus so retrieved passages ground answers, and keep the account-lookup action group for live data",
+      "Increase the model temperature so the agent explores more policy phrasings",
+      "Move the entire policy corpus into the agent's instruction field",
+      "Replace the action group with a Knowledge Base that also performs the account lookups"
+    ],
+    "correct": [0],
+    "explanation": "A Knowledge Base grounds policy answers in retrieved, citable passages while the action group continues to fetch live account data, addressing hallucination at the source. Raising temperature worsens fabrication, prompt-stuffing the corpus is unscalable, and Knowledge Bases retrieve documents rather than perform live transactional lookups."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "A high-volume agent endpoint is hitting Bedrock model invocation throttling during peak hours, degrading user experience. Which mitigations are appropriate without changing correctness? (Select TWO.)",
+    "options": [
+      "Request or configure provisioned throughput / higher quotas for the model used in orchestration",
+      "Implement exponential backoff with jitter on InvokeAgent calls and queue overflow requests",
+      "Reduce the number of orchestration iterations by hardcoding the model's tool choices in the prompt regardless of input",
+      "Switch every request to a larger, slower model to absorb more load",
+      "Disable the agent trace so each request consumes fewer tokens"
+    ],
+    "correct": [0, 1],
+    "explanation": "Provisioned throughput/higher quotas raise the throttling ceiling, and client-side backoff with jitter plus queuing smooths bursts; both preserve correctness. Hardcoding tool choices breaks dynamic reasoning, a larger model increases latency and cost, and trace settings have negligible effect on throttling."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A purchasing agent should auto-approve orders under $500 but require a human manager to approve larger ones before the order is placed. The order-placement action has irreversible side effects. What is the cleanest design?",
+    "options": [
+      "Use return of control for the place-order tool so the application can route orders over $500 to a human approval step before executing, and auto-execute smaller ones",
+      "Let the action-group Lambda place all orders and email the manager afterward for awareness",
+      "Add the $500 rule only to the agent instruction and trust the model to pause and wait for a human",
+      "Set the agent to require user confirmation on every single tool call regardless of amount"
+    ],
+    "correct": [0],
+    "explanation": "Return of control lets your application intercept the irreversible place-order tool and inject a deterministic human-approval gate for amounts over the threshold, while small orders proceed automatically. Relying on the model alone to enforce a money threshold is unsafe, post-hoc emails do not prevent bad orders, and confirming every call harms usability."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An action-group Lambda returns a 500-style failure for a downstream outage. The team wants the agent to gracefully tell the user it will retry later rather than emit a confusing stack trace. What is the best practice?",
+    "options": [
+      "Return a structured, user-safe error message in the action-group response so the agent can incorporate it and respond gracefully",
+      "Throw the raw exception so Bedrock surfaces the stack trace to the user",
+      "Return an empty body so the agent silently ends the turn",
+      "Set the agent to retry the same tool indefinitely until the downstream recovers"
+    ],
+    "correct": [0],
+    "explanation": "Returning a structured, sanitized error in the action-group response lets the agent reason about the failure and produce a graceful message. Leaking raw exceptions exposes internals, empty bodies confuse the loop, and unbounded retries risk runaway cost and latency during an outage."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A company wants one supervisor agent to delegate to specialized sub-agents (billing, technical support, shipping), with the supervisor coordinating and aggregating results. Which Bedrock Agents feature directly supports this?",
+    "options": [
+      "Multi-agent collaboration, where a supervisor agent is configured with collaborator agents it can route subtasks to",
+      "Creating four separate aliases of the same agent and load-balancing across them",
+      "Putting all three domains' action groups on a single agent and using prompt instructions to switch personas",
+      "Chaining agents only through a manually coded Step Functions state machine, since Bedrock has no native multi-agent support"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Agents multi-agent collaboration provides a native supervisor/collaborator model for routing subtasks to specialized agents and aggregating their outputs. Aliasing the same agent does not specialize behavior, a single overloaded agent loses separation of concerns, and native multi-agent collaboration does exist, so a hand-coded state machine is not required."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent must call a partner API that requires per-request OAuth tokens that expire every 10 minutes. The team must avoid hardcoding secrets and minimize token-refresh latency. What is the best approach inside the action-group implementation?",
+    "options": [
+      "Have the action-group Lambda retrieve credentials from Secrets Manager and cache a short-lived OAuth token in memory across warm invocations, refreshing on expiry",
+      "Store the long-lived OAuth client secret in the agent instruction prompt",
+      "Pass the OAuth token as a parameter the foundation model fills in each turn",
+      "Embed the client secret as a plaintext Lambda environment variable committed to the repo"
+    ],
+    "correct": [0],
+    "explanation": "Fetching credentials from Secrets Manager and caching the short-lived token in warm Lambda execution context minimizes refresh latency while keeping secrets out of code and prompts. Putting secrets in prompts or asking the model to supply tokens leaks credentials and is unreliable; committed plaintext env vars are a security violation."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "A team is hardening a Bedrock agent against prompt injection arriving through retrieved documents and tool outputs. Which controls meaningfully reduce risk? (Select TWO.)",
+    "options": [
+      "Apply Amazon Bedrock Guardrails to the agent to filter harmful or policy-violating content in inputs and outputs",
+      "Keep irreversible or high-privilege actions behind return of control with deterministic application-side authorization checks",
+      "Trust tool outputs implicitly because they originate from internal systems",
+      "Grant the agent broad IAM permissions so it can self-remediate any injected instruction",
+      "Disable the trace so injected instructions cannot be logged"
+    ],
+    "correct": [0, 1],
+    "explanation": "Guardrails screen inputs/outputs for policy violations, and gating high-privilege actions behind return of control with server-side authorization prevents an injected instruction from triggering unsafe operations. Implicitly trusting tool output, granting broad IAM, or disabling traces all increase exposure rather than reduce it."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "Latency analysis shows the agent's preprocessing and orchestration prompts are large because every action group's full OpenAPI schema is included on each model call. The team wants lower per-turn latency and cost without losing needed tools. What is the most effective change?",
+    "options": [
+      "Split rarely-used operations into separate agents/action groups and keep each agent's tool set minimal so fewer tool definitions are sent per turn",
+      "Increase the model's max tokens so the large schema fits more comfortably",
+      "Switch to a model with a smaller context window to force shorter prompts",
+      "Disable preprocessing entirely so no schema is ever evaluated"
+    ],
+    "correct": [0],
+    "explanation": "Tool/schema definitions are sent to the model each turn, so trimming each agent to a focused, minimal tool set is the direct lever on prompt size, latency, and cost. Raising max tokens does not shrink the input, a smaller context window risks truncation, and disabling preprocessing removes useful safety/routing logic without addressing schema bloat."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A developer wants a single agent invocation to keep state for a multi-turn conversation (e.g., follow-up questions referencing earlier answers) within one user session, but state should not persist beyond that session. Which mechanism is correct?",
+    "options": [
+      "Pass a consistent sessionId on each InvokeAgent call for that conversation; the session's short-term context is retained until it expires",
+      "Enable cross-session memory with a memoryId for every conversation",
+      "Create a new agent alias per conversation",
+      "Store the conversation in a Knowledge Base and re-ingest it after each turn"
+    ],
+    "correct": [0],
+    "explanation": "A consistent sessionId maintains short-term conversational context for the duration of that session without long-term persistence. Cross-session memory (memoryId) is for retaining summaries across sessions, per-conversation aliases are an anti-pattern, and re-ingesting chat into a Knowledge Base is heavy and inappropriate for transient state."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent must pass a verified customerId to its action-group Lambda, but the customerId must come from the authenticated session (a JWT validated by the app), never from anything the model could fabricate. What is the recommended way to deliver it?",
+    "options": [
+      "Pass the verified customerId in the InvokeAgent request's sessionState (e.g., session attributes) so the Lambda reads trusted context rather than a model-supplied parameter",
+      "Add customerId to the OpenAPI schema as a required parameter and let the model fill it from the conversation",
+      "Embed the customerId in the agent instruction prompt at session start",
+      "Have the Lambda parse the customerId out of the user's free-text message"
+    ],
+    "correct": [0],
+    "explanation": "sessionState attributes carry trusted, application-supplied context to the action group without exposing it to model inference, ensuring the customerId cannot be hallucinated or injected. Letting the model fill the parameter, embedding it in the prompt, or parsing free text all risk the model supplying an attacker-controlled or fabricated value."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "An SRE team wants production observability for a fleet of Bedrock agents: end-to-end latency, tool error rates, and the ability to replay what an agent did during an incident. Which approaches are appropriate? (Select THREE.)",
+    "options": [
+      "Capture and store agent trace events for each invocation to reconstruct reasoning and tool calls during incident review",
+      "Emit custom CloudWatch metrics from action-group Lambdas (latency, error counts) and alarm on thresholds",
+      "Use Amazon Bedrock model invocation logging to capture request/response data for the underlying model calls",
+      "Rely solely on the final user-facing completion text to reconstruct the agent's internal steps",
+      "Turn off all logging in production to reduce token costs"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "Stored traces reconstruct reasoning and tool calls, Lambda-emitted CloudWatch metrics give latency/error visibility with alarms, and Bedrock model invocation logging captures the underlying calls. The final completion text omits internal steps, and disabling logging removes the very signals needed for incident response."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent's ReAct loop occasionally enters long chains of tool calls that never converge, driving up cost and latency for ambiguous requests. The team wants a safety bound while preserving normal multi-step behavior. What is the most direct control?",
+    "options": [
+      "Configure a maximum number of orchestration iterations so the agent stops and responds (or escalates) after the bound is reached",
+      "Remove all action groups so the agent can never loop",
+      "Switch to a non-agent single Converse call for every request",
+      "Raise the model temperature so it commits to an answer sooner"
+    ],
+    "correct": [0],
+    "explanation": "Bounding orchestration iterations caps runaway loops while still allowing normal multi-step tasks within the limit. Removing action groups eliminates the agent's usefulness, forcing single Converse calls discards orchestration entirely, and higher temperature increases variance rather than forcing convergence."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A financial agent must produce answers only after retrieving the latest figures, but the underlying Knowledge Base is updated hourly via an ingestion job. Users sometimes get stale data right after an update. Which design best ensures freshness without rebuilding the whole index each query?",
+    "options": [
+      "Trigger Knowledge Base ingestion (sync) when source data changes and rely on incremental ingestion so only new/changed documents are re-embedded",
+      "Recreate the entire Knowledge Base from scratch on every user query",
+      "Disable retrieval and have the agent answer from its training data",
+      "Cache the first query's answer and serve it to all users for the hour"
+    ],
+    "correct": [0],
+    "explanation": "Event-driven incremental ingestion re-embeds only changed documents, keeping the index fresh efficiently. Recreating the index per query is wildly expensive, answering from training data abandons grounding, and caching one answer for all users serves stale and possibly user-specific-wrong results."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "When using the Converse API with multiple tools, a developer wants to force the model to call a specific tool on a particular turn (e.g., always classify intent first). Which mechanism supports this?",
+    "options": [
+      "Set toolChoice in the toolConfig to require the specific tool (or any tool) for that request",
+      "Lower the model temperature to zero so it always picks the first tool listed",
+      "Reorder the tools array so the desired tool appears first",
+      "Send the tool result before the model has produced a toolUse block"
+    ],
+    "correct": [0],
+    "explanation": "The Converse API's toolChoice lets you require a specific tool (or any tool) for a turn, giving deterministic control over tool invocation. Temperature and array ordering do not guarantee selection, and sending a tool result before a toolUse block is invalid."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A company has both a customer-facing chat agent and a backend batch process that needs the same tool logic. They want to avoid duplicating Lambda business logic and keep a single source of truth. What is the best structure?",
+    "options": [
+      "Implement the business logic in a shared Lambda (or shared library/layer) and have the action group invoke it, while the batch process invokes the same Lambda directly",
+      "Copy the Lambda code into a second function dedicated to the agent so the two paths stay independent",
+      "Move the logic into the agent instruction prompt so both the chat and batch paths read it",
+      "Have the batch process call InvokeAgent for every record to reuse the agent's logic"
+    ],
+    "correct": [0],
+    "explanation": "Centralizing the logic in a shared Lambda or library and invoking it from both the action group and the batch job keeps one source of truth and avoids drift. Copying code duplicates maintenance, prompts cannot hold executable logic, and routing batch records through InvokeAgent adds unnecessary LLM cost and latency."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "multiple",
+    "question": "A team is deciding when to use Bedrock Agents versus orchestrating tool use themselves with the Converse API. Which statements are accurate considerations? (Select TWO.)",
+    "options": [
+      "Bedrock Agents provide managed ReAct orchestration, action groups, sessions/memory, and Knowledge Base integration out of the box, reducing custom code",
+      "The Converse API gives the application full control of the orchestration loop, which is preferable when you need custom routing, state handling, or to embed tool use in existing services",
+      "The Converse API cannot perform any tool use, so agents are mandatory for tools",
+      "Bedrock Agents cannot integrate Knowledge Bases, so you must use Converse for RAG",
+      "Bedrock Agents bypass IAM, so they need no permissions configuration"
+    ],
+    "correct": [0, 1],
+    "explanation": "Agents offer managed orchestration plus built-in sessions, memory, and KB integration, while Converse gives you full control of the loop for custom needs. Converse does support tool use, Agents do integrate Knowledge Bases, and Agents absolutely require IAM configuration."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A multi-agent collaboration setup has a supervisor that routes to collaborator agents. The team observes the supervisor sometimes answering directly instead of delegating to the correct specialist. What is the most effective way to improve routing fidelity?",
+    "options": [
+      "Provide clear collaborator descriptions/instructions stating each specialist's scope so the supervisor can match subtasks accurately",
+      "Increase the supervisor model's temperature to encourage delegation",
+      "Give every collaborator identical instructions so any of them can handle anything",
+      "Remove the supervisor and let the user manually pick an agent each time"
+    ],
+    "correct": [0],
+    "explanation": "Routing quality in multi-agent collaboration depends heavily on precise collaborator descriptions/instructions that define each agent's scope, which the supervisor uses to delegate. Higher temperature adds randomness, identical instructions defeat specialization, and removing the supervisor abandons the orchestration goal."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent must invoke an internal microservice that already exposes a well-documented REST API behind API Gateway, and the team wants to minimize new code. Which action-group approach best leverages the existing contract?",
+    "options": [
+      "Define the action group with an OpenAPI schema that mirrors the existing API and use a thin Lambda (or return of control) to forward requests to API Gateway",
+      "Recreate every endpoint's logic inside a new Lambda so the agent never touches API Gateway",
+      "Skip the action group and tell the agent the API URL in its instruction so it calls the endpoint directly over HTTP",
+      "Move the microservice's data into a Knowledge Base instead of calling the API"
+    ],
+    "correct": [0],
+    "explanation": "Reusing the existing API's OpenAPI contract and forwarding through a thin integration layer minimizes new code and keeps one source of truth. Reimplementing endpoints duplicates logic, agents cannot call arbitrary URLs directly from an instruction, and replacing a live API with a KB loses transactional behavior."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "During load testing, the action-group Lambda intermittently fails with cold-start latency spikes that push some agent turns past acceptable response times. The team needs predictable tool latency. What is the most appropriate mitigation?",
+    "options": [
+      "Configure provisioned concurrency on the action-group Lambda to eliminate cold starts for the expected traffic",
+      "Increase the agent's max iterations so slow turns are retried",
+      "Move the Lambda to a smaller memory size to start faster",
+      "Disable the agent trace to shave milliseconds off each turn"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned concurrency keeps initialized execution environments warm, directly eliminating cold-start latency for the provisioned level. More iterations add latency rather than remove it, smaller memory typically slows execution, and trace settings do not address cold starts."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "A team wants automated, repeatable deployment of an agent (including action groups, prompts, aliases) across dev, staging, and prod accounts, with versioning and rollback. Which approach best fits AWS best practices?",
+    "options": [
+      "Define the agent and its resources as infrastructure as code (e.g., CloudFormation/CDK) and promote immutable versions through environments, repointing aliases per stage",
+      "Manually click-configure each environment in the Bedrock console and screenshot the settings for records",
+      "Share one agent across all three accounts and toggle behavior with environment flags in the prompt",
+      "Export the DRAFT version and email it to each environment owner to import"
+    ],
+    "correct": [0],
+    "explanation": "IaC plus immutable versions and per-environment aliases delivers repeatable, auditable promotion and clean rollback across accounts. Manual console configuration is error-prone and unrepeatable, a single shared agent breaks environment isolation, and emailing exports has no versioning or governance."
+  },
+  {
+    "category": "Bedrock Agents & Tool Use",
+    "type": "single",
+    "question": "An agent must call a tool that returns a large dataset (tens of MB), but only a small summary is needed for the model to reason. Passing the full payload back inflates token usage and risks exceeding limits. What is the best design?",
+    "options": [
+      "Have the action group store the full result in S3 and return only a concise summary plus a reference (e.g., S3 URI) the application can use later",
+      "Return the entire dataset to the model and rely on it to ignore the irrelevant parts",
+      "Truncate the dataset to the first few kilobytes regardless of which records matter",
+      "Increase the model's max tokens until the full payload fits"
+    ],
+    "correct": [0],
+    "explanation": "Returning a summary plus an out-of-band reference keeps the model's context small and within limits while preserving access to the full data via S3. Returning everything wastes tokens and may exceed limits, blind truncation can drop the relevant records, and inflating max tokens still bloats cost and context."
+  }
+]
