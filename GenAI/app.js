@@ -7,7 +7,7 @@ const MOCK = { count: 65, minutes: 130, pass: 72 }; // full-length timed mock ex
 // ── Google Sign-In ──────────────────────────────────────────────────────────
 // Paste your OAuth 2.0 Client ID below (see README.md). Until it is set, the app
 // runs in guest mode and shows a small "Sign-in not configured" hint.
-const GOOGLE_CLIENT_ID = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "574921121910-j8j6ja9dapm9o0tfi60sfnh9akdqqgmu.apps.googleusercontent.com";
 const AUTH_CONFIGURED =
   /\.apps\.googleusercontent\.com$/.test(GOOGLE_CLIENT_ID) &&
   !GOOGLE_CLIENT_ID.startsWith("REPLACE_WITH_");
