@@ -1,0 +1,272 @@
+[
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service records API calls and account activity, providing an audit trail of who did what and when across AWS resources?",
+    "options": ["AWS CloudTrail", "Amazon CloudWatch", "AWS Config", "AWS Artifact"],
+    "correct": [0],
+    "explanation": "AWS CloudTrail logs API calls and account activity, creating an audit trail of actions taken by users, roles, and services."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service provides on-demand access to AWS compliance reports such as SOC and ISO certifications?",
+    "options": ["AWS Artifact", "AWS Audit Manager", "AWS Config", "AWS CloudTrail"],
+    "correct": [0],
+    "explanation": "AWS Artifact is a self-service portal for downloading AWS compliance reports and accessing agreements such as SOC, ISO, and PCI documents."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the primary purpose of Amazon SageMaker Model Cards?",
+    "options": ["To document essential model information such as intended use, training details, and evaluation results for governance", "To automatically retrain models on a schedule", "To encrypt model artifacts at rest", "To deploy models to edge devices"],
+    "correct": [0],
+    "explanation": "SageMaker Model Cards capture key model details (intended use, training data, performance, risk ratings) to support documentation, governance, and accountability."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service continuously assesses, audits, and evaluates the configurations of your AWS resources for compliance with desired settings?",
+    "options": ["AWS Config", "AWS CloudTrail", "Amazon Inspector", "AWS Artifact"],
+    "correct": [0],
+    "explanation": "AWS Config continuously monitors and records resource configurations and evaluates them against rules to assess compliance."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service helps you continuously audit your AWS usage to simplify risk assessment and compliance with regulations and industry standards?",
+    "options": ["AWS Audit Manager", "Amazon CloudWatch", "AWS Trusted Advisor", "AWS Artifact"],
+    "correct": [0],
+    "explanation": "AWS Audit Manager automates evidence collection and maps it to prebuilt frameworks to streamline audits and compliance assessments."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does 'data governance' primarily refer to in the context of an AI workload?",
+    "options": ["The policies and processes that ensure data is managed, secured, and used responsibly and in compliance with regulations", "The speed at which data is processed by a model", "The number of GPUs allocated to training", "The visual design of a dashboard"],
+    "correct": [0],
+    "explanation": "Data governance encompasses the policies, roles, and processes for ensuring data quality, security, privacy, and compliant, responsible use."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service is primarily used to collect, monitor, and store logs and metrics for AI workloads in near real time?",
+    "options": ["Amazon CloudWatch", "AWS Artifact", "AWS Config", "AWS Audit Manager"],
+    "correct": [0],
+    "explanation": "Amazon CloudWatch collects logs and metrics and supports dashboards and alarms, making it the core monitoring service for AI workloads."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is 'responsible data sourcing' for AI?",
+    "options": ["Obtaining training data ethically and legally, with appropriate rights, consent, and attention to bias", "Storing data only in the cheapest region", "Collecting as much data as possible regardless of source", "Compressing data to reduce storage costs"],
+    "correct": [0],
+    "explanation": "Responsible data sourcing means acquiring data ethically and legally, respecting consent and licensing, and considering representativeness and bias."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon service can automatically discover and classify sensitive data such as personally identifiable information (PII) stored in Amazon S3?",
+    "options": ["Amazon Macie", "Amazon CloudWatch", "AWS CloudTrail", "AWS Config"],
+    "correct": [0],
+    "explanation": "Amazon Macie uses machine learning to discover, classify, and protect sensitive data like PII in Amazon S3."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a key reason to define a data retention policy for an AI system?",
+    "options": ["To comply with legal requirements and minimize risk by not keeping data longer than necessary", "To guarantee a model never makes mistakes", "To increase model accuracy automatically", "To eliminate the need for monitoring"],
+    "correct": [0],
+    "explanation": "Data retention policies help meet regulatory requirements and reduce risk by limiting how long data is stored and ensuring timely deletion."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS feature can automatically delete or transition objects in Amazon S3 after a defined period to support data lifecycle management?",
+    "options": ["S3 Lifecycle policies", "S3 Cross-Region Replication", "S3 Transfer Acceleration", "S3 Event Notifications"],
+    "correct": [0],
+    "explanation": "Amazon S3 Lifecycle policies automate transitioning objects to cheaper storage classes or expiring (deleting) them after a set time."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which capability of Amazon SageMaker helps organizations document, register, and manage approval status of models across their lifecycle?",
+    "options": ["SageMaker Model Registry and governance tools", "SageMaker Ground Truth", "SageMaker Data Wrangler", "SageMaker Neo"],
+    "correct": [0],
+    "explanation": "The SageMaker Model Registry, together with Model Cards and the model governance dashboard, supports cataloging, versioning, and approving models."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company must demonstrate to an auditor which IAM user invoked an Amazon Bedrock model and at what time. Which service provides this evidence?",
+    "options": ["AWS CloudTrail", "AWS Config", "Amazon Macie", "AWS Artifact"],
+    "correct": [0],
+    "explanation": "CloudTrail logs API activity, including Bedrock invocation calls with identity and timestamp details, providing the required audit evidence."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An organization wants to be alerted whenever an S3 bucket holding AI training data is changed to allow public access. Which service is best suited to detect this configuration change?",
+    "options": ["AWS Config with a managed rule", "AWS Artifact", "Amazon Comprehend", "AWS Audit Manager"],
+    "correct": [0],
+    "explanation": "AWS Config can evaluate resource configurations against managed rules (such as detecting public S3 buckets) and flag non-compliant changes."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which capability of Amazon Bedrock helps enforce responsible AI policies by filtering harmful content and blocking specified topics in model inputs and outputs?",
+    "options": ["Amazon Bedrock Guardrails", "Amazon Bedrock Knowledge Bases", "Amazon Bedrock Agents", "Amazon Bedrock Provisioned Throughput"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Guardrails let you define content filters, denied topics, and PII handling to enforce responsible AI policies across models."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A regulation requires that customers can request deletion of their personal data ('right to be forgotten'). Which practice best supports this in an AI data pipeline?",
+    "options": ["Maintaining data lineage and the ability to locate and delete an individual's records on request", "Encrypting all data with a single shared key", "Storing all data indefinitely for accuracy", "Disabling logging to reduce stored data"],
+    "correct": [0],
+    "explanation": "Honoring deletion requests requires tracking where personal data resides (lineage) so specific records can be reliably found and removed."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement best describes the AWS Shared Responsibility Model as it applies to a managed AI service like Amazon Bedrock?",
+    "options": ["AWS secures the underlying infrastructure, while the customer is responsible for how they configure access, manage data, and use the service", "AWS is responsible for all security including customer data classification", "The customer must patch the physical servers running the models", "Compliance is entirely AWS's responsibility"],
+    "correct": [0],
+    "explanation": "Under the shared responsibility model, AWS secures the cloud infrastructure and the customer is responsible for security in the cloud, including access control and data handling."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An ML team wants a standardized document capturing a model's intended use, limitations, and bias evaluation to share with risk reviewers. Which feature should they use?",
+    "options": ["Amazon SageMaker Model Cards", "Amazon SageMaker Endpoints", "AWS CloudTrail trails", "Amazon S3 object tags"],
+    "correct": [0],
+    "explanation": "SageMaker Model Cards provide a structured way to document intended use, limitations, evaluation, and risk ratings for governance reviews."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which AWS service uses prebuilt frameworks (for example, for GDPR or SOC 2) to automatically collect evidence and help prepare for audits?",
+    "options": ["AWS Audit Manager", "AWS Config", "Amazon CloudWatch", "AWS CloudTrail"],
+    "correct": [0],
+    "explanation": "AWS Audit Manager offers prebuilt and custom frameworks that automate evidence collection mapped to specific compliance standards."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "To detect data drift and monitor the quality of predictions from a deployed SageMaker model over time, which capability should be used?",
+    "options": ["Amazon SageMaker Model Monitor", "Amazon SageMaker Autopilot", "AWS Artifact", "Amazon SageMaker Feature Store"],
+    "correct": [0],
+    "explanation": "SageMaker Model Monitor continuously monitors deployed models for data quality, drift, and bias, alerting when metrics deviate from a baseline."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which approach best helps a company avoid copyright and licensing risks when sourcing data to fine-tune a generative AI model?",
+    "options": ["Verifying that data is properly licensed or permitted for the intended use and tracking its provenance", "Scraping any publicly visible web content without review", "Using the largest dataset available regardless of origin", "Removing all metadata from the dataset"],
+    "correct": [0],
+    "explanation": "Responsible data sourcing requires confirming licensing and usage rights and tracking provenance to avoid copyright and compliance issues."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which AWS capability lets you centrally apply guardrails and policies (such as restricting which AI services or Regions can be used) across many accounts?",
+    "options": ["AWS Organizations service control policies (SCPs)", "Amazon CloudWatch alarms", "AWS Artifact agreements", "Amazon Macie findings"],
+    "correct": [0],
+    "explanation": "Service control policies in AWS Organizations centrally define the maximum permissions available to accounts, enabling governance such as restricting services or Regions."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A healthcare company needs to confirm that an AWS service is eligible for use with protected health information under HIPAA. Where can it verify HIPAA eligibility and access the BAA?",
+    "options": ["AWS Artifact", "Amazon CloudWatch Logs", "AWS Config rules", "Amazon SageMaker Model Cards"],
+    "correct": [0],
+    "explanation": "AWS Artifact provides compliance documentation and agreements, including the Business Associate Addendum (BAA), and information about HIPAA-eligible services."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which practice most directly improves traceability and reproducibility for a regulated AI workload?",
+    "options": ["Versioning datasets, code, and models and recording which versions produced each result", "Deleting old model versions immediately after deployment", "Disabling CloudTrail to reduce log volume", "Using a single shared notebook with no version control"],
+    "correct": [0],
+    "explanation": "Versioning data, code, and models and linking them to outputs enables reproducibility and traceability, which are essential for regulated workloads."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are appropriate ways to govern access to sensitive AI training data in Amazon S3? (Select TWO.)",
+    "options": ["Apply least-privilege IAM policies and bucket policies", "Encrypt the data at rest using AWS KMS", "Make the bucket public so all teams can read it", "Email the data files to each data scientist", "Store credentials directly in application code"],
+    "correct": [0, 1],
+    "explanation": "Least-privilege access controls and encryption at rest are foundational governance practices for protecting sensitive data in S3; the other options expose data or credentials."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A company wants tamper-evident, long-term retention of CloudTrail logs for compliance, ensuring logs cannot be altered or deleted before a set period. Which configuration best achieves this?",
+    "options": ["Deliver CloudTrail logs to an S3 bucket with Object Lock in compliance mode and enable log file validation", "Store logs only in CloudWatch Logs with a 1-day retention", "Keep logs on the local instance disk", "Disable log file validation to save space"],
+    "correct": [0],
+    "explanation": "S3 Object Lock in compliance mode provides WORM (write-once-read-many) retention, and CloudTrail log file validation detects tampering, together ensuring integrity and retention."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An auditor asks how a company proves that bias was evaluated before a model was approved for production. Which combination of SageMaker capabilities best documents this?",
+    "options": ["SageMaker Clarify for bias metrics with results recorded in a SageMaker Model Card", "SageMaker Neo with CloudWatch alarms", "SageMaker Data Wrangler with S3 lifecycle rules", "SageMaker Endpoints with auto scaling"],
+    "correct": [0],
+    "explanation": "SageMaker Clarify computes bias and explainability metrics, and recording those results in a Model Card provides documented evidence for governance and audit."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "multiple",
+    "question": "Which of the following are AWS services commonly used to support governance and auditing of AI workloads? (Select TWO.)",
+    "options": ["AWS CloudTrail", "AWS Config", "Amazon Polly", "Amazon Translate", "Amazon Lex"],
+    "correct": [0, 1],
+    "explanation": "AWS CloudTrail records API activity for auditing, and AWS Config tracks resource configuration compliance; the others are AI application services, not governance tools."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which practices support responsible data sourcing and data governance for training AI models? (Select TWO.)",
+    "options": ["Verifying data licensing and obtaining required consent", "Tracking data provenance and lineage", "Collecting the maximum amount of data with no documentation", "Removing all access controls to speed up access", "Disabling encryption to reduce overhead"],
+    "correct": [0, 1],
+    "explanation": "Responsible data governance requires confirming licensing/consent and tracking provenance and lineage; the other options weaken security and compliance."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "A company is building a governance program for its generative AI workloads on AWS. Which combinations correctly pair a need with an appropriate AWS service? (Select THREE.)",
+    "options": ["Audit trail of model API calls: AWS CloudTrail", "Automated evidence collection for compliance frameworks: AWS Audit Manager", "On-demand download of SOC and ISO reports: AWS Artifact", "Real-time speech transcription: AWS Config", "Forecasting future sales: AWS CloudTrail"],
+    "correct": [0, 1, 2],
+    "explanation": "CloudTrail provides API audit trails, Audit Manager automates compliance evidence, and Artifact supplies compliance reports; the remaining pairings use the wrong services."
+  }
+]

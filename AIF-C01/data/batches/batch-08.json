@@ -1,0 +1,272 @@
+[
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service is specifically designed to help explain model predictions and detect bias in machine learning models?",
+    "options": ["Amazon SageMaker Clarify", "Amazon Comprehend", "AWS Glue", "Amazon Kinesis"],
+    "correct": [0],
+    "explanation": "Amazon SageMaker Clarify provides tools for bias detection and model explainability, including feature attribution using SHAP values."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does the term 'explainability' refer to in the context of machine learning models?",
+    "options": ["The ability to understand and articulate why a model made a particular prediction", "The speed at which a model produces predictions", "The total cost of training a model", "The amount of storage a model requires"],
+    "correct": [0],
+    "explanation": "Explainability is the degree to which the reasons behind a model's outputs can be understood and communicated to humans."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS resource provides standardized documentation about the intended use cases, limitations, and responsible AI considerations for AWS-managed AI services such as Amazon Rekognition?",
+    "options": ["AWS AI Service Cards", "AWS Trusted Advisor", "AWS Cost Explorer", "AWS CloudTrail"],
+    "correct": [0],
+    "explanation": "AWS AI Service Cards document the intended uses, limitations, and responsible AI design choices for specific AWS AI services."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What underlying technique does Amazon SageMaker Clarify primarily use to provide feature attributions for model explainability?",
+    "options": ["SHAP (Shapley Additive exPlanations)", "Gradient descent", "K-means clustering", "Bubble sort"],
+    "correct": [0],
+    "explanation": "SageMaker Clarify uses SHAP values, based on cooperative game theory, to attribute a model's prediction to individual input features."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service enables you to add human review of machine learning predictions, also known as human-in-the-loop?",
+    "options": ["Amazon Augmented AI (Amazon A2I)", "Amazon Polly", "Amazon Translate", "AWS Lambda"],
+    "correct": [0],
+    "explanation": "Amazon Augmented AI (Amazon A2I) makes it easy to build workflows that route low-confidence predictions to human reviewers."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the main purpose of a model card, such as those created with Amazon SageMaker Model Cards?",
+    "options": ["To document a model's intended use, performance, and risk information in a single record", "To provide a graphical user interface for training models", "To automatically deploy models to production", "To encrypt model artifacts at rest"],
+    "correct": [0],
+    "explanation": "Model cards centralize essential information about a model, including its purpose, training details, evaluation results, and limitations, supporting transparency and governance."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "An 'interpretable model' is best described as a model that is:",
+    "options": ["Inherently understandable by humans without additional explanation tools", "Always more accurate than complex models", "Only usable in deep learning applications", "Impossible to audit or review"],
+    "correct": [0],
+    "explanation": "Interpretable models (such as linear regression or decision trees) are simple enough that humans can directly understand how inputs map to outputs."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Why is transparency considered an important principle of responsible AI?",
+    "options": ["It helps stakeholders understand how an AI system works and builds trust", "It guarantees the model will never make errors", "It reduces the need for any data preprocessing", "It eliminates the cost of model training"],
+    "correct": [0],
+    "explanation": "Transparency allows users, regulators, and affected individuals to understand how AI systems operate and make decisions, which fosters trust and accountability."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which of the following is an example of a generally more interpretable machine learning model?",
+    "options": ["Decision tree", "Deep neural network with 50 hidden layers", "Large language model with billions of parameters", "Ensemble of thousands of boosted trees"],
+    "correct": [0],
+    "explanation": "Simple decision trees are considered highly interpretable because the path from input to decision can be directly traced by a human."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does 'human-centered design' for AI emphasize?",
+    "options": ["Designing AI systems around the needs, values, and well-being of the people who use or are affected by them", "Removing all human involvement from AI workflows", "Maximizing model size regardless of cost", "Prioritizing hardware efficiency over user outcomes"],
+    "correct": [0],
+    "explanation": "Human-centered design focuses on creating AI systems that serve human needs, are usable, and account for the impact on the people involved."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which environmental consideration is most directly associated with training very large AI models?",
+    "options": ["High energy consumption and carbon footprint", "Increased physical office space requirements", "Reduced need for network bandwidth", "Lower demand for skilled data scientists"],
+    "correct": [0],
+    "explanation": "Training large models can consume substantial energy, raising sustainability concerns related to carbon emissions and resource use."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "When a company publishes information about a model's known limitations and appropriate use cases, this practice primarily supports which responsible AI dimension?",
+    "options": ["Transparency", "Latency optimization", "Data compression", "Auto scaling"],
+    "correct": [0],
+    "explanation": "Documenting limitations and intended uses provides transparency, helping users apply the model appropriately and avoid misuse."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A bank uses a complex gradient-boosted model for loan approvals and must explain individual decisions to applicants. Which AWS capability best addresses this need?",
+    "options": ["SageMaker Clarify feature attribution using SHAP", "Amazon CloudWatch dashboards", "AWS Config rules", "Amazon S3 lifecycle policies"],
+    "correct": [0],
+    "explanation": "SageMaker Clarify can compute per-prediction SHAP feature attributions, helping explain why an individual loan decision was made."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What is a common trade-off teams face when choosing between a deep neural network and a logistic regression model?",
+    "options": ["Higher predictive performance often comes at the cost of reduced interpretability", "Simpler models always consume more compute than complex ones", "Interpretable models cannot be deployed on AWS", "Complex models never require any training data"],
+    "correct": [0],
+    "explanation": "More complex models can achieve higher accuracy but are typically harder to interpret, creating a performance-versus-interpretability trade-off."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A content moderation system automatically routes uncertain predictions to human reviewers before a final decision is made. Which design pattern does this represent?",
+    "options": ["Human-in-the-loop", "Fully autonomous inference", "Batch transform only", "Edge-only deployment"],
+    "correct": [0],
+    "explanation": "Routing low-confidence or sensitive predictions to humans for review is the human-in-the-loop pattern, which Amazon A2I supports."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement best distinguishes interpretability from explainability?",
+    "options": ["Interpretability refers to how inherently understandable a model is, while explainability refers to techniques used to explain a model's outputs", "They are identical concepts with no difference", "Interpretability applies only to deep learning, and explainability only to linear models", "Explainability measures model accuracy, while interpretability measures speed"],
+    "correct": [0],
+    "explanation": "Interpretability is an intrinsic property of how transparent a model is, while explainability often involves post-hoc methods that explain otherwise opaque models."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company wants a consolidated record documenting a self-trained model's purpose, training datasets, evaluation metrics, and intended uses for audit purposes. Which feature should they use?",
+    "options": ["Amazon SageMaker Model Cards", "AWS AI Service Cards", "Amazon SageMaker Feature Store", "Amazon SageMaker Ground Truth"],
+    "correct": [0],
+    "explanation": "SageMaker Model Cards are designed for documenting customer-trained models, whereas AWS AI Service Cards describe AWS-managed AI services."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which scenario would most justify accepting a slightly less accurate but more interpretable model?",
+    "options": ["A regulated healthcare setting where clinicians must understand and justify each recommendation", "A recommendation engine for an internal music playlist with no compliance requirements", "A spam filter where occasional misclassification is acceptable and unexplained", "An image style-transfer tool used purely for entertainment"],
+    "correct": [0],
+    "explanation": "In high-stakes, regulated domains, the ability to understand and justify decisions can outweigh marginal accuracy gains, favoring interpretable models."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What information would you most likely find in an AWS AI Service Card for a service like Amazon Textract?",
+    "options": ["Intended use cases, design considerations, and best practices for responsible deployment", "The exact source code of the underlying model", "Real-time billing data for your account", "A list of all IAM users in your organization"],
+    "correct": [0],
+    "explanation": "AI Service Cards summarize intended uses, fairness and design considerations, and deployment best practices to promote transparent, responsible use."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An organization is concerned that its training data may contain personally identifiable information (PII). Which responsible AI consideration is most relevant?",
+    "options": ["Privacy", "Latency", "Model size", "Network throughput"],
+    "correct": [0],
+    "explanation": "Handling PII raises privacy concerns, which are a core ethical and legal consideration in responsible AI."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A generative AI model produces text that closely reproduces copyrighted material from its training data. Which responsible AI concern does this raise?",
+    "options": ["Intellectual property infringement", "Insufficient GPU memory", "Excessive inference latency", "Poor data labeling throughput"],
+    "correct": [0],
+    "explanation": "Reproducing copyrighted content can lead to intellectual property and legal concerns that must be managed in responsible AI practices."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "In Amazon A2I, when is a prediction typically routed to a human reviewer?",
+    "options": ["When the model's confidence score falls below a defined threshold", "Only after the model has been deleted", "Whenever the model achieves perfect accuracy", "Only during the initial model training phase"],
+    "correct": [0],
+    "explanation": "Amazon A2I can trigger human review based on confidence thresholds, sampling rules, or specific conditions, sending uncertain predictions to reviewers."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team must explain predictions from a third-party black-box model they cannot retrain or inspect internally. Which explainability approach is most appropriate?",
+    "options": ["Model-agnostic post-hoc explanation methods such as SHAP-based feature attribution", "Replacing the model with a deeper neural network", "Reading the model's internal weights directly, which is always required", "Disabling explanations because black-box models cannot be explained at all"],
+    "correct": [0],
+    "explanation": "Model-agnostic post-hoc methods like SHAP can explain predictions based on inputs and outputs without requiring access to internal model structure."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An enterprise wants automated governance documentation of model lineage, approval status, and risk rating that integrates with its ML lifecycle. Which combination is most appropriate?",
+    "options": ["SageMaker Model Cards for documentation combined with model registry approval workflows", "AWS AI Service Cards for each custom model with no registry", "Only manual spreadsheets stored in Amazon S3 with no automation", "Amazon Polly to narrate model risk reports"],
+    "correct": [0],
+    "explanation": "SageMaker Model Cards capture governance details and integrate with the SageMaker Model Registry, enabling documented approval and lifecycle workflows for custom models."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Why might adding human-in-the-loop review introduce a trade-off in a high-volume production system?",
+    "options": ["It can increase latency and operational cost even though it improves accuracy and accountability on hard cases", "It always reduces accuracy compared to fully automated systems", "It removes the ability to log any predictions", "It makes the model entirely uninterpretable"],
+    "correct": [0],
+    "explanation": "Human review improves quality and oversight for difficult cases but adds processing time and labor cost, a trade-off to balance against throughput needs."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "multiple",
+    "question": "Which of the following are recognized as ethical or legal considerations in responsible AI? (Select TWO.)",
+    "options": ["Protecting user privacy and personal data", "Respecting intellectual property rights", "Maximizing the number of model parameters", "Increasing inference batch size", "Choosing the most expensive instance type"],
+    "correct": [0, 1],
+    "explanation": "Privacy protection and respect for intellectual property are core ethical and legal considerations; the other options are technical or cost choices, not ethical principles."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which capabilities does Amazon SageMaker Clarify provide? (Select TWO.)",
+    "options": ["Detecting bias in datasets and models", "Generating feature attributions for explainability using SHAP", "Automatically writing all application source code", "Provisioning networking for a VPC", "Managing user authentication for the AWS Management Console"],
+    "correct": [0, 1],
+    "explanation": "SageMaker Clarify provides bias detection across the ML lifecycle and explainability through SHAP-based feature attributions; the other options are unrelated services."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which practices help increase the transparency of an AI system? (Select TWO.)",
+    "options": ["Publishing model cards that describe intended use and limitations", "Providing explanations for individual predictions", "Encrypting only the network traffic with no documentation", "Hiding the existence of the AI system from users", "Deleting all evaluation results after deployment"],
+    "correct": [0, 1],
+    "explanation": "Publishing model documentation and offering prediction explanations both improve transparency, while obscuring or deleting information reduces it."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "When should a team consider favoring a more interpretable model over a more complex, higher-performing one? (Select TWO.)",
+    "options": ["When regulations require decisions to be explained to affected individuals", "When stakeholders need to understand and trust the reasoning behind outputs", "When the only goal is to maximize raw accuracy at any cost", "When interpretability is explicitly prohibited by the use case", "When the model must never be documented"],
+    "correct": [0, 1],
+    "explanation": "Regulatory explanation requirements and the need for stakeholder trust are strong reasons to prioritize interpretability over marginal performance gains."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "Which statements about AWS AI Service Cards and SageMaker Model Cards are correct? (Select TWO.)",
+    "options": ["AWS AI Service Cards document responsible AI considerations for AWS-managed AI services", "SageMaker Model Cards document customer-trained models and integrate with the model lifecycle", "AWS AI Service Cards are used to document a customer's own custom-trained models", "SageMaker Model Cards are only available for AWS-managed services and cannot describe custom models", "Both cards primarily function as billing and cost-allocation tools"],
+    "correct": [0, 1],
+    "explanation": "AI Service Cards describe AWS-managed services, while SageMaker Model Cards document customer-trained models; neither is a billing tool, and their scopes are distinct."
+  }
+]
