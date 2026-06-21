@@ -1,0 +1,272 @@
+[
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service is used to manage permissions and control who can access AI/ML resources such as Amazon Bedrock and Amazon SageMaker?",
+    "options": ["AWS IAM", "Amazon Macie", "AWS KMS", "Amazon CloudWatch"],
+    "correct": [0],
+    "explanation": "AWS Identity and Access Management (IAM) governs authentication and authorization, letting you define who can access AI/ML resources and what actions they may perform."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does AWS KMS primarily provide for AI workloads?",
+    "options": ["Managed creation and control of encryption keys", "Automatic model training", "Detection of sensitive data in S3", "Network isolation for endpoints"],
+    "correct": [0],
+    "explanation": "AWS Key Management Service (KMS) lets you create, manage, and control cryptographic keys used to encrypt data, including data used by AI/ML services."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service automatically discovers and helps protect sensitive data such as personally identifiable information (PII) stored in Amazon S3?",
+    "options": ["Amazon Macie", "Amazon Comprehend", "AWS Config", "Amazon Inspector"],
+    "correct": [0],
+    "explanation": "Amazon Macie uses machine learning to discover, classify, and help protect sensitive data like PII in Amazon S3 buckets."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Under the AWS shared responsibility model, which of the following is AWS responsible for?",
+    "options": ["Security of the cloud (physical infrastructure)", "Configuring IAM permissions for your users", "Encrypting your application data", "Managing your data classification"],
+    "correct": [0],
+    "explanation": "AWS is responsible for security 'of' the cloud, including the physical infrastructure, hardware, and managed service software, while customers are responsible for security 'in' the cloud."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the purpose of encrypting data 'in transit' for AI services?",
+    "options": ["To protect data as it moves over the network", "To compress data for faster training", "To remove duplicate records", "To label data for supervised learning"],
+    "correct": [0],
+    "explanation": "Encryption in transit (for example, using TLS) protects data from interception or tampering as it travels across networks between clients and services."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does 'encryption at rest' protect?",
+    "options": ["Data stored on disk or in storage services", "Data while it is being transmitted", "Data displayed in a dashboard", "Network routing tables"],
+    "correct": [0],
+    "explanation": "Encryption at rest protects stored data, such as data in Amazon S3 or on SageMaker volumes, so that it is unreadable if the underlying storage is accessed without authorization."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which security principle recommends granting users only the permissions they need to perform their tasks?",
+    "options": ["Least privilege", "Defense in depth", "Separation of duties", "Fail-safe defaults"],
+    "correct": [0],
+    "explanation": "The principle of least privilege means giving identities only the minimum permissions necessary, reducing the risk and impact of compromised credentials."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a 'prompt injection' attack against a generative AI application?",
+    "options": ["Crafting malicious input that manipulates the model into ignoring its instructions", "Stealing the model's training data from S3", "Overloading the endpoint with traffic", "Encrypting the model weights without authorization"],
+    "correct": [0],
+    "explanation": "Prompt injection occurs when an attacker crafts input designed to override or bypass a model's original instructions or safety guardrails."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS networking feature lets you connect privately to AWS services like Amazon Bedrock without traffic traversing the public internet?",
+    "options": ["AWS PrivateLink (VPC endpoints)", "Amazon Route 53", "AWS Direct Connect billing", "Amazon CloudFront"],
+    "correct": [0],
+    "explanation": "AWS PrivateLink provides VPC interface endpoints that allow private connectivity to AWS services, keeping traffic on the AWS network instead of the public internet."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is 'data lineage' in the context of AI/ML?",
+    "options": ["Tracking the origin and transformations of data over its lifecycle", "Encrypting data before storage", "The speed at which data is processed", "The number of model parameters"],
+    "correct": [0],
+    "explanation": "Data lineage documents where data came from and how it has been transformed, which supports auditing, governance, and trust in AI outputs."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does multi-factor authentication (MFA) add to an AWS account used for AI workloads?",
+    "options": ["An additional layer of sign-in security beyond a password", "Automatic encryption of model outputs", "Faster model inference", "Reduced storage costs"],
+    "correct": [0],
+    "explanation": "MFA requires a second verification factor in addition to a password, making it significantly harder for attackers to access accounts with stolen credentials."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company wants Amazon Bedrock API traffic from its VPC to reach Bedrock without going over the public internet. Which approach should it use?",
+    "options": ["Create an interface VPC endpoint for Bedrock using AWS PrivateLink", "Attach an internet gateway to the VPC", "Use a public NAT gateway", "Enable Amazon CloudFront in front of Bedrock"],
+    "correct": [0],
+    "explanation": "An interface VPC endpoint powered by AWS PrivateLink enables private connectivity to Amazon Bedrock, keeping API traffic within the AWS network."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which feature allows you to use your own customer managed key (CMK) in AWS KMS to encrypt data used by Amazon SageMaker?",
+    "options": ["Specifying a KMS key when creating notebooks, training jobs, or volumes", "Enabling Amazon Macie scanning", "Turning on AWS CloudTrail", "Using an IAM permission boundary"],
+    "correct": [0],
+    "explanation": "SageMaker lets you specify a customer managed KMS key for encrypting storage volumes, training job outputs, and other artifacts, giving you control over the encryption keys."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An organization is concerned that employees might paste sensitive customer PII into prompts sent to a generative AI service. Which combination of controls best addresses this data-leakage risk?",
+    "options": ["Input filtering/guardrails plus data classification policies", "Increasing the model's token limit", "Switching to a larger foundation model", "Disabling encryption at rest"],
+    "correct": [0],
+    "explanation": "Filtering or guardrails on inputs combined with data classification and policy controls help prevent sensitive data from being submitted in prompts and leaking."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which Amazon Bedrock feature helps block harmful content and can be configured to filter prompts and responses, reducing certain prompt-injection and data-leakage risks?",
+    "options": ["Amazon Bedrock Guardrails", "Amazon Bedrock Knowledge Bases", "Amazon Bedrock Agents", "Amazon Bedrock Model Evaluation"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Guardrails let you define content filters, denied topics, and sensitive-information filters (such as PII redaction) applied to model inputs and outputs."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which service records API calls made to Amazon Bedrock and SageMaker, providing an audit trail for security and governance?",
+    "options": ["AWS CloudTrail", "Amazon Macie", "AWS KMS", "Amazon Comprehend"],
+    "correct": [0],
+    "explanation": "AWS CloudTrail logs API activity across AWS services, including Bedrock and SageMaker, enabling auditing, compliance, and security investigations."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company must demonstrate where the data used to fine-tune a model originated and how it was processed for an audit. Which practice supports this requirement?",
+    "options": ["Maintaining data lineage and source attribution records", "Increasing the model temperature", "Deleting all training logs after use", "Using only synthetic data without documentation"],
+    "correct": [0],
+    "explanation": "Capturing data lineage and source attribution provides traceability of data origins and transformations, which is essential for audits and governance."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement about Amazon Bedrock and customer data is accurate?",
+    "options": ["Customer prompts and outputs are not used to train the base foundation models, and data can be encrypted with KMS keys", "All prompts are automatically published publicly", "Bedrock disables encryption by default", "Bedrock requires sharing data with third parties to function"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock does not use a customer's prompts or completions to train the underlying foundation models, and it supports encryption of data with AWS KMS."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "To restrict an Amazon SageMaker training job so it has no internet access, which configuration should be used?",
+    "options": ["Run the training job in network isolation mode within a VPC with no internet route", "Attach an internet gateway and allow all outbound traffic", "Disable IAM roles for the job", "Store data only in a public S3 bucket"],
+    "correct": [0],
+    "explanation": "SageMaker supports network isolation and VPC configurations so training containers cannot make outbound network calls, reducing the risk of data exfiltration."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which approach is the recommended way to give an Amazon SageMaker training job permission to read data from Amazon S3?",
+    "options": ["Assign an IAM role to the SageMaker job", "Hardcode access keys in the training script", "Make the S3 bucket public", "Email credentials to the data scientist"],
+    "correct": [0],
+    "explanation": "Using an IAM role lets SageMaker obtain temporary credentials securely, avoiding the need to embed long-lived access keys in code."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What is the benefit of using Amazon Macie before training a model on a large S3 dataset?",
+    "options": ["It can identify sensitive data such as PII so it can be removed or protected", "It automatically increases model accuracy", "It reduces the number of model parameters", "It encrypts data in transit"],
+    "correct": [0],
+    "explanation": "Macie discovers and classifies sensitive information in S3, helping teams identify and handle PII appropriately before using the data for training."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A regulated company needs to ensure that even AWS personnel cannot access the plaintext keys protecting its SageMaker data, while retaining full control over key usage and rotation. Which option best meets this need?",
+    "options": ["Use a customer managed AWS KMS key with key policies controlling usage", "Rely solely on AWS-owned default encryption", "Store keys in plaintext in an S3 bucket", "Disable encryption and rely on VPC isolation"],
+    "correct": [0],
+    "explanation": "A customer managed KMS key lets the customer define key policies, control usage, and manage rotation, while KMS protects the key material so plaintext keys are not exposed."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An application uses a Bedrock model with a RAG pipeline that pulls documents from multiple internal sources. The security team wants to ensure responses can be traced back to their underlying documents. Which capability addresses this?",
+    "options": ["Source attribution / citations linking outputs to retrieved source documents", "Increasing the model's context window only", "Encrypting the prompt with KMS", "Adding more foundation models to the workflow"],
+    "correct": [0],
+    "explanation": "Source attribution (citations) links generated responses to the specific retrieved documents, supporting traceability, trust, and verification of AI outputs."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Under the shared responsibility model, which security task remains the customer's responsibility when using a fully managed service like Amazon Bedrock?",
+    "options": ["Configuring IAM access, guardrails, and encrypting/classifying their own data", "Patching the underlying GPU host operating systems", "Securing the physical facilities", "Maintaining the foundation model's training infrastructure"],
+    "correct": [0],
+    "explanation": "Even with a fully managed service, customers remain responsible for managing access controls, configuring guardrails, and protecting and classifying their own data."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team retrieves documents from a vector store for a generative AI assistant. A malicious document contains hidden instructions telling the model to ignore its rules. What is this an example of, and what mitigation helps?",
+    "options": ["Indirect prompt injection; mitigate with input sanitization and guardrails on retrieved content", "Encryption failure; mitigate with KMS rotation", "A DDoS attack; mitigate with rate limiting only", "Data lineage gap; mitigate with Macie scanning"],
+    "correct": [0],
+    "explanation": "Embedding malicious instructions in retrieved content is indirect prompt injection; sanitizing inputs and applying guardrails to retrieved data helps mitigate it."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are valid ways to protect data used by Amazon SageMaker? (Select TWO.)",
+    "options": ["Encrypt data at rest using AWS KMS keys", "Deploy training jobs inside a VPC with restricted network access", "Disable IAM roles for all jobs", "Store credentials in plaintext in notebooks", "Make all S3 buckets publicly readable"],
+    "correct": [0, 1],
+    "explanation": "Encrypting data with KMS and isolating workloads within a VPC are both recommended controls; disabling IAM, storing plaintext credentials, and public buckets all weaken security."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are customer responsibilities under the AWS shared responsibility model when running AI workloads? (Select THREE.)",
+    "options": ["Configuring IAM permissions", "Classifying and encrypting their own data", "Setting up guardrails and access controls for applications", "Maintaining the physical security of data centers", "Patching the AWS managed service hypervisor"],
+    "correct": [0, 1, 2],
+    "explanation": "Customers manage their IAM, data classification and encryption, and application-level controls; AWS handles physical security and the underlying managed infrastructure."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "easy",
+    "type": "multiple",
+    "question": "Which of the following help reduce data-leakage risks in generative AI applications? (Select TWO.)",
+    "options": ["Applying guardrails that redact sensitive information", "Filtering or masking PII before it is sent in prompts", "Sharing API keys across all users", "Logging full prompts to a public location", "Disabling all access controls"],
+    "correct": [0, 1],
+    "explanation": "Guardrails that redact sensitive data and PII filtering/masking reduce data leakage, while sharing keys, public logging, and removing access controls increase risk."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which AWS services or features support private and secure access to AI services from a VPC? (Select TWO.)",
+    "options": ["AWS PrivateLink interface VPC endpoints", "Security groups controlling endpoint traffic", "Publicly shared access keys", "An open 0.0.0.0/0 inbound rule on all ports", "Disabling TLS encryption"],
+    "correct": [0, 1],
+    "explanation": "PrivateLink interface endpoints provide private connectivity, and security groups restrict traffic to the endpoints; the other options weaken security posture."
+  },
+  {
+    "category": "Security, Compliance, and Governance",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "An organization wants strong governance and traceability for a Bedrock-based application. Which practices support this goal? (Select TWO.)",
+    "options": ["Maintaining data lineage and source attribution for outputs", "Enabling AWS CloudTrail to log API activity", "Turning off all logging to save costs", "Granting every user administrator privileges", "Storing model outputs in a public bucket"],
+    "correct": [0, 1],
+    "explanation": "Data lineage with source attribution and CloudTrail logging both improve traceability and governance, while disabling logs and over-permissioning undermine it."
+  }
+]

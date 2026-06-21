@@ -1,0 +1,426 @@
+[
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is zero-shot prompting?",
+    "options": [
+      "Providing the model with several labeled examples before asking it to perform a task",
+      "Asking the model to perform a task without providing any examples in the prompt",
+      "Training a model from scratch with no pretraining data",
+      "Using a temperature setting of zero to make outputs deterministic"
+    ],
+    "correct": [1],
+    "explanation": "Zero-shot prompting asks the model to complete a task using only an instruction, without any examples in the prompt."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which prompting technique provides a small number of input-output examples in the prompt to guide the model's response?",
+    "options": [
+      "Zero-shot prompting",
+      "Few-shot prompting",
+      "Chain-of-thought prompting",
+      "Negative prompting"
+    ],
+    "correct": [1],
+    "explanation": "Few-shot prompting includes a few examples (shots) in the prompt so the model can infer the desired format and behavior."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does chain-of-thought (CoT) prompting encourage a model to do?",
+    "options": [
+      "Return only the final answer with no explanation",
+      "Break down a problem into intermediate reasoning steps before answering",
+      "Generate multiple unrelated answers in parallel",
+      "Retrieve documents from an external knowledge base"
+    ],
+    "correct": [1],
+    "explanation": "Chain-of-thought prompting asks the model to reason step by step, which often improves accuracy on complex or multi-step problems."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which inference parameter controls the randomness or creativity of a foundation model's output?",
+    "options": [
+      "Temperature",
+      "Max tokens",
+      "Stop sequence",
+      "Batch size"
+    ],
+    "correct": [0],
+    "explanation": "Temperature controls randomness; lower values make output more deterministic and focused, while higher values make it more diverse and creative."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does the 'max tokens' inference parameter limit?",
+    "options": [
+      "The number of examples allowed in a prompt",
+      "The maximum length of the model's generated response",
+      "The number of documents retrieved in a RAG query",
+      "The size of the vector embeddings"
+    ],
+    "correct": [1],
+    "explanation": "Max tokens caps the number of tokens the model can generate in its response, controlling output length and cost."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does Retrieval-Augmented Generation (RAG) do?",
+    "options": [
+      "Retrains the foundation model on new data each time a query is made",
+      "Retrieves relevant external information and adds it to the prompt to ground the model's response",
+      "Reduces the model's parameter count to lower inference cost",
+      "Generates random responses to test model robustness"
+    ],
+    "correct": [1],
+    "explanation": "RAG retrieves relevant content from an external knowledge source and supplies it as context, grounding responses in up-to-date or proprietary data."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service provides a managed way to implement RAG by connecting foundation models to your own data sources?",
+    "options": [
+      "Amazon Bedrock Knowledge Bases",
+      "Amazon Comprehend",
+      "Amazon Polly",
+      "AWS Glue"
+    ],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Knowledge Bases offers a fully managed RAG workflow, handling data ingestion, embedding, retrieval, and augmentation."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is an embedding in the context of generative AI?",
+    "options": [
+      "A numerical vector representation of text or other data that captures semantic meaning",
+      "A prompt template used for few-shot learning",
+      "A compressed version of the foundation model",
+      "A security policy attached to an AWS resource"
+    ],
+    "correct": [0],
+    "explanation": "An embedding is a dense numeric vector that represents the semantic meaning of data, enabling similarity search in vector databases."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which type of database stores embeddings and enables similarity search for RAG applications?",
+    "options": [
+      "Vector database",
+      "Relational ledger database",
+      "Time-series database",
+      "Graph database"
+    ],
+    "correct": [0],
+    "explanation": "A vector database stores embeddings and supports nearest-neighbor similarity search, which is essential for retrieving relevant context in RAG."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a prompt template?",
+    "options": [
+      "A reusable, structured prompt with placeholders that get filled with specific input values",
+      "A fine-tuned version of a foundation model",
+      "A vector index used to store embeddings",
+      "A billing report for Bedrock usage"
+    ],
+    "correct": [0],
+    "explanation": "A prompt template is a predefined prompt structure containing variables or placeholders, allowing consistent prompts to be reused with different inputs."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon Bedrock capability lets a foundation model take actions by calling APIs and orchestrating multi-step tasks?",
+    "options": [
+      "Amazon Bedrock Agents",
+      "Amazon Bedrock Guardrails",
+      "Amazon Bedrock Model Evaluation",
+      "Amazon Bedrock Provisioned Throughput"
+    ],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Agents orchestrate multi-step tasks by reasoning, calling APIs (action groups), and integrating with knowledge bases."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which approach is generally the fastest and cheapest to try first when improving a foundation model's responses for a task?",
+    "options": [
+      "Prompt engineering",
+      "Full fine-tuning",
+      "Continued pretraining",
+      "Training a model from scratch"
+    ],
+    "correct": [0],
+    "explanation": "Prompt engineering requires no model retraining and is the quickest, lowest-cost approach to improve outputs before considering RAG or fine-tuning."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company needs an LLM chatbot to answer questions using their constantly changing internal policy documents, without retraining the model. Which approach best fits?",
+    "options": [
+      "Fine-tune the model nightly on the documents",
+      "Use Retrieval-Augmented Generation with a knowledge base",
+      "Increase the temperature parameter",
+      "Use zero-shot prompting only"
+    ],
+    "correct": [1],
+    "explanation": "RAG retrieves the latest documents at query time and grounds responses in them, ideal for frequently changing data without retraining."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "How does the top-p (nucleus sampling) inference parameter influence output?",
+    "options": [
+      "It limits the response to the top P number of tokens overall",
+      "It restricts token selection to the smallest set whose cumulative probability exceeds the value p",
+      "It sets the penalty for repeated tokens",
+      "It defines the maximum number of prompts per second"
+    ],
+    "correct": [1],
+    "explanation": "Top-p sampling chooses from the smallest set of tokens whose cumulative probability mass meets the threshold p, balancing diversity and coherence."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A developer wants highly deterministic, repeatable outputs from a foundation model for a factual extraction task. What setting is most appropriate?",
+    "options": [
+      "A high temperature near 1.0",
+      "A low temperature near 0",
+      "A very large max tokens value",
+      "A high top-p value of 1.0"
+    ],
+    "correct": [1],
+    "explanation": "A low temperature reduces randomness and makes the model favor the most probable tokens, producing more deterministic, repeatable output."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which AWS options can serve as the vector store for an Amazon Bedrock Knowledge Base? (Select TWO.)",
+    "options": [
+      "Amazon OpenSearch Serverless",
+      "Amazon Aurora PostgreSQL with the pgvector extension",
+      "Amazon Polly",
+      "Amazon Rekognition",
+      "Amazon Transcribe"
+    ],
+    "correct": [0, 1],
+    "explanation": "Bedrock Knowledge Bases support vector stores including Amazon OpenSearch Serverless and Amazon Aurora PostgreSQL with pgvector."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A team's RAG application returns irrelevant context for user questions. Which embedding-related issue is the MOST likely cause?",
+    "options": [
+      "The max tokens parameter is set too low",
+      "The retrieval step returns chunks with low semantic similarity due to poor chunking or embedding quality",
+      "The temperature is set too high",
+      "The foundation model has too many parameters"
+    ],
+    "correct": [1],
+    "explanation": "In RAG, irrelevant retrieved context often stems from poor document chunking or embedding quality, causing low semantic similarity matches."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "When should fine-tuning be preferred over prompt engineering or RAG?",
+    "options": [
+      "When the data changes every few minutes and must always be current",
+      "When you need the model to adopt a specialized style, format, or domain behavior consistently and have labeled examples",
+      "When you only want to add a few examples to a single prompt",
+      "When you simply want to limit output length"
+    ],
+    "correct": [1],
+    "explanation": "Fine-tuning is appropriate when you need consistent specialized behavior, tone, or domain adaptation and have a labeled dataset to train on."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "What are the main components that an Amazon Bedrock Agent uses to complete tasks? (Select TWO.)",
+    "options": [
+      "Action groups that define APIs or Lambda functions the agent can invoke",
+      "Knowledge bases the agent can query for relevant information",
+      "A dedicated GPU cluster provisioned by the user",
+      "A relational schema migration tool",
+      "A manual approval queue for every token generated"
+    ],
+    "correct": [0, 1],
+    "explanation": "Bedrock Agents use action groups (APIs/Lambda functions) to perform tasks and can connect to knowledge bases to retrieve information."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A prompt produces overly repetitive and predictable text, and the team wants more varied, creative responses. Which adjustment helps?",
+    "options": [
+      "Lower the temperature toward 0",
+      "Raise the temperature and/or top-p",
+      "Reduce max tokens to a very small number",
+      "Remove all examples from the prompt"
+    ],
+    "correct": [1],
+    "explanation": "Increasing temperature and/or top-p broadens the token selection, producing more varied and creative output."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "In a RAG pipeline using Amazon Bedrock, what is the role of an embedding model such as Amazon Titan Text Embeddings?",
+    "options": [
+      "To generate the final natural-language answer to the user",
+      "To convert documents and queries into vectors for similarity search",
+      "To enforce content safety guardrails",
+      "To provision throughput for the foundation model"
+    ],
+    "correct": [1],
+    "explanation": "The embedding model transforms text into vector representations so that semantically similar documents can be retrieved for the query."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which scenarios are good candidates for RAG rather than fine-tuning? (Select TWO.)",
+    "options": [
+      "Answering questions over frequently updated internal documentation",
+      "Grounding responses in proprietary data while citing sources",
+      "Permanently changing the model's writing style across all outputs",
+      "Reducing the model's base inference latency",
+      "Teaching the model a brand-new language from scratch"
+    ],
+    "correct": [0, 1],
+    "explanation": "RAG excels when answers must reflect frequently updated or proprietary data and when source grounding/citation is needed, without retraining the model."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What is a key benefit of using prompt templates in a production application?",
+    "options": [
+      "They eliminate the need for any foundation model",
+      "They provide consistent, reusable prompt structures while inserting dynamic variables",
+      "They automatically fine-tune the model on each request",
+      "They store embeddings in a vector database"
+    ],
+    "correct": [1],
+    "explanation": "Prompt templates standardize prompts with placeholders, improving consistency and maintainability while allowing dynamic input substitution."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A model frequently produces factually incorrect statements about a company's own products. Which technique most directly reduces these hallucinations?",
+    "options": [
+      "Increasing the temperature parameter",
+      "Grounding responses with RAG using the company's verified product data",
+      "Removing the system prompt entirely",
+      "Increasing max tokens"
+    ],
+    "correct": [1],
+    "explanation": "RAG grounds the model's answers in verified, retrieved source data, which directly reduces hallucinations about specific factual content."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Which statement best describes the difference between few-shot prompting and fine-tuning?",
+    "options": [
+      "Few-shot adds examples in the prompt at inference time; fine-tuning updates model weights using a training dataset",
+      "Few-shot updates model weights; fine-tuning only changes the prompt",
+      "Both modify the model's parameters permanently",
+      "Both require a vector database to function"
+    ],
+    "correct": [0],
+    "explanation": "Few-shot prompting provides examples within the prompt without changing the model, while fine-tuning retrains the model weights on a dataset."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An application must let an LLM book travel by calling internal reservation APIs and checking a policy knowledge base in one workflow. Which AWS feature fits best?",
+    "options": [
+      "Amazon Bedrock Agents",
+      "Amazon Bedrock Guardrails alone",
+      "Amazon Titan Image Generator",
+      "Amazon SageMaker Ground Truth"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Agents orchestrate multi-step tasks, invoking APIs through action groups and consulting knowledge bases to complete workflows like booking travel."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A RAG system retrieves correct documents, but the LLM still ignores them and answers from its own knowledge. Which prompt-engineering change is MOST appropriate?",
+    "options": [
+      "Increase top-p to allow more token choices",
+      "Add an explicit instruction in the prompt telling the model to answer only using the provided context and to say it does not know if the context is insufficient",
+      "Remove the retrieved context to simplify the prompt",
+      "Switch to zero-shot prompting with no instructions"
+    ],
+    "correct": [1],
+    "explanation": "Explicit grounding instructions in the prompt direct the model to rely on the retrieved context and to abstain when context is insufficient, reducing ungrounded answers."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "Which factors should most influence the choice between prompt engineering, RAG, and fine-tuning for a use case? (Select THREE.)",
+    "options": [
+      "Whether the required knowledge changes frequently and must stay current",
+      "Whether you have a labeled dataset and need consistent specialized behavior",
+      "The cost and effort you are willing to invest in setup and maintenance",
+      "The color scheme of the application's user interface",
+      "The number of monitors used by the development team"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "The decision hinges on data freshness needs (favoring RAG), availability of training data plus need for specialized behavior (favoring fine-tuning), and acceptable cost/effort (favoring prompt engineering when minimal)."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team uses both temperature and top-p with a model. What is the recommended general practice for these two parameters?",
+    "options": [
+      "Always set both to their maximum values",
+      "Typically adjust one of them rather than both aggressively, since they both control output randomness and can interact unpredictably",
+      "Set max tokens to control randomness instead of either parameter",
+      "They must always be set to identical values"
+    ],
+    "correct": [1],
+    "explanation": "Temperature and top-p both shape sampling randomness, so it is generally recommended to tune one primarily rather than push both, to avoid unpredictable interactions."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An enterprise wants an assistant that always answers in a strict proprietary report format and tone, even with no supporting context, and has thousands of labeled example reports. Live data freshness is not required. Which approach is MOST appropriate?",
+    "options": [
+      "Retrieval-Augmented Generation with a knowledge base",
+      "Fine-tuning the foundation model on the labeled example reports",
+      "Increasing the temperature for more creative output",
+      "Adding a single few-shot example and nothing else"
+    ],
+    "correct": [1],
+    "explanation": "When consistent specialized format and tone are required and a large labeled dataset exists without a need for fresh external data, fine-tuning is the best fit."
+  }
+]

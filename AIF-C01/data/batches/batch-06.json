@@ -1,0 +1,426 @@
+[
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A company wants a foundation model to answer customer questions using its own internal product documentation without retraining the model. Which approach best fits this need?",
+    "options": [
+      "Retrieval Augmented Generation (RAG)",
+      "Continued pre-training",
+      "Full fine-tuning",
+      "Reinforcement learning from human feedback"
+    ],
+    "correct": [0],
+    "explanation": "RAG retrieves relevant content from an external knowledge source at inference time and supplies it to the model, allowing answers grounded in private documents without changing the model's weights."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which metric is most commonly used to evaluate the quality of machine-generated text summaries by comparing them to reference summaries?",
+    "options": [
+      "ROUGE",
+      "F1 score for tabular classification",
+      "Mean absolute error",
+      "R-squared"
+    ],
+    "correct": [0],
+    "explanation": "ROUGE measures the overlap of n-grams between generated and reference text and is widely used to evaluate summarization quality."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does the BLEU metric primarily assess?",
+    "options": [
+      "The quality of machine-translated or generated text against reference text",
+      "The latency of a model's inference responses",
+      "The total cost of running an inference workload",
+      "The diversity of a training dataset"
+    ],
+    "correct": [0],
+    "explanation": "BLEU (Bilingual Evaluation Understudy) compares machine-generated text to one or more reference texts and is commonly used to evaluate translation and generation quality."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon Bedrock feature helps block harmful content and filter undesirable topics in foundation model inputs and outputs?",
+    "options": [
+      "Amazon Bedrock Guardrails",
+      "Amazon Bedrock Knowledge Bases",
+      "Amazon Bedrock Agents",
+      "Amazon Bedrock Provisioned Throughput"
+    ],
+    "correct": [0],
+    "explanation": "Guardrails for Amazon Bedrock lets you define content filters, denied topics, and word filters to safeguard model inputs and outputs."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A team wants to evaluate whether a chatbot's tone and helpfulness meet expectations in ways that are hard to measure automatically. Which evaluation method is most appropriate?",
+    "options": [
+      "Human evaluation",
+      "BLEU scoring only",
+      "Token counting",
+      "Measuring GPU utilization"
+    ],
+    "correct": [0],
+    "explanation": "Human evaluation uses people to judge subjective qualities like tone, helpfulness, and relevance that automated metrics often cannot fully capture."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the main purpose of using a benchmark dataset when evaluating a foundation model?",
+    "options": [
+      "To provide a standardized set of inputs and expected outputs for consistent comparison",
+      "To reduce the model's parameter count",
+      "To encrypt the model weights",
+      "To increase the model's context window"
+    ],
+    "correct": [0],
+    "explanation": "Benchmark datasets offer a standardized, repeatable way to measure and compare model performance across tasks."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which of the following is a business KPI that could be used to evaluate the real-world success of a generative AI customer-support assistant?",
+    "options": [
+      "Average customer handling time reduction",
+      "Number of layers in the neural network",
+      "Size of the model checkpoint in gigabytes",
+      "Number of attention heads"
+    ],
+    "correct": [0],
+    "explanation": "Business KPIs such as reduced handling time, higher customer satisfaction, or deflection rate measure the practical value the model delivers."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Fine-tuning a foundation model requires which of the following?",
+    "options": [
+      "A labeled dataset of examples for the target task",
+      "Only a single prompt at inference time",
+      "Disabling all model weights",
+      "A vector database of unlabeled documents"
+    ],
+    "correct": [0],
+    "explanation": "Fine-tuning adjusts a model's weights using a labeled dataset of task-specific examples to improve performance on that task."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon Bedrock capability lets you compare multiple foundation models using automatic or human-based evaluations before choosing one?",
+    "options": [
+      "Amazon Bedrock model evaluation",
+      "Amazon Bedrock Marketplace billing",
+      "Amazon Bedrock Guardrails",
+      "Amazon Bedrock fine-tuning jobs"
+    ],
+    "correct": [0],
+    "explanation": "Amazon Bedrock provides model evaluation jobs that support automatic and human evaluation to help select the best model for a use case."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "When choosing a foundation model, which factor relates to how quickly the model returns a response to a user?",
+    "options": [
+      "Latency",
+      "Number of training epochs",
+      "Vocabulary embedding size",
+      "Dataset license"
+    ],
+    "correct": [0],
+    "explanation": "Latency measures the time it takes for a model to produce a response, an important trade-off in interactive applications."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which statement best describes RAG compared to fine-tuning?",
+    "options": [
+      "RAG supplies external knowledge at inference time, while fine-tuning changes the model's weights",
+      "RAG always changes the model's weights, while fine-tuning never does",
+      "RAG and fine-tuning are identical techniques",
+      "RAG requires more labeled training data than fine-tuning"
+    ],
+    "correct": [0],
+    "explanation": "RAG augments prompts with retrieved context without modifying weights, whereas fine-tuning updates the model's parameters with training data."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Why might a smaller foundation model be preferred over a larger one for a high-volume, simple classification task?",
+    "options": [
+      "Lower cost and lower latency",
+      "It always produces more creative text",
+      "It has a larger context window",
+      "It requires no input data"
+    ],
+    "correct": [0],
+    "explanation": "Smaller models typically cost less per inference and respond faster, which can be ideal for simple, high-volume tasks where a large model is unnecessary."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company has a large corpus of unlabeled industry-specific documents and wants the model to better understand domain vocabulary and patterns broadly. Which customization approach is most appropriate?",
+    "options": [
+      "Continued pre-training",
+      "Retrieval Augmented Generation",
+      "Prompt engineering only",
+      "Guardrails configuration"
+    ],
+    "correct": [0],
+    "explanation": "Continued pre-training uses large amounts of unlabeled domain data to adapt a model's general knowledge to a specific domain."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A team needs a model that responds in a very specific brand voice and consistently follows a structured output format for a narrow task. They have thousands of labeled example pairs. Which approach fits best?",
+    "options": [
+      "Fine-tuning",
+      "RAG with a vector store",
+      "Increasing the temperature parameter",
+      "Continued pre-training on unlabeled web data"
+    ],
+    "correct": [0],
+    "explanation": "Fine-tuning on labeled input-output pairs is well suited for teaching a model a consistent style, tone, and output format for a specific task."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which scenario is the strongest reason to choose RAG over fine-tuning?",
+    "options": [
+      "The knowledge changes frequently and must stay current without retraining",
+      "The model must permanently learn a new writing style",
+      "There is a large labeled dataset of question-answer pairs",
+      "The goal is to reduce the model's parameter count"
+    ],
+    "correct": [0],
+    "explanation": "RAG is ideal when information changes often, because updating the knowledge source keeps responses current without the cost of retraining."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which practices are part of good data preparation before fine-tuning a foundation model on Amazon Bedrock? (Select TWO.)",
+    "options": [
+      "Ensuring the data is clean, well-formatted, and representative of the task",
+      "Removing personally identifiable information that should not be in the model",
+      "Maximizing the number of duplicate and irrelevant examples",
+      "Setting the inference temperature to its highest value",
+      "Disabling all evaluation after training"
+    ],
+    "correct": [0, 1],
+    "explanation": "Good data preparation includes using clean, representative, well-formatted data and removing sensitive information, since the fine-tuned model learns directly from this data."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An application sends very long prompts with large retrieved contexts on every request. Which cost consideration is most directly affected?",
+    "options": [
+      "The number of input tokens processed, which increases per-request cost",
+      "The number of model layers, which lowers cost",
+      "The training dataset license fees",
+      "The size of the model checkpoint on disk"
+    ],
+    "correct": [0],
+    "explanation": "Most foundation model pricing is based on tokens, so larger inputs increase the input token count and therefore the cost of each request."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A model evaluation job in Amazon Bedrock reports a low accuracy score on a benchmark task, but human reviewers rate the responses highly for helpfulness. What is the most reasonable conclusion?",
+    "options": [
+      "Automated metrics may not fully capture subjective quality, so both views should be considered",
+      "The human reviewers are always wrong",
+      "Accuracy is the only metric that matters",
+      "The model should be deleted immediately"
+    ],
+    "correct": [0],
+    "explanation": "Automated metrics and human evaluation measure different aspects of quality; combining them gives a more complete picture of model performance."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which approach generally has the LOWEST upfront cost and effort to customize a model's behavior for a new task?",
+    "options": [
+      "Prompt engineering",
+      "Full fine-tuning",
+      "Continued pre-training",
+      "Training a model from scratch"
+    ],
+    "correct": [0],
+    "explanation": "Prompt engineering requires no training or weight changes, making it the lowest-cost and fastest way to adapt model behavior."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A retailer wants its RAG-based assistant to never discuss competitor pricing and to filter out hateful language. Which Amazon Bedrock feature should be configured?",
+    "options": [
+      "Guardrails with denied topics and content filters",
+      "Provisioned Throughput",
+      "Model evaluation jobs",
+      "Continued pre-training"
+    ],
+    "correct": [0],
+    "explanation": "Guardrails support denied topics and content filters that can prevent specific subjects and block harmful language in model interactions."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are examples of business KPIs that could be used to evaluate a deployed generative AI assistant? (Select TWO.)",
+    "options": [
+      "Customer satisfaction score (CSAT)",
+      "Reduction in average resolution time",
+      "Number of transformer attention heads",
+      "Size of the model checkpoint in gigabytes",
+      "The model's training learning rate"
+    ],
+    "correct": [0, 1],
+    "explanation": "Business KPIs such as CSAT and reduced resolution time tie model performance to real organizational outcomes; the other options are internal technical attributes."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company is deciding between two foundation models. Model A is larger, more accurate, and more expensive; Model B is smaller, slightly less accurate, and cheaper. The use case is a real-time chat feature with tight budget limits. What is the best evaluation approach?",
+    "options": [
+      "Weigh accuracy against cost and latency to find the best trade-off for the use case",
+      "Always select the most accurate model regardless of cost",
+      "Select the model with the largest number of parameters",
+      "Choose based solely on the marketing description"
+    ],
+    "correct": [0],
+    "explanation": "Model selection should balance accuracy, cost, and latency against the specific requirements of the use case rather than optimizing a single dimension."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "In Amazon Bedrock model evaluation, what is one advantage of using a human-based evaluation job over an automatic one?",
+    "options": [
+      "Humans can assess nuanced qualities like relevance, coherence, and appropriateness",
+      "Human evaluation is always faster and cheaper",
+      "Human evaluation requires no defined criteria",
+      "Human evaluation eliminates the need for test prompts"
+    ],
+    "correct": [0],
+    "explanation": "Human evaluators can judge subjective and context-dependent qualities that automated metrics struggle to measure accurately."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Which of the following best describes the role of a vector embedding in a RAG system?",
+    "options": [
+      "It represents text as numerical vectors so semantically similar content can be retrieved",
+      "It permanently updates the foundation model's weights",
+      "It encrypts the prompt before sending it to the model",
+      "It measures the latency of the inference call"
+    ],
+    "correct": [0],
+    "explanation": "Embeddings convert text into numeric vectors, enabling similarity search to retrieve the most relevant documents for a query in RAG."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A regulated bank needs an assistant grounded in constantly updated policy documents, must cite sources, and cannot risk the model memorizing sensitive data in its weights. Which approach is most appropriate?",
+    "options": [
+      "RAG with a managed knowledge base and citations",
+      "Full fine-tuning on the policy documents",
+      "Continued pre-training on customer records",
+      "Increasing the model temperature to improve grounding"
+    ],
+    "correct": [0],
+    "explanation": "RAG keeps sensitive, frequently changing data in an external store, supports source citations, and avoids baking confidential data into model weights, which suits regulated grounding requirements."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team fine-tuned a model and saw strong results on their training data but poor results on new, unseen inputs. Which problem does this most likely indicate?",
+    "options": [
+      "Overfitting to the fine-tuning dataset",
+      "The model context window being too large",
+      "Too few denied topics in Guardrails",
+      "Excessive use of RAG retrieval"
+    ],
+    "correct": [0],
+    "explanation": "Strong performance on training data but weak generalization to new data is a classic sign of overfitting, often caused by too little or unrepresentative training data."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An organization wants to reduce per-token inference cost and latency for a fine-tuned model that serves steady, high-volume traffic on Amazon Bedrock. Which option most directly addresses predictable capacity and performance?",
+    "options": [
+      "Provisioned Throughput",
+      "On-demand inference only",
+      "A larger benchmark dataset",
+      "Adding more denied topics to Guardrails"
+    ],
+    "correct": [0],
+    "explanation": "Provisioned Throughput reserves dedicated model capacity, providing consistent performance for high, predictable workloads, which is required for custom fine-tuned models in many cases."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A company combines fine-tuning and RAG for the same application. What is the most accurate rationale for using both together?",
+    "options": [
+      "Fine-tuning shapes the model's behavior and style while RAG supplies current, factual knowledge",
+      "RAG retrains the weights and fine-tuning fetches documents",
+      "Both techniques serve the identical purpose, so redundancy improves accuracy",
+      "Using both removes the need to evaluate the model"
+    ],
+    "correct": [0],
+    "explanation": "Fine-tuning is best for behavior, tone, and task format, while RAG is best for injecting up-to-date factual context; combining them leverages each technique's strength."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are valid reasons to choose RAG instead of fine-tuning for a use case? (Select TWO.)",
+    "options": [
+      "The underlying knowledge changes frequently and must stay current",
+      "You need answers grounded in private documents without altering model weights",
+      "You want to permanently change the model's writing style",
+      "You want to reduce the model's parameter count",
+      "You have no source documents at all"
+    ],
+    "correct": [0, 1],
+    "explanation": "RAG excels when knowledge changes often and when grounding answers in private data without modifying the model is required; style changes are better suited to fine-tuning."
+  },
+  {
+    "category": "Applications of Foundation Models",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which factors are important trade-offs to consider when selecting a foundation model for a production application? (Select THREE.)",
+    "options": [
+      "Inference cost",
+      "Response latency",
+      "Accuracy or quality on the target task",
+      "The model author's nationality",
+      "The color of the AWS console"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "Cost, latency, and task accuracy or quality are core trade-offs in model selection, while the other options are irrelevant to performance or value."
+  }
+]

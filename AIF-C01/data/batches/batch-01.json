@@ -1,0 +1,426 @@
+[
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which statement best describes the relationship between artificial intelligence (AI), machine learning (ML), and deep learning?",
+    "options": [
+      "Deep learning is the broadest field, with AI and ML as subsets of it",
+      "AI is the broadest field, ML is a subset of AI, and deep learning is a subset of ML",
+      "AI, ML, and deep learning are three unrelated fields of computing",
+      "ML is the broadest field, with AI and deep learning as subsets of it"
+    ],
+    "correct": [1],
+    "explanation": "AI is the overall discipline of building systems that mimic human intelligence; ML is a subset of AI that learns from data; deep learning is a subset of ML that uses multi-layered neural networks."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "In machine learning, what is a 'label'?",
+    "options": [
+      "An input variable used to make a prediction",
+      "The known correct output associated with a training example",
+      "The algorithm used to train a model",
+      "A metric that measures model accuracy"
+    ],
+    "correct": [1],
+    "explanation": "A label is the target or known correct answer for a training example. In supervised learning the model learns to map features (inputs) to labels (outputs)."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What are 'features' in a machine learning dataset?",
+    "options": [
+      "The final predictions produced by the model",
+      "The individual measurable input variables used to make predictions",
+      "The hyperparameters that control training",
+      "The errors made by the model during training"
+    ],
+    "correct": [1],
+    "explanation": "Features are the input variables (attributes) of the data that the model uses to learn patterns and make predictions."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which type of machine learning uses labeled training data?",
+    "options": [
+      "Unsupervised learning",
+      "Reinforcement learning",
+      "Supervised learning",
+      "Self-supervised pretraining only"
+    ],
+    "correct": [2],
+    "explanation": "Supervised learning trains on data that includes both input features and known output labels, learning to map inputs to the correct outputs."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is 'inference' in the context of a machine learning model?",
+    "options": [
+      "The process of collecting and cleaning training data",
+      "The process of using a trained model to make predictions on new data",
+      "The process of adjusting model weights during training",
+      "The process of labeling raw data"
+    ],
+    "correct": [1],
+    "explanation": "Inference is when a trained model is applied to new, unseen input data to produce predictions or outputs."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A model that predicts whether an email is 'spam' or 'not spam' is performing which task?",
+    "options": [
+      "Regression",
+      "Classification",
+      "Clustering",
+      "Dimensionality reduction"
+    ],
+    "correct": [1],
+    "explanation": "Predicting a discrete category (spam vs. not spam) is a classification task. Two possible classes makes it binary classification."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A model that predicts the future price of a house as a continuous dollar value is performing which task?",
+    "options": [
+      "Classification",
+      "Clustering",
+      "Regression",
+      "Anomaly detection"
+    ],
+    "correct": [2],
+    "explanation": "Predicting a continuous numeric value, such as a price, is a regression task."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which learning approach groups unlabeled data into clusters based on similarity?",
+    "options": [
+      "Supervised learning",
+      "Unsupervised learning",
+      "Reinforcement learning",
+      "Transfer learning"
+    ],
+    "correct": [1],
+    "explanation": "Unsupervised learning finds structure in unlabeled data; clustering is a common unsupervised technique that groups similar data points together."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AI use case is best described as identifying objects, people, or text within images?",
+    "options": [
+      "Natural language processing",
+      "Computer vision",
+      "Forecasting",
+      "Recommendation"
+    ],
+    "correct": [1],
+    "explanation": "Computer vision is the field of AI that enables machines to interpret and analyze visual information such as images and video."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A streaming service suggesting movies a user might like based on their viewing history is an example of which AI use case?",
+    "options": [
+      "Anomaly detection",
+      "Recommendation systems",
+      "Computer vision",
+      "Speech recognition"
+    ],
+    "correct": [1],
+    "explanation": "Recommendation systems predict items a user is likely to be interested in based on their behavior and that of similar users."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the basic processing unit of a neural network often called?",
+    "options": [
+      "A cluster",
+      "A neuron (or node)",
+      "A label",
+      "A feature"
+    ],
+    "correct": [1],
+    "explanation": "A neural network is made of interconnected units called neurons or nodes, organized into layers that pass signals forward."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Detecting fraudulent credit card transactions by flagging unusual purchasing patterns is most closely an example of which use case?",
+    "options": [
+      "Forecasting",
+      "Anomaly detection",
+      "Image classification",
+      "Text summarization"
+    ],
+    "correct": [1],
+    "explanation": "Fraud detection commonly relies on anomaly detection, which identifies data points that deviate significantly from normal patterns."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An online retailer wants to predict next month's product demand using several years of historical sales data. Which ML task is most appropriate?",
+    "options": [
+      "Clustering",
+      "Classification",
+      "Time series forecasting",
+      "Anomaly detection"
+    ],
+    "correct": [2],
+    "explanation": "Predicting future numeric values based on historical, time-ordered data is a forecasting (time series) task."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which scenario is the best fit for reinforcement learning?",
+    "options": [
+      "Grouping customers into segments from purchase data",
+      "Training an agent to play a game by rewarding good moves and penalizing bad ones",
+      "Predicting house prices from labeled historical sales",
+      "Detecting tumors in labeled X-ray images"
+    ],
+    "correct": [1],
+    "explanation": "Reinforcement learning trains an agent to take actions in an environment to maximize cumulative reward through trial and error and feedback."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which of the following problems is generally NOT a good candidate for a machine learning solution?",
+    "options": [
+      "Recognizing handwritten digits from images",
+      "Computing the exact sales tax on an order using a fixed, known percentage rule",
+      "Predicting customer churn from behavioral data",
+      "Translating text between languages"
+    ],
+    "correct": [1],
+    "explanation": "When a problem can be solved with simple, deterministic rules that are fully known, traditional programming is more appropriate than ML. ML adds value where patterns are complex and hard to express as explicit rules."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company has millions of unlabeled customer support tickets and wants to discover natural groupings of similar issues without predefined categories. Which approach fits best?",
+    "options": [
+      "Supervised classification",
+      "Unsupervised clustering",
+      "Regression",
+      "Reinforcement learning"
+    ],
+    "correct": [1],
+    "explanation": "With no predefined labels and a goal of discovering natural groupings, unsupervised clustering is the appropriate technique."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What distinguishes deep learning from traditional machine learning approaches?",
+    "options": [
+      "Deep learning never requires any training data",
+      "Deep learning uses neural networks with many layers that can automatically learn feature representations from raw data",
+      "Deep learning only works for regression problems",
+      "Deep learning always requires manual feature engineering by humans"
+    ],
+    "correct": [1],
+    "explanation": "Deep learning uses multi-layered neural networks that can automatically learn hierarchical feature representations from raw data, reducing the need for manual feature engineering."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A bank wants to automatically transcribe recorded customer phone calls into text. Which AI capability is most directly involved?",
+    "options": [
+      "Computer vision",
+      "Speech recognition (a form of NLP/audio processing)",
+      "Recommendation systems",
+      "Time series forecasting"
+    ],
+    "correct": [1],
+    "explanation": "Converting spoken audio into text is speech recognition, an AI capability closely associated with natural language processing."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "In a supervised learning workflow, what is the primary purpose of splitting data into separate training and test sets?",
+    "options": [
+      "To make training run faster by using less data",
+      "To evaluate how well the model generalizes to data it has not seen during training",
+      "To remove all labels from the dataset",
+      "To convert a regression problem into a classification problem"
+    ],
+    "correct": [1],
+    "explanation": "Holding out a test set lets you measure the model's performance on unseen data, giving a realistic estimate of how it will generalize in production."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which of the following is a natural language processing (NLP) task?",
+    "options": [
+      "Segmenting an image into foreground and background pixels",
+      "Determining the sentiment (positive or negative) of a product review",
+      "Forecasting electricity demand from past usage",
+      "Clustering geographic locations by proximity"
+    ],
+    "correct": [1],
+    "explanation": "Sentiment analysis interprets human language to classify the emotional tone of text, making it a core NLP task."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What does 'overfitting' mean in machine learning?",
+    "options": [
+      "The model performs well on training data but poorly on new, unseen data",
+      "The model performs poorly on both training and test data",
+      "The model has too few parameters to learn anything",
+      "The model trained too quickly to converge"
+    ],
+    "correct": [0],
+    "explanation": "Overfitting occurs when a model memorizes noise and details of the training data, learning patterns that do not generalize, so it performs well on training data but poorly on new data."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement about training data quality is most accurate?",
+    "options": [
+      "Model quality is independent of training data quality",
+      "Poor-quality or biased training data can lead to inaccurate or biased model predictions",
+      "More data always guarantees a better model regardless of relevance",
+      "Labels are optional for all types of machine learning"
+    ],
+    "correct": [1],
+    "explanation": "Model performance depends heavily on training data quality. Inaccurate, incomplete, or biased data produces models that make poor or biased predictions."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team labels each photo in a dataset as 'cat', 'dog', or 'bird', then trains a model to assign one of these three categories to new photos. This is best described as:",
+    "options": [
+      "Binary classification",
+      "Multiclass classification",
+      "Regression",
+      "Unsupervised clustering"
+    ],
+    "correct": [1],
+    "explanation": "Assigning inputs to one of three or more discrete, mutually exclusive labeled classes is multiclass classification."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An ML model shows 99% accuracy on a fraud dataset where only 1% of transactions are fraudulent, yet it fails to catch almost any fraud. What is the most likely explanation?",
+    "options": [
+      "The model is overfitting to fraudulent cases",
+      "Accuracy is misleading on imbalanced data because predicting 'not fraud' every time scores high accuracy",
+      "The dataset has too many features",
+      "The model is using unsupervised learning"
+    ],
+    "correct": [1],
+    "explanation": "With a highly imbalanced dataset, a model can achieve high accuracy by always predicting the majority class while missing the rare class. Metrics like precision and recall are more informative here."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A company wants a model to predict equipment failures, but only has a handful of recorded failure examples and the cost of a missed failure is extremely high. Which consideration is most important when deciding whether ML is appropriate?",
+    "options": [
+      "ML always works best with very small datasets",
+      "Insufficient representative training data for the rare event can make a reliable supervised model difficult to build",
+      "Regression must be used because failures are continuous values",
+      "Unlabeled data alone is enough to predict specific failures accurately"
+    ],
+    "correct": [1],
+    "explanation": "Supervised models need enough representative examples of the target outcome to learn reliably. Very few examples of a rare, high-cost event is a key limitation to weigh before choosing ML."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Which scenario best illustrates the difference between training and inference resource needs?",
+    "options": [
+      "Training and inference always require identical compute resources",
+      "Training is typically a compute-intensive, periodic process, while inference is often a lighter, repeated operation on new inputs",
+      "Inference requires labeled data but training does not",
+      "Inference always takes longer than training for any model"
+    ],
+    "correct": [1],
+    "explanation": "Training usually demands heavy compute over large datasets and runs periodically, whereas inference applies the finished model to new inputs and is generally lighter and run repeatedly in production."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are examples of supervised learning tasks? (Select TWO.)",
+    "options": [
+      "Predicting tomorrow's temperature from labeled historical weather data",
+      "Grouping news articles into unknown topics without labels",
+      "Classifying tumors as benign or malignant from labeled medical images",
+      "Reducing the dimensionality of a dataset for visualization",
+      "Training a robot via reward signals to navigate a maze"
+    ],
+    "correct": [0, 2],
+    "explanation": "Both predicting temperature (regression) and classifying tumors (classification) use labeled data, making them supervised learning. The others are unsupervised or reinforcement learning."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are common, well-suited use cases for machine learning? (Select THREE.)",
+    "options": [
+      "Detecting anomalies in network traffic to find security threats",
+      "Calculating an employee's monthly pay from a fixed hourly rate and hours worked",
+      "Recommending products based on a customer's browsing and purchase history",
+      "Recognizing spoken commands in a voice assistant",
+      "Returning the current date and time from the system clock"
+    ],
+    "correct": [0, 2, 3],
+    "explanation": "Anomaly detection, recommendation, and speech recognition involve complex patterns well suited to ML. Fixed-rate pay calculations and reading the system clock are deterministic tasks better handled by standard programming."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which statements about classification versus regression are correct? (Select TWO.)",
+    "options": [
+      "Classification predicts discrete categories or classes",
+      "Regression predicts continuous numeric values",
+      "Classification always predicts continuous values",
+      "Regression is only used in unsupervised learning",
+      "Clustering and regression are the same task"
+    ],
+    "correct": [0, 1],
+    "explanation": "Classification outputs discrete class labels, while regression outputs continuous numeric values. Both are supervised learning tasks."
+  },
+  {
+    "category": "Fundamentals of AI and ML",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "When evaluating whether machine learning is an appropriate solution for a business problem, which factors are important to consider? (Select TWO.)",
+    "options": [
+      "Whether sufficient relevant, high-quality data is available",
+      "Whether the problem can already be solved precisely with simple deterministic rules",
+      "Whether the company name starts with a vowel",
+      "Whether the office uses an open floor plan",
+      "Whether employees prefer working in the morning"
+    ],
+    "correct": [0, 1],
+    "explanation": "ML suitability depends on having enough relevant quality data and on whether the problem genuinely needs pattern learning rather than simple known rules. The other options are irrelevant to the decision."
+  }
+]

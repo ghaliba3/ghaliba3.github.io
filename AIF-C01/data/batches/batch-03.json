@@ -1,0 +1,426 @@
+[
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a foundation model in the context of generative AI?",
+    "options": [
+      "A large model pre-trained on broad, unlabeled data that can be adapted to many downstream tasks",
+      "A small model trained for a single, narrow classification task",
+      "A rules-based engine that requires no training data",
+      "A database that stores embeddings for similarity search"
+    ],
+    "correct": [0],
+    "explanation": "A foundation model is trained on vast amounts of broad data and can be adapted (e.g., via fine-tuning or prompting) to a wide range of tasks."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does an LLM (large language model) primarily process and generate?",
+    "options": [
+      "Text",
+      "Only images",
+      "Only audio waveforms",
+      "Only structured tabular data"
+    ],
+    "correct": [0],
+    "explanation": "Large language models are designed to understand and generate natural-language text."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a token in the context of large language models?",
+    "options": [
+      "A unit of text (such as a word or sub-word) that the model processes",
+      "A secret credential used to authenticate API calls",
+      "A measure of GPU memory usage",
+      "A label assigned to a training image"
+    ],
+    "correct": [0],
+    "explanation": "LLMs break text into tokens (words or sub-word pieces), and pricing and context limits are often measured in tokens."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is an embedding in generative AI?",
+    "options": [
+      "A numerical vector representation of data that captures semantic meaning",
+      "An encrypted version of a prompt",
+      "A compressed image file format",
+      "A type of GPU instance"
+    ],
+    "correct": [0],
+    "explanation": "Embeddings convert text, images, or other data into vectors of numbers so that similar items are close together in vector space."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "In a prompt-and-completion interaction, what is the completion?",
+    "options": [
+      "The output text the model generates in response to the prompt",
+      "The instructions the user provides to the model",
+      "The training dataset used to build the model",
+      "The maximum number of tokens allowed"
+    ],
+    "correct": [0],
+    "explanation": "The prompt is the input given to the model, and the completion is the generated response."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is a hallucination in the context of generative AI?",
+    "options": [
+      "When a model produces output that is plausible-sounding but factually incorrect or fabricated",
+      "When a model refuses to answer a question",
+      "When a model runs out of memory",
+      "When a model returns the exact same answer every time"
+    ],
+    "correct": [0],
+    "explanation": "A hallucination occurs when a generative model confidently generates information that is false or not grounded in its data."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which task is an example of a generative AI use case?",
+    "options": [
+      "Summarizing a long document into a short paragraph",
+      "Sorting a list of numbers in ascending order",
+      "Calculating the average of a column",
+      "Pinging a server to check uptime"
+    ],
+    "correct": [0],
+    "explanation": "Text summarization is a common generative AI use case; deterministic computations like sorting are not generative tasks."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What type of model is commonly used to generate images from text descriptions?",
+    "options": [
+      "Diffusion model",
+      "Decision tree",
+      "Linear regression model",
+      "K-means clustering model"
+    ],
+    "correct": [0],
+    "explanation": "Diffusion models generate images by iteratively removing noise, and are widely used for text-to-image generation."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does multimodality refer to in generative AI?",
+    "options": [
+      "The ability of a model to process and/or generate more than one type of data, such as text and images",
+      "Running a model across multiple AWS Regions",
+      "Training a model with multiple GPUs",
+      "Supporting multiple human languages only"
+    ],
+    "correct": [0],
+    "explanation": "A multimodal model can handle multiple data types (modalities) such as text, images, audio, or video."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A customer-service chatbot that answers questions in natural language is an example of which generative AI use case?",
+    "options": [
+      "Conversational AI / chatbots",
+      "Image segmentation",
+      "Time-series forecasting",
+      "Anomaly detection"
+    ],
+    "correct": [0],
+    "explanation": "Chatbots and virtual assistants are a core generative AI use case built on language models."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Why is the cost of using large generative AI models a consideration?",
+    "options": [
+      "They require significant compute resources, and usage is often billed by the number of tokens processed",
+      "They require a physical license disc for every user",
+      "They can only run on personal laptops",
+      "They are always free regardless of usage"
+    ],
+    "correct": [0],
+    "explanation": "Large models are compute-intensive, and many services charge based on input and output tokens, making cost an important factor."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does it mean that generative AI output is often nondeterministic?",
+    "options": [
+      "The same prompt can produce different responses on different runs",
+      "The model always returns identical output for a given prompt",
+      "The model cannot produce any output",
+      "The output is always numeric"
+    ],
+    "correct": [0],
+    "explanation": "Because of sampling-based generation, the same prompt can yield different completions across runs, which is nondeterminism."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which neural network architecture underlies most modern large language models?",
+    "options": [
+      "The transformer",
+      "The convolutional neural network (CNN)",
+      "The recurrent radial basis network",
+      "The decision forest"
+    ],
+    "correct": [0],
+    "explanation": "Modern LLMs are based on the transformer architecture, which uses self-attention to model relationships between tokens."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What is the key mechanism that allows transformers to weigh the importance of different tokens in a sequence?",
+    "options": [
+      "Self-attention",
+      "Backpropagation through time",
+      "Max pooling",
+      "Gradient clipping"
+    ],
+    "correct": [0],
+    "explanation": "The self-attention mechanism lets transformers consider relationships between all tokens in a sequence simultaneously."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company wants to find documents semantically similar to a user's query rather than relying on exact keyword matches. Which generative AI concept best supports this?",
+    "options": [
+      "Embeddings and vector similarity search",
+      "One-hot encoding of stop words",
+      "Regular expression matching",
+      "SQL string equality comparison"
+    ],
+    "correct": [0],
+    "explanation": "Embeddings place semantically similar text near each other in vector space, enabling similarity-based search beyond exact keywords."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement best describes the difference between a foundation model and a traditional task-specific machine learning model?",
+    "options": [
+      "A foundation model is pre-trained broadly and adapted to many tasks, while a task-specific model is trained for one task",
+      "A foundation model can only classify images, while a task-specific model handles text",
+      "A foundation model never requires any data, while a task-specific model requires data",
+      "A foundation model is always smaller than a task-specific model"
+    ],
+    "correct": [0],
+    "explanation": "Foundation models are general-purpose and adaptable, whereas traditional ML models are typically built and trained for a single narrow task."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A developer wants an LLM to generate Python functions from natural-language descriptions. This is an example of which use case?",
+    "options": [
+      "Code generation",
+      "Image generation",
+      "Speech-to-text transcription",
+      "Object detection"
+    ],
+    "correct": [0],
+    "explanation": "Generating source code from natural-language prompts is a well-established generative AI use case."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which factor most directly increases the per-request cost of calling a large language model API?",
+    "options": [
+      "A larger number of input and output tokens",
+      "Using lowercase letters in the prompt",
+      "Sending the request over HTTPS instead of HTTP",
+      "Adding more whitespace formatting in the UI"
+    ],
+    "correct": [0],
+    "explanation": "Most LLM services price by tokens, so longer prompts and longer generated responses increase cost."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "What is the context window of a large language model?",
+    "options": [
+      "The maximum number of tokens the model can consider at once, including the prompt and the generated output",
+      "The graphical window where prompts are typed",
+      "The time period during which the model was trained",
+      "The number of users who can query the model simultaneously"
+    ],
+    "correct": [0],
+    "explanation": "The context window is the maximum amount of text (in tokens) the model can process in a single request, covering both input and output."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which approach helps reduce hallucinations by grounding a model's responses in trusted external data?",
+    "options": [
+      "Retrieval Augmented Generation (RAG)",
+      "Increasing the temperature setting",
+      "Removing the system prompt",
+      "Reducing the context window size"
+    ],
+    "correct": [0],
+    "explanation": "RAG retrieves relevant documents and supplies them to the model so responses are grounded in trusted, up-to-date information."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "How does a higher temperature setting typically affect an LLM's text generation?",
+    "options": [
+      "It increases randomness and creativity in the output",
+      "It makes the output strictly deterministic",
+      "It reduces the model's vocabulary",
+      "It compresses the embeddings"
+    ],
+    "correct": [0],
+    "explanation": "Higher temperature increases randomness during sampling, producing more diverse or creative outputs; lower temperature makes output more focused."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A model that can accept an image as input and produce a text description of it is best described as what?",
+    "options": [
+      "A multimodal model",
+      "A unimodal text-only model",
+      "A diffusion-only model",
+      "A tokenizer"
+    ],
+    "correct": [0],
+    "explanation": "Handling more than one modality (image in, text out) makes the model multimodal."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which of the following is generally considered an advantage of generative AI for business?",
+    "options": [
+      "It can rapidly produce drafts of content, accelerating tasks like writing and summarization",
+      "It guarantees that every output is factually correct",
+      "It eliminates the need for any human review",
+      "It always produces identical, reproducible results"
+    ],
+    "correct": [0],
+    "explanation": "Generative AI can speed up content creation and productivity, though outputs still require review for accuracy."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Why might an organization choose a smaller foundation model over a larger one for a high-volume, latency-sensitive application?",
+    "options": [
+      "Smaller models generally offer lower cost and faster inference, which can outweigh marginal quality gains for simple tasks",
+      "Smaller models always produce more accurate results than larger models",
+      "Smaller models can process unlimited tokens at no cost",
+      "Smaller models never hallucinate"
+    ],
+    "correct": [0],
+    "explanation": "For simpler, high-throughput tasks, a smaller model can deliver acceptable quality with lower latency and cost than a larger model."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An LLM confidently cites a research paper that does not exist. Which combination of generative AI characteristics best explains this behavior?",
+    "options": [
+      "Hallucination combined with the model predicting statistically likely tokens rather than retrieving verified facts",
+      "Deterministic output combined with a fixed knowledge base lookup",
+      "Vector compression combined with image diffusion",
+      "Tokenization failure combined with a network timeout"
+    ],
+    "correct": [0],
+    "explanation": "LLMs generate the most probable next tokens and have no built-in fact-verification, so they can fabricate plausible but false references (a hallucination)."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Which statement most accurately describes how transformers process input compared to earlier recurrent models?",
+    "options": [
+      "Transformers process tokens in parallel using attention, rather than sequentially step by step",
+      "Transformers process one token at a time and cannot be parallelized",
+      "Transformers avoid using any numerical representations of tokens",
+      "Transformers require the input to be sorted alphabetically"
+    ],
+    "correct": [0],
+    "explanation": "Unlike recurrent networks that process tokens sequentially, transformers use attention to process tokens in parallel, improving training efficiency."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "multiple",
+    "question": "Which of the following are common use cases for generative AI? (Select TWO.)",
+    "options": [
+      "Text summarization",
+      "Image generation from text prompts",
+      "Sorting integers in a fixed deterministic order",
+      "Computing exact payroll totals",
+      "Pinging network endpoints"
+    ],
+    "correct": [0, 1],
+    "explanation": "Summarization and text-to-image generation are core generative AI use cases; the others are deterministic, non-generative operations."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are recognized limitations or risks of generative AI? (Select TWO.)",
+    "options": [
+      "Hallucinations that produce false but plausible information",
+      "Nondeterministic outputs that can vary between runs",
+      "Guaranteed factual accuracy on every response",
+      "Zero compute cost regardless of usage",
+      "Perfect reproducibility of every output"
+    ],
+    "correct": [0, 1],
+    "explanation": "Hallucinations and nondeterminism are well-known limitations; the other options falsely claim guarantees that generative models do not provide."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which statements about tokens and embeddings are correct? (Select TWO.)",
+    "options": [
+      "Tokens are units of text such as words or sub-words that a model processes",
+      "Embeddings are numerical vectors that capture semantic meaning",
+      "Tokens are always exactly one full word each",
+      "Embeddings are encrypted passwords for API access",
+      "Embeddings can only represent images, never text"
+    ],
+    "correct": [0, 1],
+    "explanation": "Tokens are text units (often sub-words), and embeddings are vectors representing meaning; the other statements are inaccurate."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "A team wants to control cost and latency when deploying an LLM-based application at scale. Which practices are appropriate? (Select THREE.)",
+    "options": [
+      "Limit the number of input and output tokens per request where possible",
+      "Choose a smaller or right-sized model for simpler tasks",
+      "Cache or reuse responses for repeated identical prompts",
+      "Always select the largest available model for every request regardless of task",
+      "Maximize the temperature to reduce token usage"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "Constraining tokens, right-sizing the model, and caching reduce cost and latency; always using the largest model adds cost, and temperature does not reduce token usage."
+  }
+]

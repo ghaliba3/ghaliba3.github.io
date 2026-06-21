@@ -1,0 +1,272 @@
+[
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service provides serverless access to a choice of high-performing foundation models from leading AI companies through a single API?",
+    "options": ["Amazon Bedrock", "Amazon EC2", "Amazon Comprehend", "Amazon Rekognition"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock is a fully managed, serverless service that offers a selection of foundation models from providers such as Anthropic, Meta, and Amazon through a single API."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is the primary benefit of Amazon Bedrock being a serverless service?",
+    "options": ["You do not need to provision or manage any underlying infrastructure", "It is the only service that can train models from scratch", "It requires you to manage GPU clusters manually", "It only works with custom-built models"],
+    "correct": [0],
+    "explanation": "Because Amazon Bedrock is serverless, you can access and use foundation models without provisioning, managing, or scaling any infrastructure."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service is a generative AI-powered assistant designed for business use that can answer questions and generate content based on an organization's enterprise data?",
+    "options": ["Amazon Q Business", "Amazon Polly", "Amazon Translate", "Amazon Kendra"],
+    "correct": [0],
+    "explanation": "Amazon Q Business is a generative AI assistant that connects to enterprise data sources to answer questions, summarize content, and complete tasks for employees."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon Q offering is designed specifically to assist software developers with tasks such as code generation, debugging, and code transformation?",
+    "options": ["Amazon Q Developer", "Amazon Q Business", "Amazon Lex", "Amazon Athena"],
+    "correct": [0],
+    "explanation": "Amazon Q Developer is a generative AI assistant for developers that helps write, debug, test, and transform code, and integrates with IDEs and the AWS console."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is PartyRock?",
+    "options": ["An Amazon Bedrock playground for building generative AI apps without writing code", "A relational database service", "A container orchestration platform", "A data warehousing service"],
+    "correct": [0],
+    "explanation": "PartyRock is an Amazon Bedrock playground that lets anyone experiment with and build generative AI applications without needing to write code."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which SageMaker capability provides a hub of pre-trained, open-source foundation models that can be deployed and fine-tuned with a few clicks?",
+    "options": ["Amazon SageMaker JumpStart", "Amazon SageMaker Ground Truth", "Amazon SageMaker Data Wrangler", "Amazon SageMaker Feature Store"],
+    "correct": [0],
+    "explanation": "SageMaker JumpStart is a machine learning hub offering pre-trained models and built-in solutions, including foundation models, that you can deploy and fine-tune quickly."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A term commonly used to describe a large model trained on broad data that can be adapted to many different downstream tasks is a:",
+    "options": ["Foundation model", "Decision tree", "Linear regression", "Spreadsheet macro"],
+    "correct": [0],
+    "explanation": "A foundation model is a large model pre-trained on broad data that can be adapted (for example through prompting or fine-tuning) to a wide range of tasks."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which of the following is a key value proposition of using managed generative AI services on AWS such as Amazon Bedrock?",
+    "options": ["Faster time to build applications without managing model infrastructure", "Guaranteed elimination of all model bias", "Free unlimited usage with no charges", "No need to follow any security best practices"],
+    "correct": [0],
+    "explanation": "Managed services like Amazon Bedrock let teams build generative AI applications faster by removing the burden of provisioning and operating model infrastructure."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A company wants employees to chat with an internal assistant that securely answers questions using documents in the company's wiki and file shares. Which AWS service is the best fit?",
+    "options": ["Amazon Q Business", "Amazon PartyRock", "Amazon SageMaker Ground Truth", "Amazon Macie"],
+    "correct": [0],
+    "explanation": "Amazon Q Business connects to enterprise data sources and provides a secure generative AI assistant that answers questions grounded in company content."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which statement best describes how a developer typically accesses foundation models in Amazon Bedrock?",
+    "options": ["Through a unified API without managing servers", "By manually installing model weights on EC2 instances", "Only through a physical on-premises appliance", "By writing the model architecture from scratch"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock exposes foundation models through a single, unified API, and as a serverless service it does not require managing servers."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which Amazon Q capability can a developer use to receive real-time inline code suggestions inside their IDE?",
+    "options": ["Amazon Q Developer", "Amazon Q Business", "Amazon QuickSight Q", "Amazon Q in Connect"],
+    "correct": [0],
+    "explanation": "Amazon Q Developer provides inline code completions and suggestions directly within supported IDEs to help developers write code faster."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which feature of Amazon Bedrock helps implement safeguards by filtering harmful content and blocking undesirable topics in generative AI applications?",
+    "options": ["Guardrails for Amazon Bedrock", "Amazon Bedrock Marketplace", "AWS CloudTrail", "Amazon Bedrock Studio billing"],
+    "correct": [0],
+    "explanation": "Guardrails for Amazon Bedrock let you configure content filters and denied topics to build safer generative AI applications across foundation models."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A data science team wants full control over the training infrastructure, custom model fine-tuning, and ML lifecycle management for a generative AI project. Which AWS service is most appropriate?",
+    "options": ["Amazon SageMaker AI", "Amazon Q Business", "Amazon PartyRock", "Amazon Bedrock playgrounds"],
+    "correct": [0],
+    "explanation": "Amazon SageMaker AI gives data scientists full control over infrastructure, training, and the end-to-end ML lifecycle, making it suitable for deep customization."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which scenario is the BEST fit for choosing Amazon Bedrock over Amazon SageMaker for a generative AI application?",
+    "options": ["You want to quickly build a chatbot using existing foundation models via an API without managing infrastructure", "You need to build and train a novel deep learning architecture from raw data", "You require granular control of the training cluster and distributed training", "You want to label a large dataset manually"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock is ideal when you want to consume existing foundation models through an API and build applications quickly without managing infrastructure."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Amazon Bedrock Knowledge Bases primarily enables which generative AI pattern?",
+    "options": ["Retrieval Augmented Generation (RAG) to ground model responses in your data", "Training a foundation model from scratch", "Manual data labeling for supervised learning", "Real-time video transcription"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Knowledge Bases provide a managed Retrieval Augmented Generation capability, retrieving relevant data to ground and improve foundation model responses."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A retailer wants to customize a foundation model in Amazon Bedrock using its own proprietary product descriptions to adapt the model's outputs. Which Bedrock capability supports this?",
+    "options": ["Model customization through fine-tuning", "Amazon Q Developer code transformation", "PartyRock app sharing", "SageMaker Ground Truth labeling jobs"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock supports model customization, including fine-tuning, so you can adapt supported foundation models using your own data while keeping it private."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "When selecting a foundation model in Amazon Bedrock, which combination of factors is MOST relevant to the decision?",
+    "options": ["Modality, latency, cost, accuracy, and supported capabilities", "Only the color of the AWS console theme", "The number of Availability Zones in the world", "The age of the developer's laptop"],
+    "correct": [0],
+    "explanation": "Foundation model selection should weigh factors like modality (text, image), performance and latency, cost, accuracy on the task, and supported capabilities such as context window size."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company wants a non-technical marketing team to prototype generative AI app ideas quickly without writing any code or setting up accounts for production. Which option is best for experimentation?",
+    "options": ["PartyRock", "Amazon SageMaker training jobs", "Amazon EC2 with self-hosted models", "AWS Lambda functions written in Java"],
+    "correct": [0],
+    "explanation": "PartyRock is a no-code Amazon Bedrock playground that lets non-technical users quickly prototype and experiment with generative AI applications."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement about data privacy in Amazon Bedrock is correct?",
+    "options": ["Your prompts and data are not used to train the underlying base foundation models and remain private to you", "All customer prompts are automatically shared with other customers", "Bedrock requires you to make your data public", "Bedrock publishes your fine-tuned models for anyone to use"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock does not use your prompts or data to train the underlying base foundation models, and your data stays private within your environment."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An organization wants to enable autonomous, multi-step task execution where a foundation model can call APIs and use tools to complete tasks. Which Amazon Bedrock capability supports this?",
+    "options": ["Agents for Amazon Bedrock", "Amazon Bedrock Guardrails", "Amazon Q Business plugins only", "SageMaker JumpStart notebooks"],
+    "correct": [0],
+    "explanation": "Agents for Amazon Bedrock can break down user requests into steps and call APIs or knowledge bases to autonomously complete multi-step tasks."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A legacy application written in an old Java version needs to be upgraded to a modern version with minimal manual effort. Which AWS generative AI service offers a code transformation capability for this?",
+    "options": ["Amazon Q Developer", "Amazon Q Business", "Amazon PartyRock", "Amazon Polly"],
+    "correct": [0],
+    "explanation": "Amazon Q Developer includes a code transformation feature that can help upgrade and modernize code, such as upgrading Java application versions."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which Amazon Bedrock pricing model lets you pay for model inference based on the number of input and output tokens processed, with no upfront commitment?",
+    "options": ["On-demand pricing", "Reserved Instances for three years required", "Per-physical-server licensing", "Flat unlimited monthly fee only"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock offers on-demand pricing where you pay per token (or per image) processed, with no time-based commitments required to get started."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A company needs guaranteed model throughput with a higher level of provisioned capacity for a production generative AI workload on Amazon Bedrock. Which option should they consider?",
+    "options": ["Provisioned Throughput", "On-demand only with no other option", "Amazon S3 Glacier", "AWS Snowball"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Provisioned Throughput lets you purchase a level of throughput for a model to support consistent, high-volume production workloads."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A startup wants to deploy an open-weight foundation model, host it on dedicated inference endpoints they control, and integrate it tightly with custom preprocessing pipelines. Which AWS approach best matches these requirements?",
+    "options": ["Deploy the model from SageMaker JumpStart to a SageMaker endpoint", "Use PartyRock to publish the model publicly", "Use Amazon Q Business connectors", "Use Amazon Bedrock Guardrails alone"],
+    "correct": [0],
+    "explanation": "SageMaker JumpStart lets you deploy open foundation models to dedicated SageMaker endpoints you control, supporting tight integration with custom pipelines."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A team is comparing Amazon Bedrock and Amazon SageMaker AI for a gen AI project. Which factor would MOST strongly push the decision toward SageMaker AI rather than Bedrock?",
+    "options": ["The need to fully control training, fine-tuning at scale, and the infrastructure for custom models", "The desire to call existing foundation models through a simple managed API", "The goal of avoiding all infrastructure management", "The need to launch a no-code prototype in minutes"],
+    "correct": [0],
+    "explanation": "SageMaker AI is preferred when you need deep control over training, large-scale fine-tuning, and infrastructure; Bedrock is preferred for consuming managed models via API with minimal operations."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "Amazon Bedrock Model Evaluation helps customers do which of the following when selecting a foundation model?",
+    "options": ["Compare and evaluate models on metrics like accuracy and robustness, including automatic and human-based evaluations", "Automatically increase the model's parameter count", "Permanently delete competing models from AWS", "Guarantee zero hallucinations in all outputs"],
+    "correct": [0],
+    "explanation": "Amazon Bedrock Model Evaluation lets you assess and compare foundation models using automatic metrics and human evaluation to choose the best fit for a use case."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are valid ways Amazon Bedrock lets you customize or improve foundation model responses for your use case? (Select TWO.)",
+    "options": ["Fine-tuning a model with your own labeled data", "Using Knowledge Bases for Retrieval Augmented Generation", "Physically rewiring the GPU hardware", "Editing the model provider's source training corpus", "Manually changing AWS billing invoices"],
+    "correct": [0, 1],
+    "explanation": "Amazon Bedrock supports fine-tuning with your data and Knowledge Bases for RAG, both of which adapt or ground foundation model outputs to your needs."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are key advantages of using managed generative AI services like Amazon Bedrock instead of self-hosting foundation models? (Select TWO.)",
+    "options": ["No infrastructure to provision or manage", "Access to multiple foundation models through a single API", "Guaranteed that outputs will never contain errors", "Elimination of all data governance responsibilities", "Free of charge regardless of usage"],
+    "correct": [0, 1],
+    "explanation": "Amazon Bedrock removes infrastructure management and offers many foundation models via a single API; it does not eliminate governance duties or guarantee error-free, free usage."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "An enterprise is matching AWS gen AI services to needs. Which of the following pairings are appropriate? (Select THREE.)",
+    "options": ["Build a custom app on managed foundation models via API: Amazon Bedrock", "Give employees a secure assistant over internal documents: Amazon Q Business", "Help developers generate and refactor code in the IDE: Amazon Q Developer", "Train a brand-new model architecture with full infrastructure control: PartyRock", "Provide natural-language data questions inside BI dashboards: Amazon Polly"],
+    "correct": [0, 1, 2],
+    "explanation": "Bedrock fits custom apps on managed models, Q Business fits an internal-document assistant, and Q Developer fits coding tasks; custom training uses SageMaker (not PartyRock) and BI natural-language uses Amazon Q in QuickSight (not Polly)."
+  },
+  {
+    "category": "Fundamentals of Generative AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which factors are appropriate criteria when selecting a foundation model for a generative AI workload? (Select TWO.)",
+    "options": ["Inference cost and latency requirements", "The model's accuracy and supported modalities for the task", "The marketing slogan of the model provider", "The number of letters in the model's name", "The hobbies of the model's developers"],
+    "correct": [0, 1],
+    "explanation": "Sensible model selection criteria include cost and latency along with accuracy and the modalities the model supports for the intended task."
+  }
+]

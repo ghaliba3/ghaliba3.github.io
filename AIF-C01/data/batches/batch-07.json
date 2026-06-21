@@ -1,0 +1,426 @@
+[
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service is specifically designed to detect bias in machine learning datasets and models and to explain model predictions?",
+    "options": [
+      "Amazon SageMaker Clarify",
+      "Amazon CloudWatch",
+      "AWS Glue",
+      "Amazon Comprehend"
+    ],
+    "correct": [0],
+    "explanation": "Amazon SageMaker Clarify detects potential bias during data preparation, after training, and in deployed models, and provides feature importance to explain predictions."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A company wants to add safety controls to a generative AI application built on Amazon Bedrock so it can block harmful content and restrict certain topics. Which feature should they use?",
+    "options": [
+      "Guardrails for Amazon Bedrock",
+      "Amazon Bedrock Knowledge Bases",
+      "Amazon Bedrock Agents",
+      "Provisioned Throughput"
+    ],
+    "correct": [0],
+    "explanation": "Guardrails for Amazon Bedrock lets you implement safeguards such as content filters, denied topics, word filters, and sensitive information masking for generative AI applications."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What is meant by 'fairness' as a dimension of responsible AI?",
+    "options": [
+      "Considering the impacts on different groups of stakeholders so the system does not produce discriminatory outcomes",
+      "Ensuring the model trains as quickly as possible",
+      "Maximizing the model's accuracy regardless of cost",
+      "Guaranteeing the lowest possible inference price"
+    ],
+    "correct": [0],
+    "explanation": "Fairness focuses on how a system impacts different groups of stakeholders and avoiding discriminatory or inequitable outcomes."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which responsible AI dimension refers to a model providing accurate and truthful outputs and avoiding hallucinations?",
+    "options": [
+      "Veracity and robustness",
+      "Controllability",
+      "Privacy and security",
+      "Transparency"
+    ],
+    "correct": [0],
+    "explanation": "Veracity and robustness concern the system producing correct, truthful outputs even with unexpected or adversarial inputs, which includes minimizing hallucinations."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A bank trains a loan-approval model only on historical data from one affluent neighborhood. What is the most likely consequence?",
+    "options": [
+      "The model may produce biased predictions that do not generalize fairly to other populations",
+      "The model will train more slowly than usual",
+      "The model will automatically remove all bias",
+      "The model will require no monitoring after deployment"
+    ],
+    "correct": [0],
+    "explanation": "Unrepresentative training data leads to bias, causing the model to perform poorly or unfairly for groups not reflected in the data."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which AWS service monitors deployed models for data drift and quality degradation over time?",
+    "options": [
+      "Amazon SageMaker Model Monitor",
+      "Amazon SageMaker Clarify",
+      "Amazon Textract",
+      "Amazon Polly"
+    ],
+    "correct": [0],
+    "explanation": "Amazon SageMaker Model Monitor continuously monitors production models for data quality, model quality, bias drift, and feature attribution drift."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Bias that originates from the data used to train a model, such as underrepresentation of certain groups, is best described as which type of bias?",
+    "options": [
+      "Dataset (data) bias",
+      "Algorithmic bias",
+      "Latency bias",
+      "Network bias"
+    ],
+    "correct": [0],
+    "explanation": "Dataset bias arises from issues in the training data itself, such as imbalanced, incomplete, or unrepresentative samples."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which responsible AI dimension is concerned with the ability to monitor and steer an AI system's behavior?",
+    "options": [
+      "Controllability",
+      "Fairness",
+      "Veracity",
+      "Explainability"
+    ],
+    "correct": [0],
+    "explanation": "Controllability refers to having mechanisms to monitor, guide, and direct AI system behavior so it operates within intended bounds."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "What does the 'safety' dimension of responsible AI primarily aim to achieve?",
+    "options": [
+      "Preventing the system from causing harm to individuals or society",
+      "Reducing the cost of GPU instances",
+      "Increasing model training throughput",
+      "Compressing the model for mobile devices"
+    ],
+    "correct": [0],
+    "explanation": "Safety focuses on developing algorithms and systems that avoid harmful outputs and protect against dangerous or unintended consequences."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "A guardrail in Amazon Bedrock can be configured to prevent a chatbot from giving financial or medical advice. This is an example of which guardrail capability?",
+    "options": [
+      "Denied topics",
+      "Provisioned throughput",
+      "Model fine-tuning",
+      "Vector embedding"
+    ],
+    "correct": [0],
+    "explanation": "Denied topics let you define subjects the model should avoid, blocking responses that fall within those topics."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Which of the following is a recognized dimension of responsible AI?",
+    "options": [
+      "Transparency",
+      "Compression ratio",
+      "Token throughput",
+      "Spot instance pricing"
+    ],
+    "correct": [0],
+    "explanation": "Transparency, which involves communicating how and when AI is used and how it makes decisions, is one of the core dimensions of responsible AI."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "easy",
+    "type": "single",
+    "question": "Guardrails for Amazon Bedrock can mask or block which kind of data to protect user privacy?",
+    "options": [
+      "Personally identifiable information (PII)",
+      "Model weights",
+      "GPU memory addresses",
+      "S3 bucket policies"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Guardrails include sensitive information filters that can detect and redact or block PII such as names, emails, and phone numbers."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A data scientist wants to compute pre-training bias metrics such as Class Imbalance (CI) and Difference in Proportions of Labels (DPL) before training a model. Which capability should they use?",
+    "options": [
+      "SageMaker Clarify bias detection on the dataset",
+      "SageMaker Model Monitor data quality job",
+      "Bedrock Guardrails content filter",
+      "Amazon Macie classification"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker Clarify computes pre-training bias metrics like Class Imbalance and DPL on the dataset before model training begins."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A deployed model's input feature distribution has shifted significantly from the training data, degrading accuracy. What is this phenomenon called, and which service detects it?",
+    "options": [
+      "Data drift, detected by SageMaker Model Monitor",
+      "Overfitting, detected by SageMaker Clarify",
+      "Hallucination, detected by Bedrock Guardrails",
+      "Underfitting, detected by Amazon Comprehend"
+    ],
+    "correct": [0],
+    "explanation": "A shift in input data distribution is data drift, which SageMaker Model Monitor detects by comparing live data against a baseline."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which statement best distinguishes dataset bias from algorithmic bias?",
+    "options": [
+      "Dataset bias stems from flawed or unrepresentative training data, while algorithmic bias stems from the model design or learning process",
+      "Dataset bias only occurs during inference, while algorithmic bias only occurs during data collection",
+      "Dataset bias is always intentional, while algorithmic bias is always accidental",
+      "There is no meaningful difference between the two"
+    ],
+    "correct": [0],
+    "explanation": "Dataset bias originates in the data (imbalanced, skewed, or unrepresentative), while algorithmic bias arises from choices in the model architecture, objective, or learning procedure."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "After training a model, SageMaker Clarify reports a high SHAP value for one feature. What does this indicate?",
+    "options": [
+      "That feature contributes strongly to the model's predictions",
+      "That feature contains personally identifiable information",
+      "That feature should be removed from the dataset immediately",
+      "That the model has experienced data drift"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker Clarify uses SHAP values to measure feature importance; a high SHAP value means the feature has a large influence on the model's output."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A company notices its generative AI assistant occasionally generates abusive language. Which Guardrails for Amazon Bedrock feature directly addresses this?",
+    "options": [
+      "Content filters for categories such as hate, insults, and violence",
+      "Provisioned throughput scaling",
+      "Knowledge base ingestion",
+      "Model evaluation jobs"
+    ],
+    "correct": [0],
+    "explanation": "Bedrock Guardrails content filters let you set thresholds to block harmful content across categories such as hate, insults, sexual content, and violence."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which approach best helps mitigate bias caused by an underrepresented group in a training dataset?",
+    "options": [
+      "Collect or augment data to better represent the underrepresented group",
+      "Increase the learning rate during training",
+      "Reduce the number of training epochs",
+      "Deploy the model to more Availability Zones"
+    ],
+    "correct": [0],
+    "explanation": "Addressing dataset bias from underrepresentation typically involves collecting more data or augmenting/rebalancing the dataset so all groups are adequately represented."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "An organization wants to detect whether the importance of features in a production model is changing over time compared to a baseline. Which monitoring type should they configure?",
+    "options": [
+      "SageMaker Model Monitor feature attribution drift monitoring",
+      "SageMaker Clarify pre-training bias detection",
+      "Bedrock Guardrails word filters",
+      "Amazon Inspector vulnerability scanning"
+    ],
+    "correct": [0],
+    "explanation": "SageMaker Model Monitor integrates with Clarify to monitor feature attribution drift, alerting when feature importance shifts from the established baseline."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Why is human oversight important when deploying high-stakes AI systems such as those used in hiring or lending?",
+    "options": [
+      "It supports controllability and lets people catch and correct unfair or harmful automated decisions",
+      "It eliminates the need for any model monitoring",
+      "It guarantees the model will never make mistakes",
+      "It reduces the cost of model training"
+    ],
+    "correct": [0],
+    "explanation": "Human-in-the-loop oversight supports controllability and accountability, allowing people to review, override, and correct potentially biased or harmful AI decisions."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A team wants to evaluate whether a deployed classification model produces different positive prediction rates across demographic groups. Which Clarify metric category is most relevant?",
+    "options": [
+      "Post-training bias metrics",
+      "Latency metrics",
+      "Throughput metrics",
+      "Storage cost metrics"
+    ],
+    "correct": [0],
+    "explanation": "Post-training bias metrics in SageMaker Clarify, such as Difference in Positive Proportions in Predicted Labels, measure disparities in model predictions across groups."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which of the following best describes the robustness dimension of responsible AI?",
+    "options": [
+      "The system continues to perform reliably even with noisy, unexpected, or adversarial inputs",
+      "The system uses the cheapest possible compute",
+      "The system is documented in multiple languages",
+      "The system trains without any GPUs"
+    ],
+    "correct": [0],
+    "explanation": "Robustness means the system maintains reliable, accurate performance when faced with unexpected, noisy, or adversarial conditions."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "A retailer's recommendation model was accurate at launch but now performs poorly after customer behavior changed over a year. What is the recommended response?",
+    "options": [
+      "Use Model Monitor to detect the drift and retrain the model on recent data",
+      "Increase the inference instance size only",
+      "Disable all guardrails to improve speed",
+      "Remove the explainability reports"
+    ],
+    "correct": [0],
+    "explanation": "Performance decay from changing behavior reflects drift; Model Monitor can detect it, and retraining on recent representative data restores accuracy."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "single",
+    "question": "Which Bedrock Guardrails feature helps reduce hallucinations by checking whether model responses are grounded in a provided source?",
+    "options": [
+      "Contextual grounding checks",
+      "Denied topics",
+      "PII redaction",
+      "Profanity filter"
+    ],
+    "correct": [0],
+    "explanation": "Contextual grounding checks in Bedrock Guardrails detect and filter responses that are not factually grounded in the source material or are irrelevant to the query, reducing hallucinations."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which of the following are dimensions of responsible AI as described by AWS? (Select TWO.)",
+    "options": [
+      "Fairness",
+      "Controllability",
+      "Spot pricing",
+      "Horizontal autoscaling",
+      "Region replication"
+    ],
+    "correct": [0, 1],
+    "explanation": "Fairness and controllability are both core dimensions of responsible AI; the others are infrastructure or cost concepts unrelated to responsible AI dimensions."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "medium",
+    "type": "multiple",
+    "question": "Which capabilities are provided by Amazon SageMaker Clarify? (Select TWO.)",
+    "options": [
+      "Detecting bias in datasets and models",
+      "Explaining model predictions through feature importance",
+      "Blocking harmful prompts to foundation models",
+      "Auto-scaling inference endpoints",
+      "Managing IAM permissions"
+    ],
+    "correct": [0, 1],
+    "explanation": "SageMaker Clarify detects bias across the ML lifecycle and explains predictions using feature attribution methods such as SHAP."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "A bank deploys a credit model and must continuously meet fairness and reliability obligations. Which combinations of AWS capabilities best support this? (Select THREE.)",
+    "options": [
+      "SageMaker Clarify to measure pre- and post-training bias",
+      "SageMaker Model Monitor to detect data and bias drift in production",
+      "Human review of flagged decisions to maintain controllability",
+      "Reducing the dataset size to speed up training",
+      "Disabling logging to lower storage costs"
+    ],
+    "correct": [0, 1, 2],
+    "explanation": "Clarify measures bias, Model Monitor detects drift in production, and human review supports controllability and accountability; shrinking data and disabling logging undermine fairness and oversight."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "multiple",
+    "question": "Which of the following are effective ways to mitigate bias in a machine learning workflow? (Select TWO.)",
+    "options": [
+      "Rebalancing or augmenting training data to better represent all groups",
+      "Auditing model outputs across subgroups using SageMaker Clarify",
+      "Increasing the inference timeout setting",
+      "Choosing a larger EC2 instance type",
+      "Encrypting the S3 bucket at rest"
+    ],
+    "correct": [0, 1],
+    "explanation": "Rebalancing/augmenting data addresses dataset bias, and auditing outputs across subgroups with Clarify reveals disparities; instance size, timeouts, and encryption do not address bias."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "A model shows high overall accuracy but consistently lower accuracy for one demographic subgroup even though that subgroup is well represented in the data. This pattern most strongly suggests which type of bias?",
+    "options": [
+      "Algorithmic bias arising from the model or training process",
+      "Dataset bias from underrepresentation",
+      "Network latency bias",
+      "Storage fragmentation bias"
+    ],
+    "correct": [0],
+    "explanation": "When the subgroup is adequately represented yet still suffers worse performance, the disparity points to algorithmic bias in how the model learns or optimizes rather than data underrepresentation."
+  },
+  {
+    "category": "Guidelines for Responsible AI",
+    "difficulty": "hard",
+    "type": "single",
+    "question": "An enterprise wants a single Bedrock configuration that blocks self-harm content, denies legal-advice topics, redacts PII, and filters certain profane words across all of its applications. What is the most efficient approach?",
+    "options": [
+      "Create a reusable guardrail in Guardrails for Amazon Bedrock and apply it across applications and models",
+      "Fine-tune a separate model for each application to enforce the rules",
+      "Implement the checks manually in each application's code",
+      "Use SageMaker Clarify to enforce the content rules at inference time"
+    ],
+    "correct": [0],
+    "explanation": "A single Bedrock guardrail can combine content filters, denied topics, PII redaction, and word filters, and can be reused consistently across multiple applications and foundation models."
+  }
+]
