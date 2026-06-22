@@ -1,14 +1,4 @@
-## Welcome to [my public repository](https://ghaliba3.github.io)
-
-
-
-I will make an arduous attempt on sharing my ansible & terraform tutorials for my online students on this account. 
-
-
-### Ansible 1
-### Terraform 2
-### Chef 3
-
+## Welcome to [my public repository]
 
 
 For more details on upcoming courses see [My Github Wiki](https://ghaliba3.github.io/wiki).
