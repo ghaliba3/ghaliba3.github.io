@@ -1,13 +1,13 @@
-## Welcome to [my public repository](https://ghaliba3.github.io)
+## Welcome to [my public profile]((https://skillsprofile.skillbuilder.aws/user/ghalib/certification-badges))
 
 
 
 I will make an arduous attempt on sharing my ansible & terraform tutorials for my online students on this account. 
 
 
-# Ansible 1
-## Terraform 2
-### Chef 3
+# AWS Certified: AWS Generative AI Developer Professional
+# Microsoft Certified: Azure Administrator Associate 
+# AWS Solutions Architect Professional
 
 
 
