@@ -1,0 +1,779 @@
+[
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A service wraps Bedrock text generation and must support Anthropic Claude, Amazon Nova, and Meta Llama behind one code path, letting operators swap models via config without touching request-building logic.\n\n```python\nimport boto3\nbr = boto3.client(\"bedrock-runtime\")\nresp = br.converse(\n    modelId=MODEL_ID,\n    messages=[{\"role\": \"user\", \"content\": [{\"text\": prompt}]}],\n    inferenceConfig={\"maxTokens\": 512, \"temperature\": 0.2},\n)\ntext = resp[\"output\"][\"message\"][\"content\"][0][\"text\"]\n```\n\nWhy is this Converse approach preferable to building per-model `InvokeModel` bodies?",
+    "options": [
+      "Converse automatically enables provisioned throughput, eliminating throttling regardless of model",
+      "InvokeModel does not support Amazon Nova, so Converse is mandatory for that provider",
+      "Converse provides a single unified request/response shape across supported models, so only modelId changes when swapping models",
+      "Converse is the only API that supports streaming, so InvokeModel cannot be swapped across models"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Converse normalizes messages, inferenceConfig, and the output shape across supported models, so provider-specific JSON bodies are unnecessary and only modelId changes. InvokeModel requires the exact native body per provider. Converse does not manage throughput mode, InvokeModel does support Nova with its native body, and streaming exists for both (ConverseStream and InvokeModelWithResponseStream).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Converse does not manage throughput mode; provisioned throughput is a separate reservation via CreateProvisionedModelThroughput, and Converse never auto-enables it or eliminates throttling.",
+      "InvokeModel does support Amazon Nova through its native request body, so Converse is not mandatory for that provider.",
+      "Correct: Converse exposes a single unified request/response schema across supported models, so swapping providers changes only modelId while request-building logic stays the same.",
+      "Both APIs support streaming (ConverseStream and InvokeModelWithResponseStream), so streaming is not a reason InvokeModel cannot be swapped across models."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "The following ConverseStream loop is meant to print incremental text and then the token usage, but usage always prints as an empty dict.\n\n```python\nresp = br.converse_stream(modelId=mid, messages=msgs)\nusage = {}\nfor event in resp[\"stream\"]:\n    if \"contentBlockDelta\" in event:\n        print(event[\"contentBlockDelta\"][\"delta\"][\"text\"], end=\"\")\n    if \"messageStop\" in event:\n        usage = event[\"messageStop\"].get(\"usage\", {})\nprint(usage)\n```\n\nWhat is the correct fix?",
+    "options": [
+      "Read usage from the `messageStart` event, since token counts are sent before generation",
+      "Read usage from the `metadata` event, which carries usage (inputTokens/outputTokens/totalTokens); messageStop only carries stopReason",
+      "Call resp[\"usage\"] after the loop because streaming aggregates usage on the response object",
+      "Add event[\"contentBlockStop\"][\"usage\"] since usage is emitted per content block"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "In ConverseStream the token usage arrives in the metadata event (event[\"metadata\"][\"usage\"]), while messageStop only carries stopReason. There is no top-level usage on the streaming response object, messageStart has no usage, and contentBlockStop only closes a block, so those options are wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "messageStart carries only the assistant role, not usage; token counts are not sent before generation.",
+      "Correct: token usage arrives in the metadata event (event[\"metadata\"][\"usage\"]) with inputTokens/outputTokens/totalTokens.",
+      "converse_stream returns an EventStream under resp[\"stream\"]; there is no aggregated resp[\"usage\"] attribute on the streaming response.",
+      "contentBlockStop only closes a content block and carries no usage; usage is not emitted per content block."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A team calls a Claude model in us-east-1 but wants Bedrock to automatically route requests across multiple US regions to absorb capacity spikes and reduce throttling, without managing endpoints themselves.\n\n```python\nresp = br.converse(\n    modelId=\"<PLACEHOLDER>\",\n    messages=msgs,\n    inferenceConfig={\"maxTokens\": 1024},\n)\n```\n\nWhich value belongs in the placeholder?",
+    "options": [
+      "The bare foundation-model id such as anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "A provisioned-throughput model ARN created with CreateProvisionedModelThroughput",
+      "A batch job ARN returned by CreateModelInvocationJob",
+      "A cross-region (system-defined) inference profile id such as us.anthropic.claude-3-5-sonnet-20240620-v1:0"
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Cross-region inference profiles (prefixed like us./eu./apac.) let Bedrock route on-demand traffic across a region set to improve resilience and throughput. A bare model id stays single-region, a provisioned-throughput ARN reserves fixed capacity (not cross-region routing), and a batch job ARN is for asynchronous offline inference, not synchronous Converse.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "A bare foundation-model id stays pinned to the single calling region and does not trigger any cross-region routing.",
+      "A provisioned-throughput ARN reserves fixed dedicated capacity in one region; it does not perform cross-region on-demand routing.",
+      "A batch job ARN from CreateModelInvocationJob is for asynchronous S3 batch inference, not synchronous Converse routing.",
+      "Correct: a system-defined cross-region inference profile id (us. prefix) lets Bedrock route on-demand traffic across the US region set to absorb spikes and reduce throttling."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "A developer hardens a synchronous Bedrock call against transient failures and misuse.\n\n```python\ntry:\n    resp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 400})\nexcept ClientError as e:\n    code = e.response[\"Error\"][\"Code\"]\n```\n\nWhich statements about these bedrock-runtime exceptions are correct? Select THREE.",
+    "options": [
+      "ThrottlingException is retryable and should be handled with exponential backoff plus jitter",
+      "ValidationException indicates a malformed request (e.g., bad parameter) and retrying unchanged will not help",
+      "ModelTimeoutException can occur when the model does not respond in time and is generally worth retrying",
+      "AccessDeniedException should be resolved by increasing the retry count until IAM eventually allows the call"
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanation": "ThrottlingException and ModelTimeoutException are transient and appropriate for backoff/retry, while ValidationException reflects a client-side request error that retrying unchanged cannot fix. AccessDeniedException is an authorization failure (IAM/model access) that retries never resolve; the fix is a policy or model-access change, so that statement is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: ThrottlingException is transient and retryable, best handled with exponential backoff plus jitter.",
+      "Correct: ValidationException signals a malformed request (e.g., a bad parameter), so retrying the same request unchanged will keep failing.",
+      "Correct: ModelTimeoutException means the model did not respond in time and is generally transient and worth retrying.",
+      "AccessDeniedException is an IAM/model-access authorization failure; retrying never grants permission, so the fix is a policy or model-access change, not more retries."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An offline job must score 4 million stored documents against a Bedrock model overnight at the lowest cost, with no real-time latency requirement.\n\n```python\nbc = boto3.client(\"bedrock\")\nresp = bc.create_model_invocation_job(\n    jobName=\"score-docs\", roleArn=ROLE,\n    modelId=\"anthropic.claude-3-haiku-20240307-v1:0\",\n    inputDataConfig={\"s3InputDataConfig\": {\"s3Uri\": \"s3://bkt/in/\"}},\n    outputDataConfig={\"s3OutputDataConfig\": {\"s3Uri\": \"s3://bkt/out/\"}},\n)\n```\n\nWhy is this batch approach the best fit versus a synchronous loop?",
+    "options": [
+      "Batch inference via CreateModelInvocationJob reads/writes JSONL in S3 asynchronously and offers lower per-token pricing for large offline workloads",
+      "A synchronous Converse loop with a large thread pool is cheaper because it avoids S3 storage costs",
+      "Provisioned throughput with per-document InvokeModelWithResponseStream minimizes total cost for one-off jobs",
+      "Batch inference guarantees sub-second latency per record, which the synchronous loop cannot"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "CreateModelInvocationJob processes JSONL records from S3 asynchronously and writes results back to S3 at a discounted per-token rate suited to large, latency-tolerant jobs. Synchronous loops incur higher on-demand cost and throttling risk, provisioned throughput is about reserved real-time capacity (not cheap bulk scoring), and batch is explicitly not a low-latency path.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: CreateModelInvocationJob runs asynchronous S3 JSONL batch inference at discounted per-token pricing, which fits large, latency-tolerant offline scoring.",
+      "A synchronous Converse thread pool pays full on-demand per-token rates and risks throttling; avoiding trivial S3 storage costs does not make it cheaper.",
+      "Provisioned throughput reserves paid real-time capacity by the hour, which is expensive and wasteful for a one-off offline job.",
+      "Batch inference is explicitly asynchronous and latency-tolerant and makes no sub-second per-record latency guarantee."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A chat feature must stop generation immediately if the model begins to emit \"</output>\".\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=msgs,\n    inferenceConfig={\"maxTokens\": 800, \"stopSequences\": [\"</output>\"]},\n)\nprint(resp[\"stopReason\"])\n```\n\nWhen the model generates \"</output>\", what happens and what is stopReason?",
+    "options": [
+      "Generation continues but the sequence is redacted; stopReason is \"content_filtered\"",
+      "The request raises ValidationException because stopSequences is not allowed with maxTokens",
+      "Generation halts only after maxTokens is reached; stopReason is \"max_tokens\"",
+      "Generation halts at the stop sequence, the sequence itself is excluded from the returned text, and stopReason is \"stop_sequence\""
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "A matched stopSequences entry ends generation at that point, the stop text is excluded from the output, and Converse reports stopReason \"stop_sequence\". It is not a content filter action, stopSequences coexists with maxTokens, and \"max_tokens\" applies only when the token cap is hit first.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "A stop sequence is not a content filter; generation does not continue with redaction, and stopReason is not \"content_filtered\".",
+      "stopSequences and maxTokens are both valid inferenceConfig fields and coexist, so no ValidationException is raised.",
+      "\"max_tokens\" is reported only when the token cap is reached first, not when a stop sequence matches.",
+      "Correct: generation halts at the matched stop sequence, the sequence itself is excluded from the returned text, and stopReason is \"stop_sequence\"."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer wants a Converse call to behave nearly deterministically for regression tests.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=msgs,\n    inferenceConfig={\"maxTokens\": 256, <PLACEHOLDER>},\n)\n```\n\nWhich setting best minimizes run-to-run variance, and why?",
+    "options": [
+      "\"temperature\": 1.0, \"topP\": 1.0 because maximum values disable sampling randomness",
+      "\"temperature\": 0.0 (or the lowest supported), which minimizes sampling randomness and yields near-greedy decoding",
+      "\"topP\": 0.0 which forces the model to always emit the end-of-sequence token first",
+      "\"maxTokens\": 1 because limiting length removes nondeterminism"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Setting temperature to 0 (or the minimum) makes decoding effectively greedy, minimizing variance across runs. High temperature/topP increase randomness, topP of 0 is not a determinism control (and is ill-defined/invalid), and clamping maxTokens just truncates output without removing nondeterminism.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "temperature 1.0 and topP 1.0 are maximum-randomness settings that increase, not disable, sampling variance.",
+      "Correct: temperature 0.0 (or the lowest supported) yields near-greedy decoding, minimizing run-to-run variance.",
+      "topP 0.0 is not a determinism control (it is ill-defined/invalid) and does not force the end-of-sequence token first.",
+      "maxTokens 1 only truncates output to a single token; it does not remove the sampling nondeterminism in decoding."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "This InvokeModel call against an Anthropic Claude 3.x model on Bedrock raises a ValidationException.\n\n```python\nimport json\nbody = json.dumps({\n    \"prompt\": \"Human: Summarize this.\\n\\nAssistant:\",\n    \"max_tokens\": 300,\n    \"temperature\": 0.3\n})\nresp = br.invoke_model(modelId=\"anthropic.claude-3-5-sonnet-20240620-v1:0\", body=body)\n```\n\nWhat is the root cause?",
+    "options": [
+      "modelId must be an ARN, not an id string, for InvokeModel",
+      "invoke_model requires contentType=\"text/plain\" for Anthropic models",
+      "The body uses the legacy text-completions schema; Claude 3.x requires the Messages API format with anthropic_version, messages, and max_tokens",
+      "temperature must be an integer for Anthropic models"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Claude 3.x models on Bedrock use the Messages API native schema: a body with anthropic_version (e.g., bedrock-2023-05-31), a messages array, and max_tokens. The legacy prompt/\"Human:/Assistant:\" completion format is invalid for these models. modelId accepts the id string, the content type is JSON, and temperature is a float.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "InvokeModel accepts the model id string as modelId; an ARN is not required, so this is not the cause.",
+      "invoke_model uses JSON (application/json) content type for Anthropic models, not text/plain.",
+      "Correct: Claude 3.x requires the Messages API schema (anthropic_version, messages array, max_tokens); the legacy prompt/\"Human:/Assistant:\" completion body is invalid.",
+      "temperature is a float for Anthropic models, not an integer, so this is not the root cause."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A workload needs the lowest possible time-to-first-token for a supported Claude model, accepting the same output quality.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=msgs,\n    <PLACEHOLDER>,\n    inferenceConfig={\"maxTokens\": 512},\n)\n```\n\nWhich argument enables latency-optimized inference?",
+    "options": [
+      "performanceConfig={\"latency\": \"optimized\"}",
+      "inferenceConfig={\"latencyMode\": \"fast\"}",
+      "additionalModelRequestFields={\"topP\": 0.1} to shrink the sampling search space",
+      "Switching to InvokeModel, which is inherently lower latency than Converse"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Latency-optimized inference is requested via performanceConfig with latency set to \"optimized\" on supported models/regions, reducing latency without changing outputs. There is no latencyMode field, topP alters sampling breadth not the latency tier, and InvokeModel is not inherently faster than Converse.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: latency-optimized inference is enabled via performanceConfig={\"latency\": \"optimized\"} on supported models/regions, reducing latency without changing outputs.",
+      "There is no latencyMode field in inferenceConfig, so this argument is invalid.",
+      "topP narrows the sampling nucleus (affecting token selection), not the latency tier or time-to-first-token.",
+      "InvokeModel is not inherently lower-latency than Converse; swapping APIs does not enable the latency-optimized tier."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer reads token usage after a non-streaming Converse call to compute cost.\n\n```python\nresp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 500})\nu = resp[\"usage\"]\nprint(u[\"inputTokens\"], u[\"outputTokens\"], u[\"totalTokens\"])\n```\n\nWhich statement about this usage data is correct?",
+    "options": [
+      "inputTokens counts only the final user message and excludes the system prompt and prior turns",
+      "totalTokens is a client-side estimate and may differ from what Bedrock bills",
+      "usage is only present when performanceConfig latency optimization is enabled",
+      "usage reflects billed tokens: inputTokens covers the full input context (system + all messages), outputTokens covers generated tokens, and totalTokens is their sum"
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Converse returns a usage block whose inputTokens accounts for the entire input context (system prompt plus all messages), outputTokens for generated tokens, and totalTokens for their sum, matching billed usage. It is not limited to the last message, is not a client-side estimate, and does not depend on latency optimization.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "inputTokens covers the entire input context (system prompt plus all prior turns), not only the final user message.",
+      "totalTokens is server-reported billed usage, not a client-side estimate.",
+      "usage is always returned by a Converse call and does not depend on performanceConfig latency optimization.",
+      "Correct: usage reflects billed tokens, with inputTokens covering the full input context (system + all messages), outputTokens the generated tokens, and totalTokens their sum."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "This Converse call raises ValidationException.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=[\n        {\"role\": \"system\", \"content\": [{\"text\": \"You are a compliance auditor.\"}]},\n        {\"role\": \"user\", \"content\": [{\"text\": q}]},\n    ],\n    inferenceConfig={\"maxTokens\": 600},\n)\n```\n\nWhat is the correct fix?",
+    "options": [
+      "Change the system message role to \"assistant\" so the model treats it as guidance",
+      "Move the system content into the top-level system parameter: system=[{\"text\": \"You are a compliance auditor.\"}]",
+      "Prefix the user text with 'SYSTEM:' since Converse has no separate system field",
+      "Wrap the system text in inferenceConfig={\"systemPrompt\": ...}"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Converse accepts only \"user\" and \"assistant\" roles in messages; system instructions go in the dedicated top-level system parameter (a list of content blocks). Using role \"system\" is invalid, faking it via assistant or a text prefix loses the system semantics, and there is no systemPrompt field under inferenceConfig.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Relabeling the message to role \"assistant\" does not convey system instructions and misuses the assistant role; the ValidationException is because role \"system\" is invalid inside messages.",
+      "Correct: system instructions go in the dedicated top-level system parameter as a list of content blocks (system=[{\"text\": ...}]).",
+      "Converse does have a dedicated system field, so prefixing the user text with 'SYSTEM:' is unnecessary and loses the system semantics.",
+      "There is no systemPrompt field under inferenceConfig, so this wrapping is invalid."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "A team compares foundation models on Bedrock for a high-volume, cost-sensitive classification API with short prompts, short outputs, and strict p99 latency. Which considerations are valid? Select TWO.",
+    "options": [
+      "Smaller/cheaper models (e.g., Claude Haiku-class, Amazon Nova Micro/Lite) typically offer lower per-token cost and latency, fitting short high-volume tasks",
+      "Per-token pricing and latency vary by model family and size, so the largest frontier model is not automatically the right default",
+      "All Bedrock models share identical per-token pricing, so selection should be based only on region",
+      "Choosing a model automatically guarantees provisioned throughput and removes throttling limits"
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "For short, high-volume, latency-strict tasks, smaller models in each family (Haiku-class, Nova Micro/Lite) usually minimize cost and latency, and pricing/latency genuinely differ across families and sizes, so the biggest model is rarely the right default. Pricing is not uniform across models, and model choice alone does not confer provisioned throughput or remove throttling.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: smaller/cheaper models (Haiku-class, Nova Micro/Lite) typically have lower per-token cost and latency, fitting short high-volume tasks.",
+      "Correct: per-token pricing and latency vary by model family and size, so the largest frontier model is not automatically the right default.",
+      "Bedrock models do not share identical per-token pricing; it differs by model and family, so region alone is not a valid basis for selection.",
+      "Choosing a model does not grant provisioned throughput or remove throttling; that requires a separate capacity reservation."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "The following code parses an InvokeModelWithResponseStream response for an Anthropic Claude model but crashes with a KeyError.\n\n```python\nresp = br.invoke_model_with_response_stream(modelId=mid, body=body)\nfor event in resp[\"body\"]:\n    payload = json.loads(event[\"chunk\"][\"bytes\"])\n    print(payload[\"completion\"], end=\"\")\n```\n\nWhat is the correct way to extract streamed text?",
+    "options": [
+      "Read payload[\"outputText\"] which is the standard field for all Bedrock models",
+      "Use event[\"contentBlockDelta\"][\"delta\"][\"text\"] as with ConverseStream",
+      "Call event[\"chunk\"].decode() directly because chunks are already plain UTF-8 text",
+      "Each chunk is a native event; for Claude Messages streaming, handle type \"content_block_delta\" and read payload[\"delta\"][\"text\"]"
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "InvokeModelWithResponseStream returns native provider events; for Claude Messages streaming, deltas arrive as objects with type \"content_block_delta\" whose delta.text holds the token text (\"completion\" is the legacy field). The Converse-style contentBlockDelta shape only applies to ConverseStream, outputText is a Titan field, and chunk bytes must be JSON-parsed, not just decoded.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "outputText is a Titan-specific field, not a universal Bedrock streaming field, and it is not used by Claude.",
+      "The contentBlockDelta shape belongs to ConverseStream and is not returned by InvokeModelWithResponseStream.",
+      "chunk bytes are JSON payloads that must be json.loads-parsed, not raw plain UTF-8 text to decode directly.",
+      "Correct: native Claude Messages streaming emits events of type \"content_block_delta\" whose delta.text holds the token text (\"completion\" is the legacy field)."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A steady production workload needs guaranteed capacity and consistent latency for a specific model version, and the team accepts a fixed hourly commitment.\n\n```python\nbc = boto3.client(\"bedrock\")\nresp = bc.create_provisioned_model_throughput(\n    modelUnits=2,\n    provisionedModelName=\"prod-claude\",\n    modelId=\"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n)\n```\n\nWhich statement best describes what this achieves?",
+    "options": [
+      "It reserves model units for committed, predictable capacity and latency, and returns a provisionedModelArn to use as modelId at inference time",
+      "It converts the account to on-demand mode, which scales infinitely with no throttling",
+      "It schedules a batch inference job that guarantees real-time capacity",
+      "It creates a cross-region inference profile that contractually guarantees per-request latency"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Provisioned Throughput reserves model units for a committed hourly price and returns a provisionedModelArn used as modelId, delivering predictable capacity and latency. On-demand is subject to shared throttling limits, batch is asynchronous/offline, and cross-region profiles improve resilience but sell neither a latency SLA nor reserved capacity.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Provisioned Throughput reserves model units for committed, predictable capacity and latency and returns a provisionedModelArn to use as modelId at inference time.",
+      "It does not switch the account to on-demand mode; on-demand is the shared, throttled mode and never scales infinitely without limits.",
+      "It is not a batch inference job; batch is asynchronous/offline and does not guarantee real-time capacity.",
+      "It is not a cross-region inference profile, and it sells reserved capacity rather than a contractual per-request latency SLA."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer configures boto3's built-in retries for bedrock-runtime to smooth over ThrottlingException without hand-rolling backoff.\n\n```python\nfrom botocore.config import Config\ncfg = Config(retries={\"max_attempts\": 8, \"mode\": \"<PLACEHOLDER>\"})\nbr = boto3.client(\"bedrock-runtime\", config=cfg)\n```\n\nWhich retry mode adds exponential backoff plus a client-side rate limiter best suited to throttling?",
+    "options": [
+      "\"legacy\"",
+      "\"none\"",
+      "\"adaptive\"",
+      "\"aggressive\""
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "The \"adaptive\" retry mode layers a client-side rate limiter on top of \"standard\" exponential backoff, throttling requests proactively when the service returns throttling errors. \"legacy\" is the older limited-scope mode, \"none\" disables retries, and \"aggressive\" is not a valid botocore retry mode.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "\"legacy\" is the older limited-scope retry mode with no client-side rate limiter suited to throttling.",
+      "\"none\" disables retries entirely, providing no backoff at all.",
+      "Correct: \"adaptive\" layers a client-side rate limiter on top of standard exponential backoff, best suited to throttling.",
+      "\"aggressive\" is not a valid botocore retry mode."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A CLI user invokes a Titan Text model but the command errors before any model call.\n\n```bash\naws bedrock-runtime invoke-model \\\n  --model-id amazon.titan-text-express-v1 \\\n  --body '{\"inputText\":\"Write a haiku\",\"textGenerationConfig\":{\"maxTokenCount\":128}}' \\\n  out.json\n```\n\nWhat is required to make this succeed on AWS CLI v2?",
+    "options": [
+      "Change the service to `aws bedrock invoke-model` since runtime commands live under bedrock",
+      "Add --cli-binary-format raw-in-base64-out (or base64-encode the body) so the raw JSON is accepted for the binary --body parameter",
+      "Remove textGenerationConfig because Titan does not accept generation parameters",
+      "Add --content-type application/octet-stream because Titan bodies are binary"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "The AWS CLI treats --body as a binary blob, so raw JSON needs --cli-binary-format raw-in-base64-out (CLI v2) or manual base64 encoding. invoke-model is correctly under bedrock-runtime, Titan does accept textGenerationConfig (with maxTokenCount), and the content type is application/json, not octet-stream.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "invoke-model is a bedrock-runtime command; the bedrock service is the control plane and has no invoke-model, so this change would fail.",
+      "Correct: the CLI treats --body as a binary blob, so raw JSON needs --cli-binary-format raw-in-base64-out (CLI v2) or manual base64 encoding.",
+      "Titan does accept textGenerationConfig (with maxTokenCount), so removing it is not the fix.",
+      "The content type is application/json, not octet-stream; the failure is the binary-body encoding, not the content type."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "A developer tunes sampling for a Converse call and needs to reason about exact parameter effects.\n\n```python\ninferenceConfig = {\"maxTokens\": 512, \"temperature\": 0.7, \"topP\": 0.9, \"stopSequences\": [\"###\"]}\n```\n\nWhich statements about these inferenceConfig fields are correct? Select TWO.",
+    "options": [
+      "topP is nucleus sampling: it restricts choices to the smallest token set whose cumulative probability reaches the threshold (0.9)",
+      "temperature rescales the probability distribution, with lower values concentrating mass on high-probability tokens",
+      "stopSequences increases the maximum output length beyond maxTokens when a delimiter is present",
+      "maxTokens counts both input and output tokens toward a single combined budget"
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "topP performs nucleus sampling over the smallest cumulative-probability token set (0.9 here), and temperature rescales the distribution so lower values sharpen it toward high-probability tokens. stopSequences ends generation early rather than extending length, and maxTokens caps only generated output tokens (not a combined input+output budget), so those two options are wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: topP is nucleus sampling, restricting choices to the smallest token set whose cumulative probability reaches the threshold (0.9).",
+      "Correct: temperature rescales the probability distribution, with lower values concentrating mass on high-probability tokens.",
+      "stopSequences ends generation early at a delimiter; it never extends output length beyond maxTokens.",
+      "maxTokens caps only generated output tokens, not a single combined input+output budget."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A monitoring wrapper submits a batch inference job and records its identifier for polling.\n\n```python\nbc = boto3.client(\"bedrock\")\nresp = bc.create_model_invocation_job(\n    jobName=\"nightly-scoring\", roleArn=ROLE_ARN,\n    modelId=\"anthropic.claude-3-haiku-20240307-v1:0\",\n    inputDataConfig={\"s3InputDataConfig\": {\"s3Uri\": \"s3://bkt/in/\"}},\n    outputDataConfig={\"s3OutputDataConfig\": {\"s3Uri\": \"s3://bkt/out/\"}},\n)\n```\n\nWhich statement is correct about this API?",
+    "options": [
+      "create_model_invocation_job must be called on the bedrock-runtime client, not bedrock",
+      "The call blocks until all records are processed, then returns the results inline",
+      "roleArn is optional because Bedrock uses the caller's credentials to read S3",
+      "It is a control-plane call on the bedrock client that returns a jobArn; status is checked later with get_model_invocation_job"
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "CreateModelInvocationJob is a control-plane operation on the bedrock client that returns a jobArn immediately; you poll with GetModelInvocationJob and read results from the S3 output location. It is not on bedrock-runtime, it is asynchronous (non-blocking), and an IAM roleArn granting S3 access is required.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "create_model_invocation_job is a control-plane operation on the bedrock client, not bedrock-runtime.",
+      "The call is asynchronous and returns immediately with a jobArn; it does not block until processing completes or return results inline.",
+      "roleArn is required so Bedrock can assume a role to read/write the S3 locations; it does not run under the caller's credentials.",
+      "Correct: it is a control-plane call on the bedrock client that returns a jobArn immediately, with status checked later via get_model_invocation_job."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "This Converse pipeline intermittently fails under load. The team wants to retry only transient errors and surface client errors immediately.\n\n```python\nfrom botocore.exceptions import ClientError\ntry:\n    resp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 400})\nexcept ClientError as e:\n    code = e.response[\"Error\"][\"Code\"]\n    # <PLACEHOLDER>\n```\n\nWhich retry decision is correct?",
+    "options": [
+      "Retry on ValidationException and AccessDeniedException; do not retry ThrottlingException",
+      "Retry with backoff on ThrottlingException and ModelTimeoutException; re-raise ValidationException and AccessDeniedException immediately",
+      "Retry on every ClientError uniformly to keep the code simple",
+      "Retry only on AccessDeniedException because IAM propagation is eventually consistent"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Transient errors (ThrottlingException, ModelTimeoutException) warrant retry with exponential backoff, whereas ValidationException (bad request) and AccessDeniedException (authorization) are deterministic client-side failures that should be raised. Blanket retries waste time and mask bugs, and IAM/model-access issues are not fixed by retry loops.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "This inverts the correct logic: ValidationException and AccessDeniedException are deterministic client errors that should not be retried, while ThrottlingException should be.",
+      "Correct: retry transient ThrottlingException/ModelTimeoutException with backoff, and re-raise deterministic ValidationException/AccessDeniedException immediately.",
+      "Uniformly retrying every ClientError wastes time and masks non-transient client bugs.",
+      "AccessDeniedException here reflects missing IAM/model access, not eventual-consistency propagation, so retrying will not resolve it."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer maintains multi-turn context by appending the model's reply to history for the next Converse call.\n\n```python\nout_msg = resp[\"output\"][\"message\"]\nmessages.append(out_msg)\nmessages.append({\"role\": \"user\", \"content\": [{\"text\": follow_up}]})\nresp2 = br.converse(modelId=mid, messages=messages, inferenceConfig={\"maxTokens\": 500})\n```\n\nWhat is true about maintaining conversation state this way?",
+    "options": [
+      "Bedrock stores conversation state server-side, so re-sending prior turns double-charges tokens and should be avoided",
+      "The assistant message must be re-tagged with role \"user\" before resending, or the call fails",
+      "Converse is stateless per call; the client must resend the full history (including the assistant turn) each time, and input tokens are billed for that context",
+      "Only the latest user message should be sent; Bedrock reconstructs history from the modelId"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Converse holds no server-side session; each call must include the full prior history (assistant turns keep role \"assistant\"), and those input tokens are billed. Bedrock does not persist conversation state, does not reconstruct it from modelId, and does not require relabeling assistant turns as user.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Bedrock does not store conversation state server-side, so re-sending prior turns is required rather than a double-charge to avoid.",
+      "The assistant turn must keep role \"assistant\"; relabeling it \"user\" would corrupt the conversation structure, and the call does not require it.",
+      "Correct: Converse is stateless per call, so the client must resend the full history (including the assistant turn), and input tokens are billed for that context.",
+      "Bedrock cannot reconstruct history from modelId; sending only the latest user message loses all prior context."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An application streams responses and needs to detect why generation ended (natural stop vs truncation).\n\n```python\nfor event in resp[\"stream\"]:\n    if \"<EVENT>\" in event:\n        reason = event[\"<EVENT>\"][\"stopReason\"]\n```\n\nIn ConverseStream, which event carries stopReason (e.g., end_turn, max_tokens, stop_sequence)?",
+    "options": [
+      "contentBlockDelta, under delta.stopReason",
+      "messageStop",
+      "metadata, under metadata.stopReason",
+      "messageStart, which pre-declares how generation will end"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "ConverseStream emits the stopReason in the messageStop event (values like end_turn, max_tokens, stop_sequence, tool_use). contentBlockDelta carries only text/tool deltas, the metadata event carries usage and metrics, and messageStart only opens the message with the role.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "contentBlockDelta carries only text/tool deltas; there is no delta.stopReason field.",
+      "Correct: the messageStop event carries stopReason (end_turn, max_tokens, stop_sequence, tool_use).",
+      "The metadata event carries usage and latency metrics, not stopReason.",
+      "messageStart only opens the message with the role and cannot pre-declare how generation will end."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "A team debates when to prefer InvokeModel over Converse for Bedrock. In which situations is InvokeModel the more appropriate choice? Select TWO.",
+    "options": [
+      "They need provider-specific request fields not surfaced by the Converse unified schema and want full control of the native body",
+      "They want one code path that works unchanged across multiple model families",
+      "They are calling an embeddings model (e.g., Titan Embeddings) that Converse does not support",
+      "They want automatic normalization of the response into a single output shape"
+    ],
+    "correct": [
+      0,
+      2
+    ],
+    "explanation": "InvokeModel exposes each model's native body, so it fits when you need provider-specific parameters or must call model types Converse does not support (such as embeddings). The unified single code path and normalized output shape are exactly the benefits of Converse, not reasons to drop to InvokeModel.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: InvokeModel exposes the model's native body, fitting cases that need provider-specific request fields not surfaced by the Converse unified schema.",
+      "One unchanged code path across model families is a Converse benefit, not a reason to drop to InvokeModel.",
+      "Correct: embeddings models (e.g., Titan Embeddings) are unsupported by Converse and must be called via InvokeModel.",
+      "Automatic normalization of the response into a single output shape is a Converse benefit, not an InvokeModel one."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer sets maxTokens too low and the model stops mid-sentence.\n\n```python\nresp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 20})\nprint(resp[\"stopReason\"], len(resp[\"output\"][\"message\"][\"content\"][0][\"text\"]))\n```\n\nWhat stopReason is reported, and what does maxTokens control?",
+    "options": [
+      "\"end_turn\"; maxTokens caps the combined input and output token count",
+      "\"content_filtered\"; maxTokens triggers a guardrail when exceeded",
+      "\"max_tokens\"; maxTokens caps only generated output tokens, so hitting it truncates the response",
+      "\"stop_sequence\"; maxTokens is treated as an implicit stop sequence"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "maxTokens limits only generated output tokens; when the model reaches that cap before finishing, Converse returns stopReason \"max_tokens\" and the text is truncated. It does not include input tokens, is unrelated to content filtering/guardrails, and is not a stop sequence.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "\"end_turn\" signals a natural finish; hitting the token cap does not report end_turn, and maxTokens does not cap combined input+output.",
+      "\"content_filtered\" is a guardrail action; maxTokens is a length cap and does not trigger a guardrail.",
+      "Correct: maxTokens caps only generated output tokens, so reaching it truncates the response and reports stopReason \"max_tokens\".",
+      "maxTokens is a numeric length cap, not an implicit stop sequence, so stopReason is not \"stop_sequence\"."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A regulated workload calls a Claude model but Bedrock returns AccessDeniedException mentioning the model is not enabled, even though the IAM role has bedrock:InvokeModel.\n\n```python\n# botocore.errorfactory.AccessDeniedException:\n# \"You don't have access to the model with the specified model ID.\"\n```\n\nWhat is the most likely cause and fix?",
+    "options": [
+      "The account/region has not been granted model access for that foundation model; enable it on the Bedrock model access page",
+      "The bedrock-runtime endpoint is down; retry with exponential backoff until it succeeds",
+      "InvokeModel requires the model ARN, and passing the model id triggers AccessDenied",
+      "The IAM policy must also include s3:GetObject for synchronous InvokeModel"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Beyond IAM permissions, each foundation model must be explicitly enabled for the account/region via Bedrock model access; without it you get AccessDeniedException. It is not a transient outage (retries will not help), model id strings are valid for InvokeModel, and synchronous InvokeModel does not require S3 permissions.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: beyond IAM permissions, each foundation model must be explicitly enabled for the account/region on the Bedrock model access page.",
+      "AccessDeniedException about model access is not a transient endpoint outage; retrying with backoff will never grant access.",
+      "InvokeModel accepts the model id string, so passing an id (rather than an ARN) does not cause AccessDenied.",
+      "Synchronous InvokeModel does not require s3:GetObject; S3 permissions are only relevant to batch inference jobs."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer builds a Converse request with a system prompt and tuned sampling for a Mistral model on Bedrock. Which request is well-formed?",
+    "options": [
+      "converse(modelId=mid, messages=[{\"role\": \"user\", \"content\": \"Answer only in JSON. \" + q}], inferenceConfig={\"max_tokens\": 512})",
+      "converse(modelId=mid, system=\"Answer only in JSON.\", messages=[{\"role\": \"user\", \"text\": q}])",
+      "converse(modelId=mid, system=[{\"text\": \"Answer only in JSON.\"}], messages=[{\"role\": \"user\", \"content\": [{\"text\": q}]}], inferenceConfig={\"temperature\": 0.2, \"topP\": 0.9, \"maxTokens\": 512})",
+      "converse(modelId=mid, messages=[{\"role\": \"user\", \"content\": [{\"text\": q}]}], samplingConfig={\"temperature\": 0.2})"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "The correct shape uses system as a list of content blocks, messages with content as a list of typed blocks ([{\"text\": ...}]), and inferenceConfig with camelCase maxTokens plus temperature/topP. Content must be a list of blocks (not a raw string), system must be a list (not a bare string), the field is maxTokens (not max_tokens), and there is no samplingConfig parameter.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Content is a raw string rather than a list of typed blocks, and the field is max_tokens instead of the required camelCase maxTokens.",
+      "system must be a list of content blocks (not a bare string), and the user message must use a content list of typed blocks (not a \"text\" key).",
+      "Correct: system is a list of content blocks, messages use content as a list of typed blocks ([{\"text\": ...}]), and inferenceConfig uses camelCase maxTokens with temperature/topP.",
+      "There is no samplingConfig parameter in Converse; sampling settings belong in inferenceConfig."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A team wants one inference profile with a cost-allocation tag so all spend through it is tracked to a project, then call it like any model.\n\n```python\nbc = boto3.client(\"bedrock\")\nresp = bc.create_inference_profile(\n    inferenceProfileName=\"team-x-claude\",\n    modelSource={\"copyFrom\": \"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0\"},\n    tags=[{\"key\": \"project\", \"value\": \"x\"}],\n)\n```\n\nWhat is the correct way to use the result?",
+    "options": [
+      "Set a cost-allocation tag on the bare foundation model id at call time via a request header instead",
+      "Pass the returned application inference profile ARN as modelId in Converse/InvokeModel so spend is attributed via the tag",
+      "Use CreateModelInvocationJob with a tags field, which is the only tag-aware inference path",
+      "Provisioned Throughput is required because on-demand inference cannot be tagged"
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Application inference profiles can be created (from a model or a system-defined profile) with tags for cost tracking, and their ARN is passed as modelId in inference calls. You cannot tag a bare foundation model id via a header, tagging is not exclusive to batch jobs, and provisioned throughput is not required to attribute on-demand costs.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "You cannot attach a cost-allocation tag to a bare foundation model id via a request header; tag attribution requires an inference profile.",
+      "Correct: pass the returned application inference profile ARN as modelId in Converse/InvokeModel so spend is attributed via its tag.",
+      "Tagging is not exclusive to CreateModelInvocationJob; application inference profiles tag on-demand synchronous inference too.",
+      "Provisioned Throughput is not required to attribute on-demand costs; application inference profiles handle tagging without it."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "An engineer parses a ConverseStream response and must handle each event correctly.\n\n```python\nfor event in resp[\"stream\"]:\n    ...  # dispatch by event key\n```\n\nWhich handling statements are correct? Select THREE.",
+    "options": [
+      "messageStart announces the assistant message and carries the role",
+      "contentBlockDelta carries incremental output via delta.text (or tool-use input deltas)",
+      "metadata carries usage (token counts) and latency metrics for the whole response",
+      "contentBlockStart carries the final aggregated usage totals for billing"
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanation": "messageStart opens the assistant message with its role, contentBlockDelta streams incremental text/tool deltas, and the metadata event carries usage and latency metrics. contentBlockStart only signals the beginning of a content block (e.g., a tool-use block) and does not carry billing usage totals, so that option is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: messageStart announces the assistant message and carries its role.",
+      "Correct: contentBlockDelta carries incremental output via delta.text (or tool-use input deltas).",
+      "Correct: the metadata event carries usage (token counts) and latency metrics for the whole response.",
+      "contentBlockStart only signals the beginning of a content block (e.g., a tool-use block) and carries no aggregated usage/billing totals."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A cost review finds a synchronous pipeline re-sending an identical 6,000-token instruction block on every one of millions of daily Converse calls, driving up input-token spend.\n\n```python\nSYSTEM = load_big_instructions()  # ~6000 tokens, identical each call\nresp = br.converse(modelId=mid, system=[{\"text\": SYSTEM}], messages=msgs,\n                   inferenceConfig={\"maxTokens\": 400})\n```\n\nWhich optimization most directly reduces cost and is supported by Bedrock?",
+    "options": [
+      "Enable Bedrock prompt caching for the repeated prefix so cache-hit input tokens are billed at a reduced rate",
+      "Switch every call to batch inference, which caches prompts automatically for synchronous traffic",
+      "Set temperature to 0 to reduce the number of input tokens processed",
+      "Move the instructions into inferenceConfig, which is not billed as input tokens"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Prompt caching lets Bedrock reuse a repeated prompt prefix so cache-hit input tokens are billed at a reduced rate, directly cutting cost for large static instruction blocks. Batch inference is for offline jobs (not synchronous traffic) and is not a caching mechanism, temperature does not affect input token counts, and inferenceConfig is not a place to store prompt text.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Bedrock prompt caching reuses the repeated prefix so cache-hit input tokens are billed at a reduced rate, directly cutting cost.",
+      "Batch inference is for offline jobs, not synchronous traffic, and it is not a prompt-caching mechanism.",
+      "temperature affects sampling randomness, not the number of input tokens processed or billed.",
+      "inferenceConfig holds sampling parameters, not prompt text, and cannot exempt instructions from input-token billing."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer must pass a base64/raw image plus a question to Amazon Nova via Converse for multimodal reasoning.\n\n```python\ncontent = <PLACEHOLDER>\nresp = br.converse(modelId=NOVA_ID,\n    messages=[{\"role\": \"user\", \"content\": content}],\n    inferenceConfig={\"maxTokens\": 300})\n```\n\nWhich content structure is correct?",
+    "options": [
+      "[{\"imageUrl\": \"data:image/jpeg;base64,...\"}, {\"text\": \"What defect is shown?\"}]",
+      "\"<image>...base64...</image> What defect is shown?\"",
+      "[{\"image\": {\"format\": \"jpeg\", \"source\": {\"bytes\": img_bytes}}}, {\"text\": \"What defect is shown?\"}]",
+      "[{\"text\": \"What defect is shown?\"}] with the image passed in inferenceConfig={\"image\": img_bytes}"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Converse multimodal content uses an image block with a format and a source carrying raw bytes (source.bytes), alongside a text block, in the content list. Converse does not use an imageUrl/data-URI field, does not accept images embedded in a raw string, and images are never passed via inferenceConfig.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Converse has no imageUrl/data-URI field; images are passed as image blocks with raw bytes, not as URLs.",
+      "Converse does not accept an image embedded in a raw text string with pseudo-tags.",
+      "Correct: a Converse image block uses a format and a source carrying raw bytes (source.bytes), alongside a text block in the content list.",
+      "Images are never passed via inferenceConfig; multimodal input belongs in the message content list."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "During a sustained traffic spike, a Converse-based service returns ThrottlingException on a fraction of requests even with boto3 adaptive retries, and account quotas cannot be raised immediately.\n\n```python\ncfg = Config(retries={\"max_attempts\": 10, \"mode\": \"adaptive\"})\nbr = boto3.client(\"bedrock-runtime\", config=cfg)  # still throttling at peak\n```\n\nWhich change most directly reduces throttling for this steady, business-critical traffic?",
+    "options": [
+      "Increase inferenceConfig maxTokens so fewer total requests are needed",
+      "Set temperature to 0 to make requests cheaper and thus exempt from throttling",
+      "Switch to InvokeModel, which is not subject to throttling",
+      "Purchase Provisioned Throughput (model units) to reserve dedicated capacity separate from on-demand limits"
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Provisioned Throughput reserves dedicated model-unit capacity not subject to shared on-demand throttling limits, directly addressing sustained throttling for critical traffic. Larger maxTokens does not reduce request count, InvokeModel shares the same on-demand quotas, and temperature has no effect on throttling.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Increasing maxTokens raises output length per call, not the number of requests, so it does not reduce throttling.",
+      "temperature has no effect on throttling; requests are not made exempt by being \"cheaper\".",
+      "InvokeModel shares the same on-demand account quotas as Converse and is equally subject to throttling.",
+      "Correct: Provisioned Throughput reserves dedicated model-unit capacity separate from shared on-demand limits, directly reducing throttling for steady critical traffic."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A production endpoint invoking Anthropic Claude in us-east-1 begins returning ThrottlingException during daily traffic peaks, even though the account is well under its overall service quota. The team wants higher sustained throughput without reserving dedicated capacity and can tolerate requests being served from other Regions in the same geography. What should they use?",
+    "options": [
+      "An on-demand cross-region inference profile so requests are automatically routed across Regions in the geography for higher throughput and resilience",
+      "A single-Region Provisioned Throughput reservation pinned to us-east-1",
+      "Batch inference jobs to spread the load over time",
+      "A latency-optimized inference profile to remove throttling"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Cross-region inference profiles route on-demand requests across the Regions in a geography, increasing sustained throughput and availability without a capacity reservation. Requests may be processed in any Region within the profile's geography. Provisioned Throughput reserves capacity in a single Region, batch is asynchronous, and latency-optimized inference targets latency, not throttling.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: an on-demand cross-region (system-defined) inference profile distributes traffic across the Regions in its geography, raising effective throughput and resilience with no reserved capacity.",
+      "Provisioned Throughput reserves dedicated capacity (and cost) in one Region — the opposite of 'without reserving dedicated capacity'.",
+      "Batch inference is asynchronous and does not help a real-time endpoint's peak throughput.",
+      "Latency-optimized inference reduces response latency on supported models; it does not add cross-Region capacity to relieve throttling."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "After fine-tuning Amazon Nova on proprietary data, a developer calls the Converse API with the resulting custom model ID and receives an error that the model cannot be invoked on demand. What is required to run inference against a customized model in Amazon Bedrock?",
+    "options": [
+      "Purchase Provisioned Throughput (model units) for the custom model; customized models are not available for on-demand inference",
+      "Enable a cross-region inference profile for the custom model",
+      "Re-request access to the base model in the Bedrock console",
+      "Convert the model to a batch inference job"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Customized models in Bedrock are not offered on demand; you must buy Provisioned Throughput (measured in model units) to create an endpoint for the custom model before invoking it via InvokeModel/Converse or batch.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: custom (fine-tuned or continued-pre-trained) models must be deployed with Provisioned Throughput before they can be invoked.",
+      "Inference profiles apply to supported on-demand base models, not to running a custom model without provisioned capacity.",
+      "Base-model access governs the foundation model, not invocation of your derived custom model.",
+      "Batch inference still requires the custom model to be served via Provisioned Throughput."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A nightly pipeline must summarize roughly two million archived documents stored in Amazon S3. Latency per item is irrelevant, but cost matters and the job should not compete with the interactive API traffic. Which Bedrock capability best fits?",
+    "options": [
+      "Batch inference via CreateModelInvocationJob, reading input from S3 and writing results back to S3 at a lower per-token price",
+      "A high concurrency of on-demand InvokeModel calls",
+      "ConverseStream to overlap generation with processing",
+      "Provisioned Throughput sized for two million requests"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Bedrock batch inference (CreateModelInvocationJob) is designed for large, latency-insensitive datasets in S3, runs asynchronously, and is offered at a lower price than on-demand — ideal for bulk offline summarization.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: batch inference processes large S3 datasets asynchronously at a discounted price and runs separately from real-time traffic.",
+      "Flooding on-demand InvokeModel would risk throttling and compete with interactive traffic at full price.",
+      "Streaming only changes how a single response is delivered; it does not address large asynchronous batch workloads or cost.",
+      "Provisioned Throughput reserves capacity for steady real-time load and is not the cost-optimal path for a one-off bulk job."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A chat interface should display the model's answer word-by-word as it is produced, rather than waiting for the full completion. Using the Converse family of APIs, what is the correct approach?",
+    "options": [
+      "Call ConverseStream and render the incremental contentBlockDelta events as they arrive",
+      "Call Converse and poll the response object until it is complete",
+      "Enable Provisioned Throughput, which streams tokens automatically",
+      "Set maxTokens to 1 and call Converse in a loop"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "For token-by-token output use ConverseStream (or InvokeModelWithResponseStream), which delivers incremental deltas. Plain Converse returns the whole message at once; capacity mode is unrelated to streaming.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: ConverseStream emits incremental events (e.g., contentBlockDelta) so the UI can render tokens as they are generated.",
+      "Converse returns a single complete response; there is nothing to poll for partial tokens.",
+      "Provisioned Throughput is a capacity mode and has no effect on whether a response streams.",
+      "Looping single-token Converse calls is not how streaming works and loses conversation state and efficiency."
+    ]
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An extraction service must return the same structured output for the same input as consistently as possible. Which inference parameter change most directly reduces randomness in the generated text?",
+    "options": [
+      "Lower the temperature toward 0",
+      "Increase maxTokens",
+      "Raise top_p toward 1.0",
+      "Add more stop sequences"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Determinism is governed chiefly by temperature (and secondarily top_p). Lowering temperature toward 0 minimizes randomness. maxTokens and stop sequences shape length/termination, not variability.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: temperature scales the randomness of sampling; lowering it toward 0 makes output more deterministic and repeatable.",
+      "maxTokens only caps output length; it does not affect determinism.",
+      "Raising top_p widens the candidate token pool, generally increasing variability rather than reducing it.",
+      "Stop sequences control where generation halts, not how random the sampled tokens are."
+    ]
+  }
+]

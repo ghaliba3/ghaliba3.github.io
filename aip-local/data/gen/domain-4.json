@@ -1,0 +1,780 @@
+[
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You register an action group on a Bedrock agent with a function schema and no Lambda:\n\n```python\nba = boto3.client(\"bedrock-agent\")\nba.create_agent_action_group(\n    agentId=\"AGENT123\", agentVersion=\"DRAFT\",\n    actionGroupName=\"pricing\",\n    actionGroupExecutor={\"customControl\": \"RETURN_CONTROL\"},\n    functionSchema={\"functions\": [{\n        \"name\": \"getQuote\",\n        \"parameters\": {\"sku\": {\"type\": \"string\", \"required\": True}},\n    }]},\n)\n```\n\nAt runtime, when the model decides to call getQuote, what does InvokeAgent do?",
+    "options": [
+      "Returns a returnControl event in the completion stream with an invocationId plus the function name and parameters, then pauses until your client sends the result back on the next InvokeAgent call.",
+      "Automatically invokes a Lambda ARN inferred from the action group name and injects the result into orchestration.",
+      "Raises ValidationException because actionGroupExecutor must contain a lambda key.",
+      "Completes the orchestration using only the model-predicted parameters without ever executing getQuote."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "customControl=RETURN_CONTROL hands the tool call back to the caller instead of invoking a Lambda. The stream carries a returnControl payload (invocationInputs + invocationId); you run the logic and return it via sessionState.returnControlInvocationResults on the next call. A lambda key is only needed for Lambda execution, so there is no ValidationException, and the agent does not fabricate a result.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: with actionGroupExecutor set to RETURN_CONTROL, InvokeAgent emits a returnControl event carrying the invocationId, the function name, and the predicted parameters, then pauses the turn until your client posts the result back via sessionState on the next call.",
+      "Wrong: RETURN_CONTROL deliberately bypasses Lambda, and Bedrock never infers a Lambda ARN from an action group's name; automatic Lambda invocation happens only when actionGroupExecutor contains a lambda key.",
+      "Wrong: the lambda key is required only for Lambda-backed execution; customControl=RETURN_CONTROL is itself a valid executor, so no ValidationException is raised.",
+      "Wrong: the agent neither fabricates nor skips the tool result; it returns control and blocks until you send real results, so getQuote's logic still runs, just on the client side."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "An action group is defined with an OpenAPI schema stored in S3:\n\n```python\nba.create_agent_action_group(\n    agentId=\"A1\", agentVersion=\"DRAFT\",\n    actionGroupName=\"orders\",\n    actionGroupExecutor={\"lambda\": \"arn:aws:lambda:ap-southeast-2:111:function:orderFn\"},\n    apiSchema={\"s3\": {\"s3BucketName\": \"schemas\", \"s3ObjectKey\": \"orders.json\"}},\n)\n```\n\nHow does the agent map a user request to a specific operation, and what must the OpenAPI file contain for reliable routing?",
+    "options": [
+      "The agent forwards the raw prompt to the Lambda, which parses intent itself; descriptions are ignored.",
+      "The agent matches on the numeric operation index; the schema only needs valid paths.",
+      "The agent uses each operation's summary/description and parameter descriptions to select the path+method, so meaningful description fields are required for accurate routing.",
+      "Routing is done by HTTP verb alone, so only one GET and one POST are permitted per action group."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "For OpenAPI action groups the agent relies on the natural-language summary and description of each operation and parameter to decide which path/method to call and how to fill arguments. Sparse descriptions cause misrouting. The Lambda receives a structured apiPath/httpMethod/parameters event rather than the raw prompt, and there is no verb-count limit.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: the agent does not forward the raw prompt to Lambda; it resolves the operation itself and invokes Lambda with a structured apiPath/httpMethod/parameters event, and descriptions are central rather than ignored.",
+      "Wrong: there is no numeric operation index; the agent selects the path+method from natural-language descriptions, so a schema with valid paths but empty descriptions routes unreliably.",
+      "Correct: the agent uses each operation's summary/description and parameter descriptions to select the path+method and fill arguments, so meaningful description fields are required for reliable routing.",
+      "Wrong: routing is not done by HTTP verb alone and there is no one-GET/one-POST limit per action group; operations sharing a verb are disambiguated by their descriptions."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You call InvokeAgent and seed state:\n\n```python\nrt = boto3.client(\"bedrock-agent-runtime\")\nrt.invoke_agent(\n    agentId=\"A1\", agentAliasId=\"TSTALIASID\", sessionId=\"s-42\",\n    inputText=\"What is the status?\",\n    sessionState={\n        \"sessionAttributes\": {\"tenantId\": \"t-9\"},\n        \"promptSessionAttributes\": {\"today\": \"2026-07-14\"},\n    },\n)\n```\n\nHow do sessionAttributes and promptSessionAttributes differ in scope?",
+    "options": [
+      "Both are injected verbatim into the orchestration prompt for the whole session.",
+      "sessionAttributes persist across turns for the whole session and are passed to your Lambda; promptSessionAttributes are also session-scoped but are additionally substituted into the orchestration prompt template.",
+      "sessionAttributes are single-turn only; promptSessionAttributes persist forever including across different sessionIds.",
+      "Neither reaches the Lambda; both are only visible to Knowledge Bases."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Both live for the session, but promptSessionAttributes are the ones surfaced into the prompt (e.g. via $prompt_session_attributes$) so the model can reason over them, while sessionAttributes are opaque key/values handed to the action-group Lambda. sessionAttributes are not injected into the prompt, and neither is single-turn or cross-session.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: only promptSessionAttributes are substituted into the orchestration prompt; sessionAttributes are opaque key/values passed to the Lambda and are not injected into the prompt.",
+      "Correct: both persist for the whole session, but promptSessionAttributes are additionally rendered into the prompt template (e.g. via $prompt_session_attributes$) while sessionAttributes are handed to the action-group Lambda.",
+      "Wrong: sessionAttributes are not single-turn and promptSessionAttributes do not persist across different sessionIds; both are scoped to the single session.",
+      "Wrong: sessionAttributes are delivered to the action-group Lambda, and neither attribute is restricted to Knowledge Bases."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You enable long-term memory on an agent:\n\n```python\nba.update_agent(\n    agentId=\"A1\", agentName=\"support\",\n    foundationModel=\"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n    agentResourceRoleArn=ROLE,\n    memoryConfiguration={\n        \"enabledMemoryTypes\": [\"SESSION_SUMMARY\"],\n        \"storageDays\": 30,\n    },\n)\n```\n\nTo retrieve a user's memory across separate conversations at invoke time, what identifier must you supply, and what is stored?",
+    "options": [
+      "sessionId only; the raw transcript of every turn is stored and replayed verbatim.",
+      "The agentAliasId; embeddings of each message are stored in an implicit vector store.",
+      "Nothing extra; memory is keyed automatically by IAM principal.",
+      "A memoryId on InvokeAgent; the agent stores generated session summaries (not raw transcripts) that are retrievable for storageDays across different sessionIds sharing that memoryId."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "SESSION_SUMMARY memory is keyed by a caller-supplied memoryId passed to InvokeAgent, letting multiple sessionIds share continuity. Bedrock stores condensed summaries, not full transcripts or embeddings, and retains them for storageDays. It is not keyed by alias or IAM principal, and sessionId alone only scopes a single conversation.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: SESSION_SUMMARY stores condensed summaries rather than verbatim transcripts, and sessionId alone scopes one conversation instead of linking memory across conversations.",
+      "Wrong: memory is not keyed by agentAliasId, and SESSION_SUMMARY does not create an implicit vector store of message embeddings; it stores text summaries.",
+      "Wrong: memory is not auto-keyed by IAM principal; you must explicitly supply a memoryId to retrieve cross-session memory.",
+      "Correct: you pass a memoryId to InvokeAgent, and Bedrock stores generated session summaries (not raw transcripts) retrievable for storageDays across any sessionIds sharing that memoryId."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You override the orchestration prompt:\n\n```python\nba.update_agent(agentId=\"A1\", agentName=\"a\", foundationModel=FM, agentResourceRoleArn=ROLE,\n  promptOverrideConfiguration={\"promptConfigurations\": [{\n    \"promptType\": \"ORCHESTRATION\",\n    \"promptCreationMode\": \"OVERRIDDEN\",\n    \"basePromptTemplate\": \"...custom template...\",\n    \"inferenceConfiguration\": {\"temperature\": 0.0, \"maximumLength\": 2048},\n    \"parserMode\": \"DEFAULT\",\n  }]})\n```\n\nWhat is a required constraint when supplying a custom basePromptTemplate for ORCHESTRATION?",
+    "options": [
+      "The template is free-form; Bedrock injects tools and instructions regardless of placeholders.",
+      "The template must retain the required placeholder variables (e.g. $instruction$, $tools$/$functions$, $conversation_history$) or the agent cannot inject its context and orchestration breaks.",
+      "You must also set parserMode to OVERRIDDEN whenever promptCreationMode is OVERRIDDEN.",
+      "Overriding ORCHESTRATION disables all attached action groups automatically."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "An overridden orchestration template must keep the documented placeholders so the runtime can substitute instructions, tool/function definitions, and history; omitting them yields a broken agent. parserMode is independent of promptCreationMode (you only override the parser when you supply a custom Lambda parser), and overriding the prompt does not disable action groups.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: an overridden template is not free-form; Bedrock substitutes context only where the required placeholders exist, so omitting them prevents injection of instructions and tools.",
+      "Correct: a custom ORCHESTRATION template must retain the required placeholder variables (e.g. $instruction$, $tools$/$functions$, $conversation_history$) or the runtime cannot inject its context and orchestration breaks.",
+      "Wrong: parserMode is independent of promptCreationMode; you set parserMode to OVERRIDDEN only when supplying a custom parser Lambda, not merely because the prompt is overridden.",
+      "Wrong: overriding the orchestration prompt does not disable attached action groups; the tools remain available and are injected via the $tools$/$functions$ placeholder."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You associate a Knowledge Base with an agent:\n\n```python\nba.associate_agent_knowledge_base(\n    agentId=\"A1\", agentVersion=\"DRAFT\",\n    knowledgeBaseId=\"KB123\",\n    description=\"Building code clauses and standards\",\n    knowledgeBaseState=\"ENABLED\",\n)\n```\n\nWhy is the description field operationally critical here?",
+    "options": [
+      "It is shown only in the console and has no runtime effect.",
+      "It sets the embedding model used to query the KB.",
+      "The agent uses the description to decide when to route a query to this KB during orchestration, so a precise description drives correct retrieval invocation.",
+      "It must exactly match the KB's own description or association fails."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Just like action-group descriptions, the KB association description is what the agent reasons over to decide whether a user turn warrants querying that Knowledge Base. Vague descriptions cause the agent to skip retrieval or over-query. The embedding model is a property of the KB itself, and the description need not match the KB's own.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: the association description has a real runtime effect; the agent reasons over it during orchestration to decide whether to query the KB, so it is not console-only.",
+      "Wrong: the embedding model is a property configured on the Knowledge Base itself, not something the association description sets.",
+      "Correct: the agent uses this description to decide when a user turn warrants querying the KB, so a precise description drives correct retrieval invocation.",
+      "Wrong: the association description need not match the KB's own description; there is no equality check and association does not fail on a mismatch."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "You attach a guardrail to an agent:\n\n```python\nba.update_agent(agentId=\"A1\", agentName=\"a\", foundationModel=FM, agentResourceRoleArn=ROLE,\n  guardrailConfiguration={\"guardrailIdentifier\": \"gr-abc\", \"guardrailVersion\": \"3\"})\n```\n\nWhich statements about how this guardrail behaves are correct? Select TWO.",
+    "options": [
+      "The guardrail must be published to a numbered version (or use DRAFT) to be referenced; you cannot point an agent at an unpublished, unnumbered state implicitly.",
+      "You must call prepare/PrepareAgent again after changing the guardrail configuration for it to take effect in a working draft alias.",
+      "Attaching a guardrail to the agent automatically also applies it to every Knowledge Base query as a separate ApplyGuardrail step you configure per KB.",
+      "The guardrail overrides the agent's foundationModel selection at runtime."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "A guardrail reference needs a concrete version (a published number or DRAFT), and agent config changes require re-preparing the agent to propagate into the draft/working version. The guardrail applies to the agent's model interactions but does not silently reconfigure each KB, nor does it change which foundation model the agent uses.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: a guardrail reference must point to a concrete version (a published number or DRAFT); you cannot implicitly reference an unpublished, unnumbered state.",
+      "Correct: agent configuration changes, including guardrail attachment, require re-running PrepareAgent for them to take effect in the working draft the test alias serves.",
+      "Wrong: attaching a guardrail to the agent does not auto-insert a separate per-KB ApplyGuardrail step; the guardrail governs the agent's model interactions, not a self-configured KB pipeline.",
+      "Wrong: a guardrail filters inputs and outputs but never overrides which foundationModel the agent uses at runtime."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You parse the streaming completion from InvokeAgent:\n\n```python\nresp = rt.invoke_agent(agentId=\"A1\", agentAliasId=\"AL1\", sessionId=\"s1\", inputText=\"hi\")\ntext = \"\"\nfor event in resp[\"completion\"]:\n    if \"chunk\" in event:\n        text += event[\"chunk\"][\"bytes\"].decode(\"utf-8\")\n```\n\nWhat is true about resp[\"completion\"] and the chunk bytes?",
+    "options": [
+      "resp[\"completion\"] is a JSON string you should json.loads() directly.",
+      "chunk['bytes'] is base64 and must be base64-decoded before UTF-8 decoding.",
+      "The whole response is buffered, so streaming iteration is unnecessary.",
+      "resp[\"completion\"] is an EventStream you must iterate; each chunk['bytes'] is raw UTF-8 output, and other event keys (trace, returnControl, files) can appear interleaved."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "InvokeAgent returns an EventStream under completion that you iterate; chunk['bytes'] is already raw UTF-8 (boto3 handles transport decoding), so no base64 step. The stream may interleave trace, returnControl, and files events, so robust parsing checks each event key rather than assuming only chunks.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: resp['completion'] is a botocore EventStream, not a JSON string, so calling json.loads() on it fails; you must iterate it.",
+      "Wrong: chunk['bytes'] is not base64-encoded; boto3 handles transport decoding, so you decode raw UTF-8 directly with no base64 step.",
+      "Wrong: the response is streamed rather than fully buffered, so you must iterate the EventStream to assemble the output.",
+      "Correct: completion is an EventStream you iterate; each chunk['bytes'] is raw UTF-8, and trace, returnControl, and files events can appear interleaved, so robust code checks each event key."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You build a supervisor agent for multi-agent collaboration:\n\n```python\nba.update_agent(agentId=\"SUP\", agentName=\"sup\", foundationModel=FM,\n  agentResourceRoleArn=ROLE, agentCollaboration=\"SUPERVISOR\")\nba.associate_agent_collaborator(\n    agentId=\"SUP\", agentVersion=\"DRAFT\",\n    agentDescriptor={\"aliasArn\": \"arn:aws:bedrock:...:agent-alias/SUB1/AL1\"},\n    collaboratorName=\"specExtractor\",\n    collaborationInstruction=\"Use for extracting values from specification PDFs.\",\n    relayConversationHistory=\"TO_COLLABORATOR\",\n)\n```\n\nWhat does associating a collaborator by aliasArn (not agentId) imply?",
+    "options": [
+      "The supervisor routes to a specific published/version-backed alias of the subagent, so the subagent must be prepared and have a usable alias before collaboration works.",
+      "The supervisor always invokes the subagent's DRAFT working version regardless of alias.",
+      "aliasArn is optional decoration; collaboration is resolved purely by collaboratorName.",
+      "Using an aliasArn disables the supervisor's own action groups."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Collaborators are referenced by an alias ARN, which pins the supervisor to a specific prepared, versioned subagent; the subagent must exist as a working alias first. It does not force DRAFT, the ARN is what actually resolves the target (not the display name), and the supervisor keeps its own action groups.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: referencing a collaborator by aliasArn pins the supervisor to a specific prepared, versioned subagent, which must therefore exist as a usable alias before collaboration works.",
+      "Wrong: an aliasArn resolves to whatever version the alias routes to, not the subagent's DRAFT working version, so it does not force DRAFT.",
+      "Wrong: the aliasArn is what actually resolves the target subagent; collaboratorName is only a display label and cannot resolve collaboration on its own.",
+      "Wrong: associating a collaborator does not disable the supervisor's own action groups; the supervisor keeps its tools while delegating."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "Your RETURN_CONTROL client executed the function and now sends the result back:\n\n```python\nrt.invoke_agent(\n    agentId=\"A1\", agentAliasId=\"AL1\", sessionId=\"s1\",\n    sessionState={\"invocationId\": INV_ID, \"returnControlInvocationResults\": [{\n        \"functionResult\": {\n            \"actionGroup\": \"pricing\",\n            \"function\": \"getQuote\",\n            \"responseBody\": {\"TEXT\": {\"body\": \"{\\\"price\\\": 42.0}\"}},\n        }}]},\n)\n```\n\nWhat must be true for the agent to continue correctly, and is inputText allowed here?",
+    "options": [
+      "You must resend inputText along with the results, or the agent restarts the turn.",
+      "The invocationId must match the one returned earlier and inputText should be omitted; supplying inputText together with returnControlInvocationResults causes a validation error.",
+      "The actionGroup/function names are ignored; only the body matters.",
+      "returnControlInvocationResults must be sent to a brand-new sessionId to avoid duplicate state."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "When returning control results you echo the exact invocationId from the prior response and omit inputText; passing both inputText and returnControlInvocationResults is rejected. The actionGroup and function names must correctly identify which pending call this satisfies, and you reuse the same sessionId to preserve the paused turn.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: you must not resend inputText with return-control results; supplying both is rejected, and sending results alone does not restart the turn.",
+      "Correct: you must echo the exact invocationId from the prior returnControl event and omit inputText, because passing inputText together with returnControlInvocationResults triggers a validation error.",
+      "Wrong: the actionGroup and function names are not ignored; they identify which pending call this result satisfies and must match the paused invocation.",
+      "Wrong: results must be sent to the same sessionId holding the paused turn; a brand-new sessionId loses the pending invocation state."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You launch a fine-tuning job:\n\n```python\nbr = boto3.client(\"bedrock\")\nbr.create_model_customization_job(\n    jobName=\"ft-titan-1\", customModelName=\"titan-support\",\n    roleArn=ROLE, customizationType=\"FINE_TUNING\",\n    baseModelIdentifier=\"amazon.titan-text-express-v1\",\n    trainingDataConfig={\"s3Uri\": \"s3://data/train.jsonl\"},\n    hyperParameters={\"epochCount\": \"3\", \"batchSize\": \"1\",\n                     \"learningRateMultiplier\": \"0.2\"},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhich statement about this job and its resulting model is correct?",
+    "options": [
+      "FINE_TUNING requires unlabeled text only; labeled prompt/completion pairs are rejected.",
+      "FINE_TUNING uses labeled prompt/completion examples, and the resulting custom model can only be invoked after you buy Provisioned Throughput for it.",
+      "The output custom model is immediately invocable on-demand via InvokeModel with its model ID.",
+      "hyperParameter values may be passed as native ints; strings raise a type error."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Fine-tuning consumes labeled prompt/completion pairs, and every resulting custom model must be deployed behind Provisioned Throughput before InvokeModel works, no on-demand access. Continued pre-training is the one that uses unlabeled text, and the API expects hyperparameter values as strings.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: this describes CONTINUED_PRE_TRAINING; FINE_TUNING requires labeled prompt/completion pairs and does not reject them.",
+      "Correct: fine-tuning consumes labeled prompt/completion examples, and the resulting custom model is invocable only after you buy Provisioned Throughput for it.",
+      "Wrong: fine-tuned custom models are not available on-demand via InvokeModel; they need Provisioned Throughput first.",
+      "Wrong: the customization API expects hyperparameter values as strings (e.g. \"3\"); native ints are not the required form."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A team wants a Titan model to absorb a large corpus of unlabeled internal engineering documents to shift its domain knowledge, without input/output examples. Which customizationType and data shape fits, and how does it differ from fine-tuning?",
+    "options": [
+      "FINE_TUNING with {\"prompt\", \"completion\"} pairs; identical to continued pre-training but cheaper.",
+      "DISTILLATION with a teacher model; unlabeled data is auto-labeled.",
+      "IMPORTED with a Hugging Face checkpoint; no training occurs.",
+      "CONTINUED_PRE_TRAINING with JSONL records containing only an {\"input\": ...} text field (no completion), used to adapt domain knowledge from unlabeled corpora, whereas fine-tuning teaches task behavior from labeled pairs."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Continued pre-training ingests unlabeled text (records with just an input field) to broaden domain knowledge, while fine-tuning uses labeled prompt/completion pairs to shape task-specific responses. Distillation transfers from a teacher to a student and imported models are not trained through this API.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: fine-tuning with prompt/completion pairs is labeled task training and is not identical to continued pre-training, which ingests unlabeled text.",
+      "Wrong: distillation transfers knowledge from a teacher to a student model; it is not the mechanism for absorbing an unlabeled corpus and does not simply auto-label your documents.",
+      "Wrong: IMPORTED brings in external pre-trained weights and performs no training, so it cannot shift domain knowledge from your corpus.",
+      "Correct: CONTINUED_PRE_TRAINING takes JSONL records with only an input field (no completion) to adapt domain knowledge from unlabeled corpora, unlike fine-tuning which shapes task behavior from labeled pairs."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "Below is one line of a fine-tuning training file for a text model:\n\n```json\n{\"prompt\": \"Summarize: The slab pour was delayed by rain.\", \"completion\": \"Slab pour delayed due to rain.\"}\n```\n\nWhich requirements of this JSONL training data are correct? Select TWO.",
+    "options": [
+      "Each line must be one complete JSON object (JSON Lines); a single pretty-printed JSON array spanning multiple lines is invalid.",
+      "The keys must literally be \"prompt\" and \"completion\" for text fine-tuning; a record missing either key is rejected during validation.",
+      "Records may freely mix {\"prompt\",\"completion\"} and {\"input\"}-only continued-pre-training records in the same file.",
+      "The completion may be empty because only the prompt is used for gradient updates."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Text fine-tuning data is JSON Lines (one object per line, not a wrapped array) with the exact keys prompt and completion, and validation fails if either is missing. You cannot mix fine-tuning and continued-pre-training record shapes in one job, and the completion is the learning target so it cannot be empty.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: the training file is JSON Lines, one complete JSON object per line; a pretty-printed multi-line JSON array is invalid input.",
+      "Correct: text fine-tuning requires the literal keys prompt and completion, and validation rejects any record missing either key.",
+      "Wrong: you cannot mix fine-tuning {prompt,completion} records with continued-pre-training {input}-only records in one job; each job takes a single record shape.",
+      "Wrong: completion is the learning target for gradient updates, so it cannot be empty; an empty completion gives the model nothing to learn."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "Your create_model_customization_job call fails fast with a validation error before any training compute starts. The training file's first records are:\n\n```json\n{\"prompt\": \"Classify severity\", \"completion\": \"high\"}\n{\"prompt\": \"Classify severity\", \"completion\": \"low\", \"label\": 1}\n{ \"prompt\": \"Classify severity\" }\n```\n\nWhat is the most likely cause?",
+    "options": [
+      "The extra \"label\" key on line 2 is a hard error that always aborts validation.",
+      "Leading whitespace before the brace on line 3 corrupts the file.",
+      "Line 3 is missing the required \"completion\" field, and/or the dataset violates the base model's minimum record count / token limits enforced at validation.",
+      "prompt values must be unique across records."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "A record lacking the required completion field is invalid, and Bedrock also validates dataset-level constraints (minimum examples, per-record token caps) up front, which is why it fails before billing training time. Duplicate prompts are allowed, incidental extra keys are generally tolerated, and JSON permits leading whitespace.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: an incidental extra key like label is generally tolerated and is not a hard error that always aborts validation.",
+      "Wrong: JSON permits leading whitespace before the opening brace, so it does not corrupt the record.",
+      "Correct: line 3 omits the required completion field, and Bedrock also enforces dataset-level constraints (minimum record count, per-record token limits) up front, so the job fails at validation before training compute starts.",
+      "Wrong: prompt values need not be unique; duplicate prompts across records are allowed."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "For the fine-tuning hyperParameters map:\n\n```python\nhyperParameters={\"epochCount\": \"4\", \"batchSize\": \"8\",\n                 \"learningRateMultiplier\": \"1.0\"}\n```\n\nWhich statements about tuning these are accurate? Select THREE.",
+    "options": [
+      "epochCount controls how many full passes over the training set are made; too high risks overfitting the small dataset.",
+      "learningRateMultiplier scales the base learning rate; larger values speed adaptation but can destabilize or overfit training.",
+      "batchSize is the number of samples processed before a weight update; it interacts with effective learning dynamics and memory.",
+      "Omitting all three is invalid because Bedrock has no defaults for customization hyperparameters."
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanation": "epochCount is dataset passes (overfitting risk when high on small data), learningRateMultiplier scales the LR (stability/overfitting trade-off), and batchSize is samples per update affecting dynamics and memory. Bedrock does provide sensible defaults per base model, so omitting them is valid, unlike the fourth option claims.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: epochCount is the number of full passes over the training set, and setting it too high risks overfitting a small dataset.",
+      "Correct: learningRateMultiplier scales the base learning rate; larger values adapt faster but can destabilize training or overfit.",
+      "Correct: batchSize is the number of samples processed before each weight update, trading off learning dynamics against memory use.",
+      "Wrong: Bedrock provides sensible per-base-model defaults for these hyperparameters, so omitting them is valid rather than an error."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A developer finishes a fine-tuning job and immediately tries:\n\n```python\nbrt = boto3.client(\"bedrock-runtime\")\nbrt.invoke_model(modelId=\"arn:aws:bedrock:...:custom-model/amazon.titan-text-express-v1/abcd1234\",\n                 body=json.dumps({\"inputText\": \"hi\"}))\n```\n\nThis throws an error. What is the correct fix?",
+    "options": [
+      "Switch to InvokeModelWithResponseStream; custom models only support streaming.",
+      "Create Provisioned Throughput for the custom model, then invoke using the returned provisioned-model ARN as modelId.",
+      "Pass the base model ID instead; custom weights load automatically from S3.",
+      "Add an inferenceProfile ARN; custom models require a cross-region profile."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Custom (fine-tuned) models are not available on-demand; you must call CreateProvisionedModelThroughput and then invoke with the provisioned model ARN. Streaming vs non-streaming is irrelevant, the base model ID would not use your weights, and inference profiles are for cross-region routing of supported base models, not for enabling custom-model access.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: custom models are not streaming-only; switching to InvokeModelWithResponseStream does not fix the real issue, which is missing provisioned capacity.",
+      "Correct: fine-tuned custom models are not on-demand, so you must call CreateProvisionedModelThroughput and then invoke using the returned provisioned-model ARN as modelId.",
+      "Wrong: passing the base model ID invokes the untuned base weights, not your custom weights, which are not loaded automatically from S3.",
+      "Wrong: inference profiles route supported base models across regions; they do not enable access to a custom model."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You configure model distillation via a customization job:\n\n```python\nbr.create_model_customization_job(\n    jobName=\"distill-1\", customModelName=\"distilled-student\",\n    roleArn=ROLE, customizationType=\"DISTILLATION\",\n    baseModelIdentifier=\"amazon.nova-lite-v1:0\",\n    customizationConfig={\"distillationConfig\": {\"teacherModelConfig\": {\n        \"teacherModelIdentifier\": \"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n        \"maxResponseLengthForInference\": 1000}}},\n    trainingDataConfig={\"s3Uri\": \"s3://data/prompts.jsonl\"},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhat is the point of distillation here and what does the training data provide?",
+    "options": [
+      "A larger, accurate teacher generates responses used to fine-tune a smaller cheaper student, so the training file can be prompts only (labels come from the teacher).",
+      "The student teaches the teacher; the file must contain graded completions.",
+      "Distillation merges two models' weights and needs no training data.",
+      "It compresses the teacher via quantization; the S3 file holds calibration text only."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Distillation uses a capable teacher to synthesize training targets that fine-tune a smaller, cheaper student aimed at matching teacher quality on your prompts; you can supply prompts and let the teacher produce the completions. It is not weight-merging or quantization, and the direction is teacher-to-student, not the reverse.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: distillation uses a larger, accurate teacher to synthesize responses that fine-tune a smaller, cheaper student, so the training file can be prompts only and the teacher produces the completions.",
+      "Wrong: the direction is teacher-to-student, not student teaching teacher, and the file does not need pre-graded completions.",
+      "Wrong: distillation trains a student on teacher-generated data; it does not merge two models' weights and it does require training data (prompts).",
+      "Wrong: distillation is knowledge transfer via training, not quantization compression, and the S3 file holds prompts rather than calibration text."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You import external model weights:\n\n```python\nbr.create_model_import_job(\n    jobName=\"import-llama-ft\", importedModelName=\"my-llama\",\n    roleArn=ROLE,\n    modelDataSource={\"s3DataSource\": {\"s3Uri\": \"s3://weights/llama3-ft/\"}},\n)\n```\n\nWhich statement about Bedrock Custom Model Import is correct?",
+    "options": [
+      "Imported models are invoked on-demand and billed per-token like base models, with no capacity provisioning.",
+      "The S3 location must hold compatible model artifacts (weights + config/tokenizer of a supported architecture), and the imported model is invoked via InvokeModel using the imported model ARN, billed on model-units capacity.",
+      "You can import any architecture; Bedrock recompiles unsupported ones automatically.",
+      "Imported models must first be wrapped in a Bedrock Agent to be callable."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Custom Model Import requires artifacts of a supported architecture (weights plus config/tokenizer) in S3, and once imported you call it through InvokeModel with the imported-model ARN, with capacity/model-unit based billing. Only supported architectures work (no auto-recompilation), and it is not on-demand per-token like base models nor does it require an agent wrapper.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: imported models are not billed on-demand per-token like base models; they run on provisioned model-unit capacity.",
+      "Correct: the S3 source must hold compatible artifacts (weights plus config/tokenizer of a supported architecture), and you then call InvokeModel with the imported-model ARN, billed on model-unit capacity.",
+      "Wrong: only supported architectures can be imported; Bedrock does not auto-recompile unsupported architectures.",
+      "Wrong: an imported model is invoked directly through InvokeModel and need not be wrapped in a Bedrock Agent to be callable."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You create an automatic model evaluation job:\n\n```python\nbr.create_evaluation_job(\n    jobName=\"auto-eval-1\", roleArn=ROLE,\n    evaluationConfig={\"automated\": {\"datasetMetricConfigs\": [{\n        \"taskType\": \"QuestionAndAnswer\",\n        \"dataset\": {\"name\": \"qa\", \"datasetLocation\": {\"s3Uri\": \"s3://d/qa.jsonl\"}},\n        \"metricNames\": [\"Accuracy\"]}]}},\n    inferenceConfig={\"models\": [{\"bedrockModel\": {\"modelIdentifier\": FM}}]},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhat is required of the dataset for an automatic job with the Accuracy metric?",
+    "options": [
+      "The dataset needs only prompts; automatic Accuracy needs no ground truth.",
+      "The dataset must include reference/ground-truth answers per prompt, since automatic Accuracy compares model output against the provided references.",
+      "Accuracy is only available in human evaluation jobs.",
+      "You must supply at least two models; single-model automatic evaluation is unsupported."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Automatic evaluation with Accuracy scores model outputs against reference answers, so the JSONL prompts must carry ground-truth targets. Accuracy is an automatic metric (not human-only), and a single model is perfectly valid for an automatic job.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: automatic Accuracy compares outputs against references, so a prompts-only dataset with no ground truth cannot compute it.",
+      "Correct: automatic Accuracy scores model output against the provided reference answers, so each prompt in the JSONL must carry a ground-truth target.",
+      "Wrong: Accuracy is an automatic metric, not human-only; it is computed programmatically against references.",
+      "Wrong: a single model is valid for an automatic evaluation job; two or more models are not required."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You set up a human evaluation job:\n\n```python\nbr.create_evaluation_job(\n    jobName=\"human-eval\", roleArn=ROLE,\n    evaluationConfig={\"human\": {\n        \"humanWorkflowConfig\": {\"flowDefinitionArn\": FLOW, \"instructions\": \"Rate helpfulness\"},\n        \"customMetrics\": [{\"name\": \"helpfulness\", \"description\": \"...\", \"ratingMethod\": \"ThumbsUpDown\"}],\n        \"datasetMetricConfigs\": [{\"taskType\": \"General\", \"dataset\": {...}, \"metricNames\": [\"helpfulness\"]}]}},\n    inferenceConfig={\"models\": [{\"bedrockModel\": {\"modelIdentifier\": M1}}, {\"bedrockModel\": {\"modelIdentifier\": M2}}]},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"})\n```\n\nWhat capability does the human path add that the automatic path lacks here?",
+    "options": [
+      "It runs without any workforce; humanWorkflowConfig is decorative.",
+      "Human evaluation supports custom, subjective metrics (with rating methods like ThumbsUpDown/Likert) judged by a human workforce, and can compare multiple models side by side.",
+      "Human jobs cannot compare more than one model at a time.",
+      "Human jobs compute Toxicity and BERTScore automatically instead of using raters."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Human evaluation lets you define bespoke subjective metrics with rating methods (thumbs, Likert, comparison) scored by a SageMaker Ground Truth-style workforce and supports multi-model comparison. It requires a real workflow/workforce, can compare 2+ models, and does not auto-compute algorithmic metrics like Toxicity or BERTScore, that is the automatic path.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: humanWorkflowConfig is functional, not decorative; it wires a real workforce via the flow definition, without which the human job cannot run.",
+      "Correct: the human path supports custom subjective metrics with rating methods (ThumbsUpDown/Likert/comparison) judged by a human workforce and can compare multiple models side by side.",
+      "Wrong: human jobs can compare two or more models at once, as shown by the two entries in inferenceConfig.",
+      "Wrong: Toxicity and BERTScore are algorithmic metrics from the automatic path; human jobs rely on raters, not auto-computed scores."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "For an automatic evaluation job you can request task-appropriate metrics such as Accuracy, Robustness, and Toxicity. Which pairing of metric to what it measures is correct?",
+    "options": [
+      "Accuracy measures output toxicity; Toxicity measures factual correctness.",
+      "Robustness measures response latency under load.",
+      "Toxicity measures how well outputs match references word-for-word.",
+      "Robustness measures how stable outputs are under small perturbations of the input (e.g. typos/paraphrase), while Toxicity measures the presence of harmful/offensive content."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Robustness gauges output stability when inputs are perturbed, and Toxicity flags harmful/offensive content in generations. Accuracy (not toxicity) tracks correctness against references, and none of these metrics measure latency, which is an operational, not quality, dimension.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: this swaps the definitions; Accuracy measures correctness against references and Toxicity measures harmful content, not the reverse.",
+      "Wrong: Robustness measures output stability under input perturbations, not response latency, which is an operational rather than quality metric.",
+      "Wrong: word-for-word reference matching is Accuracy-style scoring; Toxicity measures harmful/offensive content, not lexical overlap.",
+      "Correct: Robustness measures how stable outputs are under small input perturbations (typos/paraphrase), while Toxicity measures the presence of harmful/offensive content."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You configure an automatic evaluation using an LLM-as-a-judge:\n\n```python\nbr.create_evaluation_job(\n    jobName=\"llm-judge\", roleArn=ROLE,\n    evaluationConfig={\"automated\": {\n        \"evaluatorModelConfig\": {\"bedrockEvaluatorModels\": [{\"modelIdentifier\": JUDGE_FM}]},\n        \"datasetMetricConfigs\": [{\"taskType\": \"General\",\n            \"dataset\": {\"name\": \"d\", \"datasetLocation\": {\"s3Uri\": \"s3://d/eval.jsonl\"}},\n            \"metricNames\": [\"Correctness\", \"Completeness\", \"Coherence\"]}]}},\n    inferenceConfig={\"models\": [{\"bedrockModel\": {\"modelIdentifier\": TARGET_FM}}]},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"})\n```\n\nWhat distinguishes this LLM-as-a-judge job from a plain metrics-only automatic job?",
+    "options": [
+      "A separate evaluator (judge) model scores the target model's outputs on qualitative dimensions like Correctness/Coherence, enabling nuanced grading without a human workforce (and often without exact references).",
+      "It requires a human workforce despite being under the automated key.",
+      "The judge model must be identical to the target model.",
+      "Only string-match metrics like BLEU are permitted with a judge."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "LLM-as-a-judge introduces an evaluatorModelConfig so a judge model grades the target's outputs on qualitative rubrics (correctness, completeness, coherence, etc.), giving human-like nuance at scale with no workforce. The judge is typically a different, capable model, and it is used precisely to go beyond rigid string-match metrics.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: an evaluatorModelConfig adds a separate judge model that scores the target's outputs on qualitative dimensions like Correctness/Coherence, enabling nuanced grading without a human workforce and often without exact references.",
+      "Wrong: LLM-as-a-judge runs under the automated key with no human workforce; judging is done by the evaluator model, not people.",
+      "Wrong: the judge is typically a different, capable model; it need not (and usually should not) be identical to the target model.",
+      "Wrong: the purpose of a judge is qualitative rubric grading beyond rigid string-match metrics like BLEU, not restricting evaluation to them."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "You are wiring a Lambda-backed action group. Which of the following are required or true for the executor to work end to end? Select TWO.",
+    "options": [
+      "The Lambda's resource policy must allow bedrock.amazonaws.com to invoke it (typically scoped to the agent's ARN via SourceArn).",
+      "The Lambda must return a response matching the agent's expected event contract (echoing actionGroup, function/apiPath, and a responseBody), or the agent cannot continue orchestration.",
+      "The Lambda handler must import the bedrock-agent-runtime SDK to send results back manually.",
+      "The action group's functionSchema and an apiSchema must both be supplied for Lambda execution."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Bedrock invokes your Lambda, so its resource policy must permit the Bedrock principal (usually restricted to the agent ARN), and the function must return the structured response the agent expects (echoing identifiers and a responseBody). With Lambda execution the agent handles the round-trip, so the handler does not call the runtime SDK, and you provide exactly one of functionSchema or apiSchema, not both.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Bedrock invokes your Lambda, so the function's resource policy must allow the bedrock.amazonaws.com principal, typically scoped to the agent ARN via SourceArn.",
+      "Correct: the Lambda must return a response matching the agent's expected event contract (echoing actionGroup, function/apiPath, and a responseBody), or the agent cannot continue orchestration.",
+      "Wrong: with Lambda execution the agent manages the round-trip; the handler simply returns its response and does not call bedrock-agent-runtime to send results back.",
+      "Wrong: an action group takes exactly one of functionSchema or apiSchema, not both, so requiring both for Lambda execution is incorrect."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "Before a fine-tuning create_model_customization_job succeeds, which prerequisites must be satisfied? Select THREE.",
+    "options": [
+      "The base model must be one that supports the chosen customizationType (not every model is fine-tunable).",
+      "The roleArn must grant Bedrock access to read the training/validation S3 data and write to the output bucket.",
+      "The training data must be valid JSONL conforming to the base model's required schema and size limits.",
+      "You must pre-provision throughput before the job starts so training has capacity."
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanation": "The IAM role needs S3 read/write for data and output, the training file must be schema- and size-valid JSONL, and note the trick: Provisioned Throughput is required to INVOKE the resulting custom model, not to run training, so option 4 is a misconception. Option 1 is also genuinely required (base model must support fine-tuning); the three strongest, unambiguous prerequisites are the role, valid data, and correct base-model/type support, with the throughput claim being the deliberate distractor.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: not every base model supports every customizationType, so the base model must be one that supports fine-tuning for the job to succeed.",
+      "Correct: the roleArn must grant Bedrock permission to read the training/validation S3 data and write to the output bucket.",
+      "Correct: the training data must be valid JSONL conforming to the base model's required prompt/completion schema and its size/token limits.",
+      "Wrong: Provisioned Throughput is required to INVOKE the resulting custom model, not to run the training job, so pre-provisioning capacity before training is the deliberate misconception here."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "Which statements correctly contrast Bedrock model customization approaches? Select TWO.",
+    "options": [
+      "Fine-tuning needs labeled prompt/completion data; continued pre-training uses unlabeled text.",
+      "Distillation is cheaper to serve than the teacher because the student is a smaller model, at the cost of some quality.",
+      "Continued pre-training produces an on-demand invocable model, unlike fine-tuning.",
+      "Imported models are produced by CreateModelCustomizationJob just like fine-tuned ones."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Fine-tuning is labeled, continued pre-training is unlabeled, and distillation yields a smaller, cheaper-to-serve student that trades a bit of quality for cost. Both fine-tuned and continued-pre-trained custom models require Provisioned Throughput (neither is on-demand), and imported models come from CreateModelImportJob, not the customization API.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: fine-tuning requires labeled prompt/completion data, whereas continued pre-training adapts the model from unlabeled text.",
+      "Correct: distillation yields a smaller student that is cheaper to serve than the teacher, trading some quality for lower inference cost.",
+      "Wrong: continued-pre-trained custom models are not on-demand; like fine-tuned models they require Provisioned Throughput to invoke.",
+      "Wrong: imported models come from CreateModelImportJob, not CreateModelCustomizationJob, which produces fine-tuned, continued-pre-trained, or distilled models."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You created an agent alias for production traffic:\n\n```python\nba.create_agent_alias(agentId=\"A1\", agentAliasName=\"prod\",\n    routingConfiguration=[{\"agentVersion\": \"5\"}])\n```\n\nYou then edit the agent's instruction on DRAFT and re-prepare it. What do live callers using agentAliasId of the prod alias see?",
+    "options": [
+      "They immediately see the new DRAFT instruction because prepare propagates to all aliases.",
+      "They continue to get version 5 behavior; the prod alias is pinned to version 5 until you create a new version and update the alias's routingConfiguration.",
+      "The prod alias breaks until re-prepared, returning 5xx.",
+      "The alias auto-advances to the highest numbered version after prepare."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "An alias routes to a specific immutable version; editing/preparing DRAFT changes the working draft only. Production callers keep getting version 5 until you cut a new version and repoint the alias's routingConfiguration. Prepare does not touch published aliases, they do not break, and aliases never auto-advance.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: prepare does not propagate DRAFT edits to published aliases; a prepared draft affects only the working draft the test alias serves, not the prod alias.",
+      "Correct: the prod alias is pinned to the immutable version 5 in its routingConfiguration, so callers keep version 5 behavior until you create a new version and repoint the alias.",
+      "Wrong: preparing DRAFT does not break the prod alias or return 5xx; the published alias is unaffected by draft edits.",
+      "Wrong: aliases never auto-advance to the highest numbered version after prepare; you must explicitly update the alias's routingConfiguration."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A developer creates an agent and an action group, then calls InvokeAgent against the TSTALIASID, but the new action group is never invoked and traces show the old toolset. They never called:\n\n```python\nba.prepare_agent(agentId=\"A1\")\n```\n\nWhat is the role of PrepareAgent and why does its absence explain this?",
+    "options": [
+      "PrepareAgent publishes a numbered version; without it no alias exists at all.",
+      "PrepareAgent retrains the foundation model on the new tools.",
+      "PrepareAgent only validates IAM permissions and has no effect on tool availability.",
+      "PrepareAgent packages the current DRAFT configuration (instructions, action groups, KBs) into the working draft the test alias serves; until you re-prepare after edits, the test alias keeps serving the previously prepared state."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "PrepareAgent compiles the current DRAFT (instructions, action groups, KB associations, guardrails) into the testable working draft that TSTALIASID serves, so edits made after the last prepare are invisible until you prepare again. It does not train the model, is more than an IAM check, and creating numbered versions is a separate CreateAgentVersion/alias step.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: PrepareAgent does not publish a numbered version; versioning is a separate CreateAgentVersion step, and the TSTALIASID test alias exists independently.",
+      "Wrong: PrepareAgent does not retrain the foundation model; it recompiles the agent's configuration, and tools are never learned through training.",
+      "Wrong: PrepareAgent does far more than validate IAM; it packages the DRAFT config into the working draft, which is exactly what governs tool availability.",
+      "Correct: PrepareAgent compiles the current DRAFT (instructions, action groups, KB associations, guardrails) into the working draft that TSTALIASID serves, so edits made after the last prepare stay invisible until you prepare again."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You want to evaluate retrieval-augmented quality of a Knowledge Base, not just a bare model. In a Bedrock evaluation job, how do you evaluate a Knowledge Base and what extra metrics become relevant?",
+    "options": [
+      "Knowledge Bases cannot be evaluated; only foundation models are supported.",
+      "You must export the KB to a dataset and run a model-only Accuracy job.",
+      "Configure the job with a knowledgeBaseConfig/RAG inference target so the pipeline retrieves then generates, enabling RAG metrics such as context relevance and faithfulness/groundedness in addition to answer quality.",
+      "RAG evaluation replaces the generation step with pure retrieval and reports only recall@k."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Bedrock evaluation supports a RAG/Knowledge Base inference target that performs retrieval then generation, so you can score retrieval-specific dimensions like context relevance and answer faithfulness/groundedness alongside response quality. KBs are evaluable (not model-only), and RAG evaluation covers end-to-end generation, not retrieval recall alone.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: Knowledge Bases are evaluable in Bedrock; evaluation is not limited to bare foundation models.",
+      "Wrong: you do not export the KB to a static dataset for a model-only Accuracy run; the job uses a live RAG inference target that retrieves then generates.",
+      "Correct: you configure a knowledgeBaseConfig/RAG inference target so the pipeline retrieves then generates, enabling RAG metrics like context relevance and faithfulness/groundedness alongside answer quality.",
+      "Wrong: RAG evaluation covers end-to-end retrieval plus generation, not a retrieval-only run reporting only recall@k."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "During distillation you notice the teacher's synthesized responses are what the student learns from. Given:\n\n```python\ncustomizationConfig={\"distillationConfig\": {\"teacherModelConfig\": {\n    \"teacherModelIdentifier\": TEACHER,\n    \"maxResponseLengthForInference\": 512}}}\n```\n\nWhat does maxResponseLengthForInference control and why does it matter for distillation quality?",
+    "options": [
+      "It caps the length of the teacher's generated responses used as training targets; too small truncates the labels the student learns, hurting quality on long-form tasks.",
+      "It sets the student's maximum output length at deployment time.",
+      "It limits the number of training prompts processed.",
+      "It is the maximum sequence length of the input prompts, rejecting longer ones."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "maxResponseLengthForInference bounds how long the teacher's generated answers (the distillation labels) can be; setting it too low truncates the very targets the student imitates, degrading long-form performance. It governs teacher outputs during label synthesis, not the student's deployment output length, the prompt count, or input truncation.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: it caps the length of the teacher's generated responses used as training targets, so setting it too low truncates those labels and hurts the student on long-form tasks.",
+      "Wrong: it bounds the teacher's label-generation length during training, not the student's maximum output length at deployment time.",
+      "Wrong: it governs generated response length, not the number of training prompts processed.",
+      "Wrong: it limits generated response length, not input prompt sequence length, and does not reject over-length prompts."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "An agent has both a Knowledge Base and an action group. A user asks a question answerable from documents. In the InvokeAgent trace you see an orchestration step choose knowledgeBaseLookup, then a final response. Enabling the trace was done via:\n\n```python\nrt.invoke_agent(agentId=\"A1\", agentAliasId=\"AL1\", sessionId=\"s1\",\n    inputText=\"Which clause covers slab curing?\", enableTrace=True)\n```\n\nWhat does the trace stream let you inspect, and how is it delivered?",
+    "options": [
+      "The trace is only written to CloudWatch; it is not in the InvokeAgent response.",
+      "Trace events are interleaved in the completion EventStream (as trace events alongside chunk events), exposing the model's reasoning/rationale, which KB/action was chosen, and observations, useful for debugging routing.",
+      "enableTrace returns the full base prompt template but hides which tool was chosen.",
+      "The trace replaces the chunk output, so you must disable it to get the answer text."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "With enableTrace=True the completion EventStream interleaves trace events (rationale, invocation inputs/observations, which KB or action group was selected) with the normal chunk output, so you can debug orchestration decisions. The trace is in the response stream (not only CloudWatch), reveals the chosen tool, and coexists with, rather than replacing, the answer chunks.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: with enableTrace the trace is delivered inline in the InvokeAgent completion stream, not only written to CloudWatch.",
+      "Correct: trace events are interleaved with chunk events in the completion EventStream, exposing the model's rationale, which KB or action group was chosen, and observations, useful for debugging routing.",
+      "Wrong: enableTrace surfaces which tool was chosen (that is its purpose); it does not hide tool selection while returning only the base prompt template.",
+      "Wrong: trace events coexist with the answer chunks rather than replacing them, so you receive both the reasoning and the output text."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A Bedrock Agent must be able to look up order status by calling an existing internal REST service during a conversation. What is the standard way to give the agent this capability?",
+    "options": [
+      "Define an action group with an API/function schema, backed by a Lambda function that calls the internal service",
+      "Paste the API documentation into the agent's instructions and hope it calls the endpoint",
+      "Enable Provisioned Throughput on the agent",
+      "Attach a Guardrail that forwards requests to the service"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Bedrock Agents call external systems through action groups: you declare operations with a schema and back them with a Lambda function that performs the work (or use return of control to let your app execute).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: action groups define the operations (via OpenAPI/function schema) and are fulfilled by a Lambda function (or return of control) that performs the call.",
+      "Instructions alone cannot make the agent invoke an external service; there is no execution path.",
+      "Provisioned Throughput is a capacity mode and does not grant tool/API capabilities.",
+      "Guardrails filter content for safety; they do not execute API calls."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A team wants their own application — not a Bedrock-managed Lambda — to execute the action an agent decides to take, so they can run it inside their existing service and control side effects. Which action group fulfillment option supports this?",
+    "options": [
+      "Return of control, where the agent hands the chosen action and parameters back to the application to execute",
+      "A managed Lambda fulfillment that the team cannot see",
+      "Provisioned Throughput fulfillment",
+      "Guardrails-based fulfillment"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Action groups can be fulfilled by a Lambda or by return of control. Return of control sends the agent's chosen action and parameters back to your application to execute, giving you full control over side effects.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: return of control returns the predicted action and inputs to your application, which executes it and returns results to the agent.",
+      "Managed Lambda fulfillment runs in a Lambda you configure — not the 'execute in my own service' pattern described.",
+      "Provisioned Throughput is unrelated to how actions are executed.",
+      "Guardrails do not execute actions."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A company has thousands of labeled prompt-and-ideal-response pairs and wants a base model to adopt their specific answer style and terminology. Which customization approach fits, and how does it differ from continued pre-training?",
+    "options": [
+      "Fine-tuning on the labeled pairs; continued pre-training instead uses large amounts of unlabeled domain text",
+      "Continued pre-training on the labeled pairs; fine-tuning requires unlabeled text",
+      "Model distillation on the labeled pairs; it needs no data",
+      "RAG, because customization always means retrieval"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Fine-tuning uses labeled examples (e.g., JSONL prompt/completion) to specialize style and behavior. Continued pre-training uses large unlabeled domain text to build knowledge. Both produce custom models needing Provisioned Throughput to invoke.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: fine-tuning uses labeled prompt/completion examples to shape behavior/style; continued pre-training ingests large unlabeled corpora to add domain knowledge.",
+      "This reverses the definitions — fine-tuning is the labeled-data method.",
+      "Distillation transfers a teacher model's behavior and requires data; it is not the labeled-pairs style-adaptation method described.",
+      "RAG grounds answers with retrieved context but does not change the model's weights or inherent style."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A team wants a smaller, cheaper model that approaches the accuracy of a large model on a narrow task, and prefers to avoid manually curating a large labeled dataset. Which Bedrock capability is designed for this?",
+    "options": [
+      "Model distillation, which uses a larger teacher model to generate training data that fine-tunes a smaller student model",
+      "Continued pre-training on public web data",
+      "Provisioned Throughput sizing",
+      "Prompt caching"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Model distillation transfers capability from a large teacher model to a smaller student by generating training data from the teacher and fine-tuning the student — yielding a cheaper, faster model that approximates the teacher on the task.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Bedrock model distillation generates responses from a teacher model and uses them to fine-tune a smaller, cheaper student model for the target task.",
+      "Continued pre-training adds broad domain knowledge from unlabeled corpora; it is not the teacher→student cost-reduction method.",
+      "Provisioned Throughput is a capacity/pricing mode, not a way to shrink a model.",
+      "Prompt caching reduces repeated-token cost, not model size."
+    ]
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "Before launch, a team must compare two candidate models on their own dataset for accuracy and quality, using both automatic metrics and human reviewers. Which Bedrock feature supports this directly?",
+    "options": [
+      "Bedrock model evaluation jobs, which offer automatic metrics and human (or LLM-as-a-judge) evaluation on your dataset",
+      "CloudWatch metrics for the endpoints",
+      "Provisioned Throughput benchmarking",
+      "Guardrails content filters"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Bedrock model evaluation supports automatic metric-based jobs, human evaluation, and LLM-as-a-judge to compare models on a task dataset — the right tool for pre-launch quality/accuracy comparison.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Bedrock model evaluation lets you compare models on your dataset using automatic metrics, human review, or LLM-as-a-judge.",
+      "CloudWatch reports operational metrics (latency, invocations), not answer quality/accuracy on a dataset.",
+      "Provisioned Throughput concerns capacity, not evaluation of output quality.",
+      "Guardrails enforce safety policies; they do not benchmark model accuracy."
+    ]
+  }
+]

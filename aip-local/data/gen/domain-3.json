@@ -1,0 +1,790 @@
+[
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You are shrinking a RAG vector index and invoke Titan Text Embeddings V2 directly.\n\n```python\nimport json, boto3\nbrt = boto3.client(\"bedrock-runtime\")\nbody = json.dumps({\n    \"inputText\": \"concrete slab hairline crack at grid B4\",\n    \"dimensions\": 512,\n    \"normalize\": True\n})\nresp = brt.invoke_model(modelId=\"amazon.titan-embed-text-v2:0\", body=body)\nvec = json.loads(resp[\"body\"].read())[\"embedding\"]\n```\n\nWhich statement about this configuration is correct?",
+    "options": [
+      "amazon.titan-embed-text-v2:0 accepts dimensions of 256, 512, or 1024; requesting 512 is valid and produces smaller vectors than the 1024 default, trading a little accuracy for index size.",
+      "The dimensions field is ignored; Titan V2 always returns 1536-dimensional vectors identical to Titan Embeddings G1 / v1.",
+      "normalize:true is unsupported on Titan V2 and raises a ValidationException; normalization must be done client-side.",
+      "Requesting dimensions:512 forces embeddingTypes to [\"binary\"], so the returned embedding is a packed bit array rather than floats."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Titan Text Embeddings V2 supports three output sizes 256, 512, and 1024 (default 1024), so 512 is valid and halves storage versus 1024. normalize defaults to true and is fully supported, so C is wrong. Titan V1 (G1) is fixed at 1536 dims, but V2 is configurable, making B wrong. Binary/float output is controlled by embeddingTypes independently of dimensions, so D is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Titan Text Embeddings V2 accepts 256, 512, or 1024 dimensions (1024 default), so requesting 512 is valid and produces smaller vectors than the default, trading a little accuracy for reduced index size.",
+      "Wrong: this describes Titan G1/v1, which is fixed at 1536 dims; Titan V2's dimensions field is honored and its default is 1024, not an ignored 1536.",
+      "Wrong: normalize actually defaults to true and is fully supported by Titan V2, so it does not raise a ValidationException and need not be done client-side.",
+      "Wrong: output format (float vs binary) is controlled by embeddingTypes independently; requesting dimensions:512 has no effect on it and floats are returned by default."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You index a corpus with Cohere Embed on Bedrock and must set input_type correctly for the two phases (indexing documents vs. answering a live user query).\n\n```python\nimport json, boto3\nbrt = boto3.client(\"bedrock-runtime\")\nresp = brt.invoke_model(\n    modelId=\"cohere.embed-english-v3\",\n    body=json.dumps({\n        \"texts\": [\"ITP hold point requires engineer sign-off\"],\n        \"input_type\": \"???\"\n    })\n)\n```\n\nWhen embedding the documents you are ingesting into the vector store, which input_type must you use?",
+    "options": [
+      "search_query, because every text passed to Cohere Embed v3 is treated as a query.",
+      "search_document, and the live user question must be embedded separately with search_query so the asymmetric query/document spaces align.",
+      "classification, because retrieval is internally a classification over document IDs.",
+      "clustering, because RAG groups semantically similar chunks before retrieval."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Cohere Embed v3 is asymmetric: documents you ingest must use input_type=search_document and the incoming query must use search_query so the two embedding spaces are comparable. Using search_query for documents (A) degrades retrieval quality. classification and clustering are for different downstream tasks and are not the retrieval pair, so C and D are wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: search_query is only for the live user question; applying it to ingested documents mismatches Cohere v3's asymmetric spaces and degrades retrieval.",
+      "Correct: documents must be embedded with search_document and the query with search_query so Cohere v3's asymmetric document/query spaces align.",
+      "Wrong: classification is for text-classification tasks; retrieval is nearest-neighbor over vectors, not a classification over document IDs.",
+      "Wrong: clustering is for grouping/clustering tasks, not retrieval; RAG does not cluster chunks before retrieving, so this input_type mislabels ingested documents."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A Knowledge Base must scale to hundreds of millions of vectors, support metadata filtering plus HYBRID (semantic + keyword) search, and require no cluster capacity planning from your team. You are configuring the vector store when creating the KB.\n\n```json\n{\n  \"type\": \"???\",\n  \"opensearchServerlessConfiguration\": {\n    \"collectionArn\": \"arn:aws:aoss:...:collection/abc\",\n    \"vectorIndexName\": \"kb-index\",\n    \"fieldMapping\": {\n      \"vectorField\": \"embedding\",\n      \"textField\": \"chunk\",\n      \"metadataField\": \"meta\"\n    }\n  }\n}\n```\n\nWhich vector store best fits these constraints?",
+    "options": [
+      "Amazon Neptune Analytics, because graph adjacency gives the fastest hybrid search.",
+      "Amazon Aurora PostgreSQL with pgvector, because it is the only store that supports metadata filters.",
+      "Amazon OpenSearch Serverless, which is serverless (no shard/capacity management), scales to very large vector counts, and supports HYBRID search and filtering in Knowledge Bases.",
+      "Amazon Redis / MemoryDB, because in-memory storage is required for any hybrid search."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "OpenSearch Serverless removes capacity planning, scales to large vector volumes, and is the store that supports overrideSearchType=HYBRID in Bedrock Knowledge Bases. Aurora pgvector supports filters too, so B's exclusivity claim is false. Neptune Analytics targets GraphRAG, not general hybrid vector search, and Redis is not required for hybrid search, so A and D are wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: Neptune Analytics targets GraphRAG via graph traversal, not hybrid semantic+keyword vector search, and graph adjacency does not provide the fastest hybrid search.",
+      "Wrong: pgvector supports filters but is not the only store that does, and Aurora requires instance/capacity management, violating the no-capacity-planning requirement.",
+      "Correct: OpenSearch Serverless needs no shard/capacity management, scales to very large vector counts, and supports HYBRID search plus metadata filtering in Knowledge Bases.",
+      "Wrong: Redis/MemoryDB is not required for hybrid search and its in-memory model is unsuited to hundreds of millions of vectors at low cost."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Your customer data already lives in Amazon Aurora PostgreSQL. You want RAG chunks stored beside relational rows so you can JOIN vectors with business columns in plain SQL, minimize new infrastructure, and keep cost low at moderate scale.\n\n```sql\nCREATE EXTENSION IF NOT EXISTS vector;\nCREATE TABLE bedrock_kb (\n  id uuid PRIMARY KEY,\n  embedding vector(1024),\n  chunks text,\n  metadata jsonb\n);\nCREATE INDEX ON bedrock_kb USING hnsw (embedding vector_cosine_ops);\n```\n\nWhich vector store matches these requirements?",
+    "options": [
+      "Pinecone, because it is the only managed vector store Bedrock Knowledge Bases can use.",
+      "OpenSearch Serverless, because pgvector cannot be used with Bedrock Knowledge Bases.",
+      "Amazon Neptune Analytics, because JSONB metadata implies a graph model.",
+      "Amazon Aurora PostgreSQL with the pgvector extension, which stores embeddings next to relational data and is a supported Knowledge Base vector store."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Aurora PostgreSQL + pgvector is a supported Knowledge Base store and is ideal when embeddings should sit beside relational data for SQL joins with low added infrastructure. Pinecone is supported but not the only option, so A is wrong. pgvector IS supported by Knowledge Bases, so B is false. JSONB is just a column type, not a graph, so C is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: Pinecone is only one of several supported stores (OpenSearch, Aurora pgvector, Redis, Neptune are others), so it is not the only managed option.",
+      "Wrong: pgvector IS a supported Knowledge Base vector store, so the premise that it cannot be used is false.",
+      "Wrong: JSONB is merely a PostgreSQL column type for metadata; it does not imply a graph model or Neptune.",
+      "Correct: Aurora PostgreSQL with pgvector is a supported KB store and stores embeddings beside relational rows for SQL joins with minimal added infrastructure."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "You are choosing a chunking strategy for a Bedrock Knowledge Base ingesting long inspection reports where related clauses span multiple paragraphs. Select TWO statements that are correct.\n\n```json\n{\n  \"chunkingConfiguration\": {\n    \"chunkingStrategy\": \"SEMANTIC\",\n    \"semanticChunkingConfiguration\": {\n      \"maxTokens\": 300,\n      \"bufferSize\": 1,\n      \"breakpointPercentileThreshold\": 95\n    }\n  }\n}\n```\n\nSelect TWO.",
+    "options": [
+      "SEMANTIC chunking uses embedding similarity between adjacent sentences and splits at points where similarity drops below the breakpointPercentileThreshold, keeping semantically coherent text together.",
+      "Choosing chunkingStrategy=NONE tells Bedrock to treat each source file as a single chunk, so you must pre-chunk documents yourself if they exceed the embedding model's context.",
+      "SEMANTIC chunking guarantees each chunk is exactly maxTokens tokens with fixed overlap, identical to FIXED_SIZE.",
+      "HIERARCHICAL and SEMANTIC are the same strategy under two names and can be set interchangeably.",
+      "chunkingStrategy=NONE automatically applies a 300-token default fixed-size split."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "SEMANTIC chunking embeds sentences and breaks where semantic similarity drops past the percentile threshold, so coherent passages stay together (A). NONE treats each file as one chunk, so oversized files must be pre-split (B). C is wrong because only FIXED_SIZE guarantees uniform token counts. HIERARCHICAL (parent/child) differs from SEMANTIC, so D is wrong, and NONE applies no default split, so E is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: SEMANTIC chunking embeds adjacent sentences and splits where similarity drops past breakpointPercentileThreshold, keeping semantically coherent text together.",
+      "Correct: chunkingStrategy=NONE treats each source file as a single chunk, so files exceeding the embedding model's context must be pre-chunked yourself.",
+      "Wrong: only FIXED_SIZE guarantees uniform token counts with fixed overlap; SEMANTIC chunk sizes vary with similarity and maxTokens is only an upper cap.",
+      "Wrong: HIERARCHICAL is a distinct parent/child strategy, not another name for SEMANTIC's similarity-breakpoint splitting; they are not interchangeable.",
+      "Wrong: NONE applies no splitting at all, so there is no 300-token default fixed-size split."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A developer wants only the raw retrieved passages (no LLM answer) so a downstream service can build its own prompt.\n\n```python\nimport boto3\nrt = boto3.client(\"bedrock-agent-runtime\")\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": \"What curing time applies to N32 concrete?\"},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\"numberOfResults\": 5}}\n)\n```\n\nWhat does resp contain?",
+    "options": [
+      "A retrievalResults list of chunk objects (content.text, location, score, metadata) and no generated answer, because retrieve performs retrieval only.",
+      "A generated natural-language answer in resp[\"output\"][\"text\"], because retrieve always calls the model afterward.",
+      "Nothing usable, because retrieve requires a modelArn just like retrieve_and_generate.",
+      "Only document S3 URIs, because retrieve never returns chunk text."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "retrieve returns retrievalResults with each chunk's content.text, location, score, and metadata, and does not invoke a model, so A is correct. Generation is done by retrieve_and_generate, so B is wrong. retrieve does not take a modelArn (C wrong) and it does return chunk text, not just URIs (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: retrieve performs retrieval only, returning a retrievalResults list of chunks with content.text, location, score, and metadata, and no generated answer.",
+      "Wrong: retrieve never invokes a model; generation and output[\"text\"] come from retrieve_and_generate, not retrieve.",
+      "Wrong: retrieve does not accept or require a modelArn (that is retrieve_and_generate), so the response is fully usable.",
+      "Wrong: retrieve returns the chunk text in content.text, not merely S3 URIs."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You call retrieve_and_generate against a Knowledge Base. The call fails validation.\n\n```python\nrt = boto3.client(\"bedrock-agent-runtime\")\nresp = rt.retrieve_and_generate(\n    input={\"text\": \"Summarize non-conformances for lot 7.\"},\n    retrieveAndGenerateConfiguration={\n        \"type\": \"KNOWLEDGE_BASE\",\n        \"knowledgeBaseConfiguration\": {\n            \"knowledgeBaseId\": \"KB123ABCDE\"\n        }\n    }\n)\n```\n\nWhat is the minimal fix?",
+    "options": [
+      "Add sessionConfiguration with a KMS key; modelArn is optional.",
+      "Add modelArn inside knowledgeBaseConfiguration, because retrieve_and_generate must know which foundation model generates the grounded answer.",
+      "Change type to \"RETRIEVE\" because \"KNOWLEDGE_BASE\" is not a valid type.",
+      "Move knowledgeBaseId to the top-level input object."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "retrieve_and_generate needs a modelArn in knowledgeBaseConfiguration so Bedrock knows which model synthesizes the grounded answer; omitting it fails validation, so B is correct. sessionConfiguration/KMS is optional (A wrong), the valid type is KNOWLEDGE_BASE not RETRIEVE (C wrong), and knowledgeBaseId belongs in knowledgeBaseConfiguration, not input (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: sessionConfiguration/KMS is optional and not the validation failure; modelArn is what is required, not optional.",
+      "Correct: retrieve_and_generate requires a modelArn inside knowledgeBaseConfiguration so Bedrock knows which foundation model synthesizes the grounded answer.",
+      "Wrong: KNOWLEDGE_BASE is the valid type; RETRIEVE is not a valid retrieveAndGenerateConfiguration type value.",
+      "Wrong: knowledgeBaseId correctly belongs inside knowledgeBaseConfiguration; moving it to input would itself be invalid."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You must restrict retrieval to chunks whose metadata field department equals \"legal\".\n\n```python\nrt = boto3.client(\"bedrock-agent-runtime\")\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": query},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\n        \"numberOfResults\": 5,\n        \"filter\": FILTER\n    }}\n)\n```\n\nWhich FILTER is the correct Bedrock metadata filter?",
+    "options": [
+      "{\"department\": \"legal\"}",
+      "{\"match\": {\"department\": \"legal\"}}",
+      "{\"equals\": {\"key\": \"department\", \"value\": \"legal\"}}",
+      "{\"filterExpression\": \"department = 'legal'\"}"
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Bedrock retrieval filters use operator objects with key and value, so equals with {\"key\":\"department\",\"value\":\"legal\"} is correct (C). Bare key:value maps (A), Elasticsearch-style match (B), and SQL-like filterExpression strings (D) are not the Bedrock filter schema and will fail or be ignored.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: a bare {\"key\":\"value\"} map is not the Bedrock filter schema, which requires an operator object; this will fail or be ignored.",
+      "Wrong: match is Elasticsearch/OpenSearch query-DSL syntax, not a Bedrock retrieval filter operator.",
+      "Correct: Bedrock filters use operator objects with key and value, so equals with {\"key\":\"department\",\"value\":\"legal\"} is the right form.",
+      "Wrong: Bedrock does not accept a SQL-like filterExpression string; filters are structured operator objects."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A teammate leaves numberOfResults unset and asks how many chunks are retrieved, and what the ceiling is.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": query},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {}}  # numberOfResults omitted\n)\n```\n\nWhich statement is correct?",
+    "options": [
+      "Omitting it returns all matching vectors in the store, ignoring any cap.",
+      "It defaults to 1, and the maximum you can request is 5.",
+      "It defaults to 25, and there is no maximum.",
+      "It defaults to a small number (5) when omitted, and the value you pass is capped at a documented maximum (100), so requesting 500 is rejected/clamped."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "numberOfResults has a small default (5) and an upper bound of 100 in Knowledge Bases, so oversized requests are rejected/clamped, making D correct. It never returns the entire store (A), the default is not 1 with a max of 5 (B), and it is not unbounded (C).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: omitting numberOfResults does not return the entire store; a default applies and a documented cap still bounds results.",
+      "Wrong: the default is not 1 and the maximum is not 5; the ceiling is 100.",
+      "Wrong: the default is not 25 and there is a maximum of 100, so it is not unbounded.",
+      "Correct: numberOfResults defaults to a small value (about 5) and is capped at 100, so an oversized request like 500 is rejected/clamped."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "Your team is finalizing vector-store selection for several Knowledge Bases with different needs. Select TWO statements that are correct.",
+    "options": [
+      "Amazon Neptune Analytics is the appropriate choice when you need GraphRAG, combining vector similarity with graph relationships between entities.",
+      "Pinecone can be used with Bedrock Knowledge Bases by supplying a connection endpoint and a Secrets Manager ARN holding the API key.",
+      "Aurora PostgreSQL pgvector cannot store metadata, so filtering is impossible with that store.",
+      "OpenSearch Serverless requires you to manually provision and scale shards before creating the index.",
+      "Redis/MemoryDB is the only supported store that allows metadata filtering."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Neptune Analytics fits GraphRAG where graph relationships augment vector similarity (A), and Pinecone integrates via a connection endpoint plus a Secrets Manager credentials ARN (B). pgvector stores metadata in a JSONB column and supports filtering, so C is wrong. OpenSearch Serverless removes shard provisioning (D wrong), and metadata filtering is not exclusive to Redis (E wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Neptune Analytics is appropriate for GraphRAG, combining vector similarity with graph relationships between entities.",
+      "Correct: Pinecone integrates with Knowledge Bases via a connection endpoint plus a Secrets Manager ARN holding the API key.",
+      "Wrong: pgvector stores metadata in a JSONB column and fully supports filtering, so filtering is not impossible.",
+      "Wrong: OpenSearch Serverless is serverless and requires no manual shard provisioning or scaling before index creation.",
+      "Wrong: metadata filtering is supported across multiple stores, not exclusive to Redis/MemoryDB."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You want keyword precision (exact clause numbers like \"AS 3600\") plus semantic recall in one KB query.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": \"cover requirements in AS 3600\"},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\n        \"numberOfResults\": 8,\n        \"overrideSearchType\": \"HYBRID\"\n    }}\n)\n```\n\nWhich statement is correct?",
+    "options": [
+      "HYBRID combines semantic (vector) and keyword (text) matching and is supported when the KB is backed by OpenSearch (Serverless/managed); it improves recall of exact tokens like standard numbers.",
+      "HYBRID is the default for every KB, so setting overrideSearchType has no effect anywhere.",
+      "overrideSearchType only accepts \"KEYWORD\" or \"NEURAL\"; \"HYBRID\" raises a ValidationException.",
+      "HYBRID is supported on all vector stores including pgvector, Pinecone, Redis, and Neptune identically."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "HYBRID blends vector and keyword search and is available on OpenSearch-backed Knowledge Bases, helping match exact tokens such as standard numbers (A). SEMANTIC is the default, not HYBRID (B wrong). The valid values are SEMANTIC and HYBRID, not KEYWORD/NEURAL (C wrong). HYBRID support is store-dependent, not universal across all stores (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: HYBRID blends semantic vector and keyword text matching on OpenSearch-backed KBs, improving recall of exact tokens like standard numbers.",
+      "Wrong: SEMANTIC is the default search type, not HYBRID, so overrideSearchType does change behavior.",
+      "Wrong: the valid overrideSearchType values are SEMANTIC and HYBRID, not KEYWORD or NEURAL, so HYBRID does not raise a ValidationException.",
+      "Wrong: HYBRID support is store-dependent (OpenSearch), not universally available across pgvector, Pinecone, Redis, and Neptune."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Retrieval returns many loosely-related chunks, hurting answer quality. You add a reranking step.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": query},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\n        \"numberOfResults\": 25,\n        \"rerankingConfiguration\": {\n            \"type\": \"BEDROCK_RERANKING_MODEL\",\n            \"bedrockRerankingConfiguration\": {\n                \"modelConfiguration\": {\"modelArn\": \"arn:aws:bedrock:...:cohere.rerank-v3-5:0\"},\n                \"numberOfRerankedResults\": 5\n            }\n        }\n    }}\n)\n```\n\nWhat is the effect?",
+    "options": [
+      "Reranking replaces the vector search entirely, so numberOfResults is ignored.",
+      "The KB retrieves 25 candidates by vector similarity, a reranker model reorders them by query relevance, and only the top 5 (numberOfRerankedResults) are returned, improving precision at the cost of extra latency/cost.",
+      "numberOfRerankedResults must be greater than numberOfResults or the call fails.",
+      "Reranking runs before retrieval, embedding the query twice for redundancy."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "Reranking is a second stage: retrieve a larger candidate set (25), score each against the query with a rerank model, and keep the top numberOfRerankedResults (5), improving precision but adding latency/cost (B). Vector search still runs first (A wrong), the reranked count is a subset so it must be <= candidates (C wrong), and reranking happens after retrieval (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: reranking is a second stage on top of vector search, not a replacement; numberOfResults still sets the candidate count fed to the reranker.",
+      "Correct: the KB retrieves 25 candidates by vector similarity, the rerank model reorders them by query relevance, and only the top numberOfRerankedResults (5) are returned, raising precision at some latency/cost.",
+      "Wrong: numberOfRerankedResults is a subset of candidates, so it must be less than or equal to numberOfResults, not greater.",
+      "Wrong: reranking runs after retrieval on the retrieved candidates, not before it, and does not embed the query twice."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You uploaded new PDFs to the S3 data source. Retrieval still returns only the old content.\n\n```python\nagent = boto3.client(\"bedrock-agent\")\n# ??? call needed here\nresp = agent.list_ingestion_jobs(\n    knowledgeBaseId=\"KB123ABCDE\",\n    dataSourceId=\"DS987ZYX\"\n)\n```\n\nWhat must you do so the new documents become searchable?",
+    "options": [
+      "Nothing; Knowledge Bases automatically embed new S3 objects the instant they are uploaded.",
+      "Delete and recreate the Knowledge Base, because ingestion cannot be re-run.",
+      "Call start_ingestion_job(knowledgeBaseId=..., dataSourceId=...) to sync the data source; ingestion chunks and embeds only the new/changed objects into the vector store.",
+      "Call retrieve with a special flag forceReindex=true to trigger embedding."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Ingestion is not automatic; you must call start_ingestion_job for the data source, which incrementally chunks and embeds new or changed S3 objects (C). Uploading to S3 alone does nothing (A wrong), you never need to recreate the KB (B wrong), and retrieve has no forceReindex flag (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: Knowledge Bases do not embed S3 objects automatically on upload; an ingestion job is required.",
+      "Wrong: you never need to delete and recreate the KB; ingestion can be re-run at any time.",
+      "Correct: call start_ingestion_job for the data source to sync it, which incrementally chunks and embeds only new or changed S3 objects.",
+      "Wrong: retrieve has no forceReindex flag; retrieval only queries the existing index."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You must show users the exact source passages behind a generated answer.\n\n```python\nresp = rt.retrieve_and_generate(\n    input={\"text\": \"What triggered the hold point on lot 12?\"},\n    retrieveAndGenerateConfiguration={\n        \"type\": \"KNOWLEDGE_BASE\",\n        \"knowledgeBaseConfiguration\": {\n            \"knowledgeBaseId\": \"KB123ABCDE\",\n            \"modelArn\": \"arn:aws:bedrock:...:anthropic.claude-3-5-sonnet-...\"\n        }\n    }\n)\n```\n\nWhere are the source references found in resp?",
+    "options": [
+      "There are no sources; retrieve_and_generate returns only free text.",
+      "In resp[\"retrievalResults\"], identical to the retrieve API response.",
+      "In resp[\"output\"][\"metadata\"][\"sources\"] as raw S3 object bytes.",
+      "In resp[\"citations\"], where each citation maps a generatedResponsePart span to retrievedReferences containing content.text and location (e.g., S3 URI)."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "retrieve_and_generate returns a citations array; each citation links a span of the generated text to retrievedReferences with the source content and location such as an S3 URI (D). It does return sources, so A is wrong. retrievalResults is the retrieve API's shape, not this one (B wrong), and citations carry text/location, not raw object bytes (C wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: retrieve_and_generate does return source references, not only free text.",
+      "Wrong: retrievalResults is the shape of the retrieve API response, not retrieve_and_generate.",
+      "Wrong: sources are not returned as raw S3 object bytes under output.metadata.sources.",
+      "Correct: retrieve_and_generate returns a citations array where each citation maps a generatedResponsePart span to retrievedReferences containing content.text and location such as an S3 URI."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "Answers from your RAG system occasionally state facts that are not in the retrieved passages (hallucination). Select TWO techniques that most directly reduce this.",
+    "options": [
+      "Instruct the generation model, via a custom prompt template, to answer only from the provided search results and to say it does not know when the context is insufficient.",
+      "Add a reranking stage so the most relevant passages actually reach the model's context window instead of being crowded out by weak matches.",
+      "Increase the model's temperature so it explores more phrasings of the answer.",
+      "Remove citations from the response so users cannot see mismatches.",
+      "Switch chunkingStrategy to NONE so each answer is generated without any retrieved context."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Constraining the model to answer only from retrieved context and to abstain when context is insufficient reduces fabrication (A), and reranking ensures the truly relevant passages occupy the context window (B). Higher temperature increases variability/hallucination (C wrong), hiding citations masks rather than fixes errors (D wrong), and NONE does not remove context and generating without grounding would increase hallucination (E wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: a custom prompt template constraining the model to answer only from retrieved results and to abstain when context is insufficient directly reduces fabrication.",
+      "Correct: a reranking stage ensures the most relevant passages actually reach the model's context window instead of being crowded out by weak matches.",
+      "Wrong: raising temperature increases output variability and makes hallucination more likely, not less.",
+      "Wrong: removing citations merely hides mismatches from users; it does not reduce hallucination.",
+      "Wrong: chunkingStrategy=NONE is a chunking option, not a way to drop context; generating without grounding would increase hallucination."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You embed documents and queries with Titan Text Embeddings V2 using normalize:true, then compute similarity in your own store.\n\n```python\nimport numpy as np\ndef score(q, d):\n    return float(np.dot(q, d))  # q, d are Titan v2 vectors, normalize=True\n```\n\nWhich statement is correct?",
+    "options": [
+      "Because normalize=true makes vectors unit length, the dot product equals cosine similarity, so this score is a valid cosine ranking.",
+      "Dot product on normalized vectors gives Euclidean distance, so higher scores mean less similar.",
+      "Cosine similarity cannot be computed from Titan vectors; you must request embeddingTypes:[\"cosine\"].",
+      "Normalization has no effect on ranking, so cosine and dot product always disagree."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "For unit-length (normalized) vectors, cosine similarity reduces to the dot product, so the score is a valid cosine ranking where higher means more similar (A). Dot product is not Euclidean distance (B wrong), there is no embeddingTypes:[\"cosine\"] option (C wrong), and normalization is precisely what makes dot product and cosine agree (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: normalize=true makes vectors unit length, so their dot product equals cosine similarity and this score is a valid cosine ranking where higher means more similar.",
+      "Wrong: the dot product of normalized vectors is cosine similarity, not Euclidean distance, and higher scores mean more similar.",
+      "Wrong: there is no embeddingTypes:[\"cosine\"] option; cosine is computed from the returned vectors themselves.",
+      "Wrong: normalization is exactly what makes dot product and cosine agree, so they do not always disagree."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Users ask compound questions like \"Compare curing times for N32 and N40 and list defects for each.\" Single-shot retrieval misses parts of the answer. You enable query reformulation in retrieve_and_generate.\n\n```python\nconfig = {\n  \"type\": \"KNOWLEDGE_BASE\",\n  \"knowledgeBaseConfiguration\": {\n    \"knowledgeBaseId\": \"KB123ABCDE\",\n    \"modelArn\": MODEL_ARN,\n    \"orchestrationConfiguration\": {\n      \"queryTransformationConfiguration\": {\"type\": \"???\"}\n    }\n  }\n}\n```\n\nWhich type addresses this problem?",
+    "options": [
+      "PROMPT_COMPRESSION, which shortens the query to a single keyword before retrieval.",
+      "QUERY_DECOMPOSITION, which breaks a complex query into multiple sub-queries, retrieves for each, and combines the results before generation.",
+      "VECTOR_QUANTIZATION, which reformulates queries into binary vectors.",
+      "SEMANTIC_ROUTING, which sends the query to a different Knowledge Base."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "QUERY_DECOMPOSITION splits a multi-part question into sub-queries, retrieves separately for each, and merges the evidence, covering all parts of the answer (B). PROMPT_COMPRESSION (A), VECTOR_QUANTIZATION (C), and SEMANTIC_ROUTING (D) are not the decomposition transformation and do not solve multi-intent retrieval.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: PROMPT_COMPRESSION is not a valid queryTransformation type, and reducing a compound question to one keyword would drop parts of the intent.",
+      "Correct: QUERY_DECOMPOSITION breaks a complex query into sub-queries, retrieves for each, and combines the results before generation, covering all parts of the answer.",
+      "Wrong: VECTOR_QUANTIZATION is not a query transformation type; quantization compresses vectors and does not reformulate multi-intent queries.",
+      "Wrong: SEMANTIC_ROUTING is not a valid queryTransformationConfiguration type and routing to another KB does not address multi-part questions."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You must retrieve chunks where project == \"Bridge12\" AND status != \"draft\".\n\n```python\nfilter = {\n    \"???\": [\n        {\"equals\": {\"key\": \"project\", \"value\": \"Bridge12\"}},\n        {\"notEquals\": {\"key\": \"status\", \"value\": \"draft\"}}\n    ]\n}\n```\n\nWhich key combines the two conditions with logical AND?",
+    "options": [
+      "\"anyOf\"",
+      "\"orAll\"",
+      "\"andAll\"",
+      "\"mustMatch\""
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "Bedrock filters use andAll for logical AND across a list of conditions and orAll for logical OR (C). orAll would loosen to OR (B wrong), and anyOf / mustMatch are not valid Bedrock filter operators (A and D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: anyOf is not a valid Bedrock filter operator for combining conditions.",
+      "Wrong: orAll combines conditions with logical OR, which would loosen the filter rather than require both.",
+      "Correct: andAll combines the listed conditions with logical AND, requiring both project==Bridge12 and status!=draft.",
+      "Wrong: mustMatch is not a valid Bedrock filter operator."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Your documents have a clear section hierarchy, and you want retrieval to match small precise child chunks but feed the model the larger parent context.\n\n```json\n{\n  \"chunkingStrategy\": \"HIERARCHICAL\",\n  \"hierarchicalChunkingConfiguration\": {\n    \"levelConfigurations\": [\n      {\"maxTokens\": 1500},\n      {\"maxTokens\": 300}\n    ],\n    \"overlapTokens\": 60\n  }\n}\n```\n\nWhat behavior does HIERARCHICAL chunking provide?",
+    "options": [
+      "It ignores the smaller level and only ever returns 1500-token chunks.",
+      "It embeds only parent chunks, so child sizes are cosmetic.",
+      "It produces overlapping fixed windows with no parent/child relationship.",
+      "It searches on the smaller child chunks (300 tokens) for precise matching but returns the associated larger parent chunk (1500 tokens) so the model receives fuller surrounding context."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "HIERARCHICAL chunking matches on small child chunks for precision and returns their parent chunk so the model gets broader context (D). It does not return only parents or only children, so A and B are wrong, and it explicitly maintains a parent/child relationship rather than flat overlapping windows, so C is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: HIERARCHICAL does not ignore the child level; child chunks are what searches match against.",
+      "Wrong: it does not embed only parents; the small child chunks are embedded and searched, so their sizes are not cosmetic.",
+      "Wrong: it explicitly maintains a parent/child relationship, not flat overlapping fixed windows.",
+      "Correct: HIERARCHICAL searches on the small child chunks (300 tokens) for precise matching but returns the associated larger parent chunk (1500 tokens) so the model gets fuller context."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "Your team debates embedding-model choices for a Bedrock RAG system. Select TWO correct statements.",
+    "options": [
+      "Amazon Titan Text Embeddings V2 lets you request 256, 512, or 1024 dimensions, so you can trade retrieval accuracy for lower storage and faster search.",
+      "Cohere Embed v3 requires input_type, and mismatching document vs. query input_type degrades retrieval relevance.",
+      "You can safely mix vectors from Titan V2 and Cohere Embed in the same index and compare them with cosine similarity.",
+      "Query and document embeddings can use different embedding models as long as both output 1024 dimensions.",
+      "Titan Embeddings G1 (v1) supports the same configurable dimensions as V2."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Titan V2 supports 256/512/1024 dimensions for an accuracy-vs-cost trade-off (A), and Cohere Embed v3 requires a correct input_type for queries vs documents (B). Embeddings from different models live in incompatible vector spaces, so mixing Titan and Cohere (C) or using different models for query vs document (D) breaks similarity even at equal dimensions. Titan G1/v1 is fixed at 1536 dims and is not configurable, so E is wrong.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Titan Text Embeddings V2 supports 256, 512, or 1024 dimensions, letting you trade retrieval accuracy for lower storage and faster search.",
+      "Correct: Cohere Embed v3 requires input_type, and mismatching document vs. query input_type degrades retrieval relevance.",
+      "Wrong: Titan V2 and Cohere embeddings occupy different, incompatible vector spaces, so mixing them in one index and comparing with cosine is invalid.",
+      "Wrong: query and document embeddings must come from the same model; different models produce incompatible spaces even at equal dimensions.",
+      "Wrong: Titan Embeddings G1/v1 is fixed at 1536 dimensions and is not configurable like V2."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You configure SEMANTIC chunking and want fewer, larger coherent chunks that only split at strong topic shifts.\n\n```json\n{\n  \"chunkingStrategy\": \"SEMANTIC\",\n  \"semanticChunkingConfiguration\": {\n    \"maxTokens\": 500,\n    \"bufferSize\": 1,\n    \"breakpointPercentileThreshold\": 99\n  }\n}\n```\n\nWhat is the effect of these parameter values?",
+    "options": [
+      "A high breakpointPercentileThreshold (99) means only the largest similarity drops become split points, yielding fewer/larger chunks, while maxTokens caps chunk size and bufferSize controls how many surrounding sentences are grouped when evaluating similarity.",
+      "breakpointPercentileThreshold sets the number of chunks to produce, so 99 forces exactly 99 chunks.",
+      "maxTokens is ignored in SEMANTIC mode; only the threshold controls size.",
+      "bufferSize is the overlap in tokens between adjacent chunks."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "A high breakpointPercentileThreshold makes only the most significant similarity drops become breakpoints, producing fewer/larger chunks; maxTokens still caps size and bufferSize groups neighboring sentences when computing similarity (A). The threshold is a percentile, not a chunk count (B wrong), maxTokens still applies (C wrong), and bufferSize is a sentence-grouping window, not a token overlap (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: a high breakpointPercentileThreshold (99) makes only the largest similarity drops become split points, yielding fewer/larger chunks, while maxTokens caps chunk size and bufferSize sets how many surrounding sentences are grouped when evaluating similarity.",
+      "Wrong: breakpointPercentileThreshold is a percentile on similarity drops, not a count of chunks, so 99 does not force 99 chunks.",
+      "Wrong: maxTokens is still enforced as a size cap in SEMANTIC mode; it is not ignored.",
+      "Wrong: bufferSize is a sentence-grouping window used when computing similarity, not a token overlap between chunks."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You must connect a Bedrock Knowledge Base to an existing Pinecone index.\n\n```json\n{\n  \"type\": \"PINECONE\",\n  \"pineconeConfiguration\": {\n    \"connectionString\": \"https://kb-index-xyz.svc.pinecone.io\",\n    \"credentialsSecretArn\": \"???\",\n    \"fieldMapping\": {\"textField\": \"text\", \"metadataField\": \"metadata\"}\n  }\n}\n```\n\nWhat must credentialsSecretArn point to?",
+    "options": [
+      "The ARN of the Pinecone index itself, since Bedrock derives the key from it.",
+      "An AWS Secrets Manager secret ARN holding the Pinecone API key that Bedrock uses to authenticate to the index.",
+      "An IAM role ARN that Pinecone assumes into your account.",
+      "A KMS key ARN used to encrypt the connectionString at rest."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "For Pinecone, credentialsSecretArn is the Secrets Manager ARN of the secret that stores the Pinecone API key Bedrock uses to authenticate (B). It is not the index ARN (A), not an IAM role Pinecone assumes (C), and not a KMS key for the connection string (D).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: credentialsSecretArn is not the Pinecone index ARN; Bedrock does not derive an API key from the index.",
+      "Correct: credentialsSecretArn points to an AWS Secrets Manager secret holding the Pinecone API key that Bedrock uses to authenticate to the index.",
+      "Wrong: it is not an IAM role that Pinecone assumes; Pinecone auth uses an API key, not cross-account role assumption.",
+      "Wrong: it is not a KMS key for encrypting the connectionString; it stores the authentication credential."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A low-latency chatbot must serve a modest, frequently-updated set of embeddings with sub-millisecond vector lookups, and the data comfortably fits in memory. Which Bedrock-supported vector store best fits?",
+    "options": [
+      "OpenSearch Serverless, because only it supports vector search.",
+      "Aurora PostgreSQL pgvector, because in-memory speed requires a relational engine.",
+      "Amazon MemoryDB / Redis, an in-memory store offering very low-latency vector search well-suited to small, hot, frequently-updated datasets.",
+      "Amazon Neptune Analytics, because in-memory latency requires a graph engine."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "MemoryDB/Redis is an in-memory store that gives very low-latency vector lookups, ideal for small, hot, frequently-updated datasets (C). OpenSearch Serverless is not the only vector store (A), Aurora pgvector is disk-backed and not the lowest-latency option (B), and Neptune Analytics targets graph/GraphRAG rather than in-memory speed (D).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: OpenSearch Serverless is not the only store that supports vector search, and it is not the lowest-latency in-memory option.",
+      "Wrong: Aurora pgvector is disk-backed relational storage and does not deliver sub-millisecond in-memory lookups.",
+      "Correct: Amazon MemoryDB/Redis is an in-memory store offering very low-latency vector search, well-suited to small, hot, frequently-updated datasets.",
+      "Wrong: Neptune Analytics is a graph/GraphRAG engine, not an in-memory store optimized for sub-millisecond vector lookups."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You need RAG that reasons over relationships between entities (which inspector signed which ITP, which lot belongs to which project) rather than pure passage similarity. Which vector store is purpose-built for this GraphRAG pattern in Bedrock?",
+    "options": [
+      "Pinecone, because managed vector stores are inherently graph-aware.",
+      "Redis, because sorted sets model graphs efficiently.",
+      "Aurora pgvector, because foreign keys make it a graph database.",
+      "Amazon Neptune Analytics, which combines vector search with graph traversal so retrieval can follow entity relationships (GraphRAG)."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "Neptune Analytics unites vector similarity with graph traversal, enabling GraphRAG over entity relationships (D). Pinecone and Redis are vector stores without native graph traversal for this pattern (A, B wrong), and foreign keys do not make Aurora a graph database (C wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: Pinecone is a pure vector store and is not inherently graph-aware, so it cannot follow entity relationships.",
+      "Wrong: Redis sorted sets do not provide the graph traversal GraphRAG needs over entity relationships.",
+      "Wrong: foreign keys do not make Aurora a graph database or provide graph traversal for GraphRAG.",
+      "Correct: Amazon Neptune Analytics combines vector search with graph traversal, so retrieval can follow entity relationships for the GraphRAG pattern."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "A developer is deciding between retrieve, retrieve_and_generate, and multi-turn sessions in bedrock-agent-runtime. Select TWO correct statements.",
+    "options": [
+      "retrieve returns ranked chunks without calling a model, giving you full control to build a custom prompt downstream.",
+      "retrieve_and_generate both fetches passages and produces a grounded, cited answer in one call using the specified modelArn.",
+      "retrieve accepts a modelArn to generate a short summary of each chunk.",
+      "retrieve_and_generate cannot return citations; you must call retrieve separately to get sources.",
+      "retrieve performs generation but skips retrieval when a sessionId is supplied."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "retrieve returns ranked chunks only, leaving prompt construction to you (A), while retrieve_and_generate retrieves and generates a grounded, cited answer in a single call with the given modelArn (B). retrieve takes no modelArn (C wrong), retrieve_and_generate does return citations (D wrong), and a sessionId adds conversational memory without disabling retrieval (E wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: retrieve returns ranked chunks without calling a model, giving you full control to build a custom prompt downstream.",
+      "Correct: retrieve_and_generate both fetches passages and produces a grounded, cited answer in one call using the specified modelArn.",
+      "Wrong: retrieve takes no modelArn and does not summarize chunks; it only returns raw ranked passages.",
+      "Wrong: retrieve_and_generate does return citations, so a separate retrieve call is not needed for sources.",
+      "Wrong: retrieve performs retrieval only and does not generate; a sessionId does not turn it into generation or disable retrieval."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A junior dev filters on a metadata key that was never emitted in the .metadata.json sidecar files during ingestion.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": query},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\n        \"numberOfResults\": 5,\n        \"filter\": {\"equals\": {\"key\": \"region\", \"value\": \"NSW\"}}\n    }}\n)\n```\n\nNo chunk carries a region attribute. What happens?",
+    "options": [
+      "The filter matches nothing, so retrievalResults comes back empty (or nearly so) because no chunks satisfy region == \"NSW\"; the fix is to re-ingest with region in the metadata sidecars.",
+      "Bedrock ignores unknown filter keys and returns the top 5 unfiltered results.",
+      "The call raises a ValidationException because the key is unknown to the index.",
+      "Bedrock infers region from the chunk text automatically, so results are still relevant."
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Filters match only chunks that actually carry the attribute; if no chunk has region, the equals filter excludes everything and results are empty, fixable by re-ingesting with the metadata present (A). Bedrock does not silently drop the filter (B), does not raise a validation error for absent metadata values (C), and does not infer metadata from text (D).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: the equals filter matches only chunks that carry region, so with no chunk having it results come back empty; the fix is to re-ingest with region in the metadata sidecars.",
+      "Wrong: Bedrock does not silently ignore an unmatched filter key and return unfiltered top results.",
+      "Wrong: filtering on an absent metadata value does not raise a ValidationException; it simply matches nothing.",
+      "Wrong: Bedrock does not infer metadata like region from chunk text; only ingested metadata attributes are filterable."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You need a multi-turn RAG assistant where follow-up questions like \"and what about lot 8?\" resolve against prior context.\n\n```python\nresp = rt.retrieve_and_generate(\n    input={\"text\": \"and what about lot 8?\"},\n    retrieveAndGenerateConfiguration={...},\n    sessionId=\"???\"\n)\n```\n\nHow should sessionId be used across turns?",
+    "options": [
+      "Generate a brand-new sessionId on every request so turns stay isolated for privacy.",
+      "Capture the sessionId returned by the first response and pass that same value on subsequent calls so Bedrock maintains conversational context across turns.",
+      "Set sessionId to the knowledgeBaseId so the KB tracks history.",
+      "sessionId must equal the modelArn to bind the conversation to a model."
+    ],
+    "correct": [
+      1
+    ],
+    "explanation": "retrieve_and_generate returns a sessionId; reusing that same value on later calls lets Bedrock carry conversational context so follow-ups resolve correctly (B). A fresh sessionId each turn discards context (A), and sessionId is neither the knowledgeBaseId (C) nor the modelArn (D).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: generating a brand-new sessionId every request discards prior context, so follow-ups cannot resolve against earlier turns.",
+      "Correct: capture the sessionId returned by the first response and reuse it on subsequent calls so Bedrock maintains conversational context across turns.",
+      "Wrong: sessionId is a conversation identifier, not the knowledgeBaseId, and the KB does not track history via that field.",
+      "Wrong: sessionId is unrelated to the modelArn and does not bind the conversation to a model."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You choose FIXED_SIZE chunking and want roughly 20% overlap so context is not lost at chunk boundaries.\n\n```json\n{\n  \"chunkingStrategy\": \"FIXED_SIZE\",\n  \"fixedSizeChunkingConfiguration\": {\n    \"maxTokens\": 500,\n    \"overlapPercentage\": 20\n  }\n}\n```\n\nWhich statement is correct?",
+    "options": [
+      "overlapPercentage is expressed in tokens, so 20 means a 20-token overlap regardless of maxTokens.",
+      "FIXED_SIZE cannot overlap; you must switch to HIERARCHICAL for overlap.",
+      "overlapPercentage=20 makes each chunk share ~20% of its tokens (about 100 of 500) with the neighboring chunk, reducing loss of context at boundaries.",
+      "maxTokens is a soft target and chunks will actually be 600 tokens because overlap adds to the size."
+    ],
+    "correct": [
+      2
+    ],
+    "explanation": "overlapPercentage is a percentage of maxTokens, so 20% of 500 gives roughly 100 shared tokens between adjacent chunks, preserving boundary context (C). It is a percentage, not raw tokens (A wrong), FIXED_SIZE does support overlap (B wrong), and overlap does not inflate maxTokens beyond the cap (D wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: overlapPercentage is a percentage of maxTokens, not a raw token count, so 20 does not mean a fixed 20-token overlap.",
+      "Wrong: FIXED_SIZE fully supports overlap via overlapPercentage; you do not need HIERARCHICAL for it.",
+      "Correct: overlapPercentage=20 makes each chunk share about 20% of its tokens (roughly 100 of 500) with the neighboring chunk, reducing context loss at boundaries.",
+      "Wrong: overlap does not add to maxTokens; chunks stay capped at 500 tokens rather than growing to 600."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You want each S3 document to carry filterable attributes (project, docType) usable in retrieval filters. How do you attach this metadata for a Bedrock Knowledge Base S3 data source?",
+    "options": [
+      "Embed the attributes as the first line of each PDF's text and Bedrock will parse them into filters.",
+      "Pass a metadata dict in the retrieve call; ingestion metadata is not supported.",
+      "Set S3 object tags only; Bedrock reads tags as filter metadata automatically.",
+      "Place a companion <filename>.metadata.json sidecar next to each object containing a metadataAttributes object, then run an ingestion job so the attributes are indexed and become usable in filter expressions."
+    ],
+    "correct": [
+      3
+    ],
+    "explanation": "For S3 sources you attach a <filename>.metadata.json sidecar with metadataAttributes, then run ingestion so the attributes are indexed and filterable (D). Attributes in body text are not parsed into filters (A), filters operate on ingested metadata rather than being supplied only at query time (B), and S3 object tags are not the metadata mechanism for Knowledge Bases (C).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Wrong: attributes placed in the PDF body text are not parsed into filterable metadata by Bedrock.",
+      "Wrong: ingestion-time metadata is supported and filters operate on it; you do not supply filter metadata as a dict in the retrieve call.",
+      "Wrong: Bedrock does not read S3 object tags as filter metadata for Knowledge Bases.",
+      "Correct: place a <filename>.metadata.json sidecar with a metadataAttributes object next to each object, then run an ingestion job so the attributes are indexed and usable in filters."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "A KB returns too few relevant passages and answers feel thin. Your architect proposes several retrieval tuning changes. Select TWO changes that are sound.",
+    "options": [
+      "Raise numberOfResults (within the max of 100) so more candidate chunks reach generation, then rerank to keep only the best.",
+      "Switch overrideSearchType to HYBRID (on an OpenSearch-backed KB) so exact keyword matches supplement semantic recall.",
+      "Set numberOfResults to 1000 to guarantee the answer is present.",
+      "Disable citations to reduce response latency and improve grounding.",
+      "Re-embed queries with a different model than the documents to broaden recall."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "explanation": "Raising numberOfResults within the 100 cap plus reranking widens the candidate pool then refines it (A), and enabling HYBRID on an OpenSearch-backed KB adds keyword precision to semantic recall (B). numberOfResults cannot exceed 100, so 1000 is invalid (C wrong), disabling citations does not affect grounding (D wrong), and using a different embedding model for queries breaks vector-space alignment and harms recall (E wrong).",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: raising numberOfResults within the 100 cap sends more candidate chunks to generation, and reranking then keeps only the best.",
+      "Correct: switching to HYBRID on an OpenSearch-backed KB supplements semantic recall with exact keyword matches.",
+      "Wrong: numberOfResults is capped at 100, so setting it to 1000 is invalid rather than a guarantee.",
+      "Wrong: disabling citations does not improve grounding and has negligible effect on the underlying retrieval quality.",
+      "Wrong: re-embedding queries with a different model than the documents breaks vector-space alignment and harms recall."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A Knowledge Base indexes long policy manuals. Retrieved chunks frequently cut sentences mid-thought and lose surrounding context, degrading answer quality. Which change most directly addresses this at ingestion time?",
+    "options": [
+      "Adjust the chunking strategy — e.g., semantic or hierarchical chunking, or larger chunks with overlap — so retrieved segments preserve context",
+      "Lower the model temperature during generation",
+      "Switch the generation model to a larger one",
+      "Increase the number of results returned (topK) without changing chunking"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Context loss from mid-sentence splits is a chunking problem solved at ingestion. Bedrock Knowledge Bases support fixed, semantic, and hierarchical chunking (plus overlap); choosing a context-preserving strategy is the direct fix.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: chunking strategy determines how documents are split; semantic/hierarchical chunking or larger overlapping chunks keep context intact.",
+      "Temperature affects generation randomness, not how source text was split during ingestion.",
+      "A bigger generation model cannot recover context that was lost when the source was fragmented.",
+      "Returning more fragmented chunks adds noise without fixing the underlying fragmentation."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A developer wants a single managed API call that retrieves relevant passages from a Bedrock Knowledge Base, generates a grounded answer, and returns citations to the source documents. Which API should they use?",
+    "options": [
+      "RetrieveAndGenerate",
+      "Retrieve, then manually build the prompt and call Converse",
+      "InvokeModel with the documents pasted into the prompt",
+      "StartIngestionJob"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "RetrieveAndGenerate is the fully managed RAG call: it retrieves, grounds the generation, and returns citations. Retrieve returns passages only, leaving prompt assembly and citation handling to you.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: RetrieveAndGenerate performs retrieval, augments the prompt, generates the answer, and returns citations in one managed call.",
+      "Retrieve returns only passages; you would then have to assemble the prompt, generate, and build citations yourself.",
+      "Pasting documents into InvokeModel skips the Knowledge Base retrieval and citation handling entirely.",
+      "StartIngestionJob indexes data sources; it does not answer queries."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A team replaces the embedding model used for their vector index with a newer one that produces different-dimension vectors. Queries now return irrelevant results. What is the required corrective action?",
+    "options": [
+      "Re-embed and re-index the entire corpus with the new model so document and query embeddings come from the same model",
+      "Keep the old document vectors and only switch the query-time model",
+      "Pad the old vectors with zeros to match the new dimensions",
+      "Lower the similarity threshold to accept more matches"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Embeddings are only comparable within the same model's vector space. Switching embedding models invalidates existing vectors, so you must re-embed and re-index the full corpus with the new model.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: query and document vectors must be produced by the same embedding model; changing models requires rebuilding the whole index.",
+      "Mixing an old document space with a new query model yields incomparable vectors and poor retrieval.",
+      "Zero-padding does not map old vectors into the new model's semantic space; results stay wrong.",
+      "Loosening the threshold surfaces more irrelevant matches rather than fixing the space mismatch."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "An organization wants the fastest path to a fully managed vector store for a new Bedrock Knowledge Base, without provisioning or operating a database cluster themselves. Which option is the managed default?",
+    "options": [
+      "Amazon OpenSearch Serverless",
+      "A self-managed OpenSearch cluster on EC2",
+      "Amazon RDS for MySQL",
+      "Amazon DynamoDB"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "For a quick, fully managed setup, Bedrock Knowledge Bases can provision Amazon OpenSearch Serverless as the vector store. Other supported stores (Aurora pgvector, Pinecone, Redis Enterprise, Neptune Analytics) require you to configure them.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: Bedrock Knowledge Bases can automatically create and manage an Amazon OpenSearch Serverless vector store as the default, requiring no cluster operations.",
+      "A self-managed cluster on EC2 is the opposite of fully managed and requires operational effort.",
+      "RDS for MySQL is not a supported Knowledge Base vector store.",
+      "DynamoDB is a key-value/document store, not a supported vector store for Knowledge Bases."
+    ]
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A multi-tenant RAG application must ensure that a query only retrieves passages belonging to the requesting tenant, even though all tenants share one Knowledge Base index. What is the appropriate mechanism?",
+    "options": [
+      "Attach tenant metadata to documents at ingestion and apply a metadata filter on each retrieval request",
+      "Rely on a higher similarity threshold to exclude other tenants",
+      "Create a separate foundation model per tenant",
+      "Lower topK so fewer cross-tenant results appear"
+    ],
+    "correct": [
+      0
+    ],
+    "explanation": "Bedrock Knowledge Bases support attaching metadata to documents and applying metadata filters on Retrieve/RetrieveAndGenerate. Filtering on a tenant attribute enforces per-tenant retrieval isolation within a shared index.",
+    "difficulty": "hard",
+    "optionExplanations": [
+      "Correct: document metadata plus a metadata filter at query time restricts retrieval to the matching tenant's passages.",
+      "Similarity thresholds rank by relevance, not ownership; they cannot enforce tenant isolation.",
+      "The foundation model does not control which passages are retrieved from the index.",
+      "Reducing topK just returns fewer results and still risks leaking other tenants' data."
+    ]
+  }
+]

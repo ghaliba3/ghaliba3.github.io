@@ -1,0 +1,2456 @@
+[
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A service wraps Bedrock text generation and must support Anthropic Claude, Amazon Nova, and Meta Llama behind one code path, letting operators swap models via config without touching request-building logic.\n\n```python\nimport boto3\nbr = boto3.client(\"bedrock-runtime\")\nresp = br.converse(\n    modelId=MODEL_ID,\n    messages=[{\"role\": \"user\", \"content\": [{\"text\": prompt}]}],\n    inferenceConfig={\"maxTokens\": 512, \"temperature\": 0.2},\n)\ntext = resp[\"output\"][\"message\"][\"content\"][0][\"text\"]\n```\n\nWhy is this Converse approach preferable to building per-model `InvokeModel` bodies?",
+    "options": [
+      "Converse automatically enables provisioned throughput, eliminating throttling regardless of model",
+      "InvokeModel does not support Amazon Nova, so Converse is mandatory for that provider",
+      "Converse provides a single unified request/response shape across supported models, so only modelId changes when swapping models",
+      "Converse is the only API that supports streaming, so InvokeModel cannot be swapped across models"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Converse does not manage throughput mode; provisioned throughput is a separate reservation via CreateProvisionedModelThroughput, and Converse never auto-enables it or eliminates throttling.",
+      "InvokeModel does support Amazon Nova through its native request body, so Converse is not mandatory for that provider.",
+      "Correct: Converse exposes a single unified request/response schema across supported models, so swapping providers changes only modelId while request-building logic stays the same.",
+      "Both APIs support streaming (ConverseStream and InvokeModelWithResponseStream), so streaming is not a reason InvokeModel cannot be swapped across models."
+    ],
+    "explanation": "Converse normalizes messages, inferenceConfig, and the output shape across supported models, so provider-specific JSON bodies are unnecessary and only modelId changes. InvokeModel requires the exact native body per provider. Converse does not manage throughput mode, InvokeModel does support Nova with its native body, and streaming exists for both (ConverseStream and InvokeModelWithResponseStream).",
+    "reference": {
+      "title": "Amazon Bedrock — Provisioned Throughput",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html"
+    },
+    "difficulty": "hard",
+    "id": 1
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "You are wiring tool use with the Bedrock Converse API and define:\n\n```python\ntool_config = {\n    \"tools\": [{\n        \"toolSpec\": {\n            \"name\": \"get_defect_status\",\n            \"description\": \"Look up a construction defect status by id.\",\n            \"inputSchema\": {\n                \"json\": {\n                    \"type\": \"object\",\n                    \"properties\": {\"defect_id\": {\"type\": \"string\"}},\n                    \"required\": [\"defect_id\"]\n                }\n            }\n        }\n    }]\n}\nresp = br.converse(modelId=MID, messages=msgs, toolConfig=tool_config)\n```\n\nWhich statement is correct?",
+    "options": [
+      "The schema must sit directly under `inputSchema` without the `json` wrapper key.",
+      "`inputSchema.json` is standard JSON Schema and `required` tells the model it must populate `defect_id` when it calls the tool.",
+      "In boto3 the keys must be snake_case (`tool_spec`, `input_schema`); the camelCase shown will raise a ValidationException.",
+      "Tool definitions must be passed in the `system` parameter, not `toolConfig`."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "The `json` wrapper is mandatory in Converse; placing the schema directly under `inputSchema` omits the required `inputSchema.json` key and triggers a ValidationException.",
+      "Correct — `inputSchema.json` holds standard JSON Schema, and its `required` array tells the model which arguments it must populate in `toolUse.input` when it calls the tool.",
+      "Converse fields are camelCase (`toolSpec`, `inputSchema`); the snake_case keys `tool_spec`/`input_schema` are unrecognized, and the camelCase shown is actually valid rather than an error.",
+      "Tool definitions belong in `toolConfig`, not `system`; the `system` parameter only accepts text/cachePoint guidance blocks, never tool specs."
+    ],
+    "explanation": "The Converse API wraps the JSON Schema in `inputSchema.json`, and the schema's `required` array signals which arguments the model must include in its `toolUse.input`. The wrapper key is mandatory (A wrong). Converse uses camelCase field names, not snake_case (C wrong), and tools go in `toolConfig`, never `system` (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 2
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You are shrinking a RAG vector index and invoke Titan Text Embeddings V2 directly.\n\n```python\nimport json, boto3\nbrt = boto3.client(\"bedrock-runtime\")\nbody = json.dumps({\n    \"inputText\": \"concrete slab hairline crack at grid B4\",\n    \"dimensions\": 512,\n    \"normalize\": True\n})\nresp = brt.invoke_model(modelId=\"amazon.titan-embed-text-v2:0\", body=body)\nvec = json.loads(resp[\"body\"].read())[\"embedding\"]\n```\n\nWhich statement about this configuration is correct?",
+    "options": [
+      "amazon.titan-embed-text-v2:0 accepts dimensions of 256, 512, or 1024; requesting 512 is valid and produces smaller vectors than the 1024 default, trading a little accuracy for index size.",
+      "The dimensions field is ignored; Titan V2 always returns 1536-dimensional vectors identical to Titan Embeddings G1 / v1.",
+      "normalize:true is unsupported on Titan V2 and raises a ValidationException; normalization must be done client-side.",
+      "Requesting dimensions:512 forces embeddingTypes to [\"binary\"], so the returned embedding is a packed bit array rather than floats."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: Titan Text Embeddings V2 accepts 256, 512, or 1024 dimensions (1024 default), so requesting 512 is valid and produces smaller vectors than the default, trading a little accuracy for reduced index size.",
+      "Wrong: this describes Titan G1/v1, which is fixed at 1536 dims; Titan V2's dimensions field is honored and its default is 1024, not an ignored 1536.",
+      "Wrong: normalize actually defaults to true and is fully supported by Titan V2, so it does not raise a ValidationException and need not be done client-side.",
+      "Wrong: output format (float vs binary) is controlled by embeddingTypes independently; requesting dimensions:512 has no effect on it and floats are returned by default."
+    ],
+    "explanation": "Titan Text Embeddings V2 supports three output sizes 256, 512, and 1024 (default 1024), so 512 is valid and halves storage versus 1024. normalize defaults to true and is fully supported, so C is wrong. Titan V1 (G1) is fixed at 1536 dims, but V2 is configurable, making B wrong. Binary/float output is controlled by embeddingTypes independently of dimensions, so D is wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Titan Text Embeddings",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html"
+    },
+    "difficulty": "hard",
+    "id": 3
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You register an action group on a Bedrock agent with a function schema and no Lambda:\n\n```python\nba = boto3.client(\"bedrock-agent\")\nba.create_agent_action_group(\n    agentId=\"AGENT123\", agentVersion=\"DRAFT\",\n    actionGroupName=\"pricing\",\n    actionGroupExecutor={\"customControl\": \"RETURN_CONTROL\"},\n    functionSchema={\"functions\": [{\n        \"name\": \"getQuote\",\n        \"parameters\": {\"sku\": {\"type\": \"string\", \"required\": True}},\n    }]},\n)\n```\n\nAt runtime, when the model decides to call getQuote, what does InvokeAgent do?",
+    "options": [
+      "Returns a returnControl event in the completion stream with an invocationId plus the function name and parameters, then pauses until your client sends the result back on the next InvokeAgent call.",
+      "Automatically invokes a Lambda ARN inferred from the action group name and injects the result into orchestration.",
+      "Raises ValidationException because actionGroupExecutor must contain a lambda key.",
+      "Completes the orchestration using only the model-predicted parameters without ever executing getQuote."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: with actionGroupExecutor set to RETURN_CONTROL, InvokeAgent emits a returnControl event carrying the invocationId, the function name, and the predicted parameters, then pauses the turn until your client posts the result back via sessionState on the next call.",
+      "Wrong: RETURN_CONTROL deliberately bypasses Lambda, and Bedrock never infers a Lambda ARN from an action group's name; automatic Lambda invocation happens only when actionGroupExecutor contains a lambda key.",
+      "Wrong: the lambda key is required only for Lambda-backed execution; customControl=RETURN_CONTROL is itself a valid executor, so no ValidationException is raised.",
+      "Wrong: the agent neither fabricates nor skips the tool result; it returns control and blocks until you send real results, so getQuote's logic still runs, just on the client side."
+    ],
+    "explanation": "customControl=RETURN_CONTROL hands the tool call back to the caller instead of invoking a Lambda. The stream carries a returnControl payload (invocationInputs + invocationId); you run the logic and return it via sessionState.returnControlInvocationResults on the next call. A lambda key is only needed for Lambda execution, so there is no ValidationException, and the agent does not fabricate a result.",
+    "reference": {
+      "title": "Amazon Bedrock — Agent action groups",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents-action-create.html"
+    },
+    "difficulty": "hard",
+    "id": 4
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "You must let a chatbot echo customer emails and phone numbers back to the same customer for confirmation, but SSNs and credit-card numbers must never appear. You create a guardrail:\n\n```python\nbedrock.create_guardrail(\n    name=\"pii-guard\",\n    sensitiveInformationPolicyConfig={\n        \"piiEntitiesConfig\": [\n            {\"type\": \"EMAIL\", \"action\": \"ANONYMIZE\"},\n            {\"type\": \"PHONE\", \"action\": \"ANONYMIZE\"},\n            {\"type\": \"US_SOCIAL_SECURITY_NUMBER\", \"action\": \"BLOCK\"},\n            {\"type\": \"CREDIT_DEBIT_CARD_NUMBER\", \"action\": \"BLOCK\"}\n        ]\n    },\n    blockedInputMessaging=\"blocked\",\n    blockedOutputMessaging=\"blocked\"\n)\n```\n\nWhat happens when the model output contains an email plus a credit-card number?",
+    "options": [
+      "The email is masked with a placeholder and the entire response is blocked because the card number triggers a BLOCK action",
+      "Both the email and card number are masked with placeholders and the response is delivered",
+      "The email is delivered in cleartext and only the card number is masked",
+      "The whole response passes through unchanged because ANONYMIZE overrides BLOCK when both are present"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: ANONYMIZE replaces the email with a {EMAIL} placeholder, but a single BLOCK-configured entity (the card number) anywhere in the segment blocks the whole message and returns blockedOutputMessaging.",
+      "Wrong: the card number is configured with action BLOCK, not ANONYMIZE, so it is never masked-and-delivered; any BLOCK match discards the entire response rather than masking it.",
+      "Wrong: ANONYMIZE never emits the matched value in cleartext (it substitutes a placeholder), and the card number's BLOCK action prevents delivery entirely rather than merely masking it.",
+      "Wrong: there is no precedence where ANONYMIZE overrides BLOCK; the two actions are per-entity, and a BLOCK match always takes precedence and stops the message."
+    ],
+    "explanation": "ANONYMIZE replaces the matched entity with a type placeholder (e.g. {EMAIL}), but a single BLOCK-configured entity anywhere in the segment blocks the whole message and returns blockedOutputMessaging. So the card-number BLOCK wins and the response is blocked. It is not delivered (B/D wrong), and ANONYMIZE never leaves values in cleartext (C wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 5
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A team calls a Claude model in us-east-1 but wants Bedrock to automatically route requests across multiple US regions to absorb capacity spikes and reduce throttling, without managing endpoints themselves.\n\n```python\nresp = br.converse(\n    modelId=\"<PLACEHOLDER>\",\n    messages=msgs,\n    inferenceConfig={\"maxTokens\": 1024},\n)\n```\n\nWhich value belongs in the placeholder?",
+    "options": [
+      "The bare foundation-model id such as anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "A provisioned-throughput model ARN created with CreateProvisionedModelThroughput",
+      "A batch job ARN returned by CreateModelInvocationJob",
+      "A cross-region (system-defined) inference profile id such as us.anthropic.claude-3-5-sonnet-20240620-v1:0"
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "A bare foundation-model id stays pinned to the single calling region and does not trigger any cross-region routing.",
+      "A provisioned-throughput ARN reserves fixed dedicated capacity in one region; it does not perform cross-region on-demand routing.",
+      "A batch job ARN from CreateModelInvocationJob is for asynchronous S3 batch inference, not synchronous Converse routing.",
+      "Correct: a system-defined cross-region inference profile id (us. prefix) lets Bedrock route on-demand traffic across the US region set to absorb spikes and reduce throttling."
+    ],
+    "explanation": "Cross-region inference profiles (prefixed like us./eu./apac.) let Bedrock route on-demand traffic across a region set to improve resilience and throughput. A bare model id stays single-region, a provisioned-throughput ARN reserves fixed capacity (not cross-region routing), and a batch job ARN is for asynchronous offline inference, not synchronous Converse.",
+    "reference": {
+      "title": "Amazon Bedrock — Cross-region inference",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 6
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "Every request in your validation pipeline must call exactly one specific tool `extract_lot_number` (no free-form text, no other tool). Which `toolChoice` is correct?\n\n```python\ntool_config = {\n    \"tools\": [...],\n    \"toolChoice\": <CHOICE>\n}\n```",
+    "options": [
+      "`{\"tool\": {\"name\": \"extract_lot_number\"}}`",
+      "`{\"any\": {}}`",
+      "`{\"auto\": {}}`",
+      "`{\"required\": {\"name\": \"extract_lot_number\"}}`"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct — `{\"tool\": {\"name\": \"extract_lot_number\"}}` forces the model to invoke exactly that one named tool.",
+      "`{\"any\": {}}` forces *some* tool call but lets the model choose among all registered tools, so it cannot guarantee `extract_lot_number` specifically.",
+      "`{\"auto\": {}}` lets the model decide whether to call a tool at all and permits free-form text, violating the exactly-one-specific-tool requirement.",
+      "`{\"required\": {...}}` is not a valid Converse `toolChoice` shape; the only valid keys are `auto`, `any`, and `tool`."
+    ],
+    "explanation": "`toolChoice: {\"tool\": {\"name\": ...}}` forces the model to invoke that one named tool. `{\"any\": {}}` forces the model to use *some* tool but not a specific one. `{\"auto\": {}}` lets the model decide whether to use a tool at all. `{\"required\": ...}` is not a valid Converse toolChoice shape.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 7
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A Knowledge Base must scale to hundreds of millions of vectors, support metadata filtering plus HYBRID (semantic + keyword) search, and require no cluster capacity planning from your team. You are configuring the vector store when creating the KB.\n\n```json\n{\n  \"type\": \"???\",\n  \"opensearchServerlessConfiguration\": {\n    \"collectionArn\": \"arn:aws:aoss:...:collection/abc\",\n    \"vectorIndexName\": \"kb-index\",\n    \"fieldMapping\": {\n      \"vectorField\": \"embedding\",\n      \"textField\": \"chunk\",\n      \"metadataField\": \"meta\"\n    }\n  }\n}\n```\n\nWhich vector store best fits these constraints?",
+    "options": [
+      "Amazon Neptune Analytics, because graph adjacency gives the fastest hybrid search.",
+      "Amazon Aurora PostgreSQL with pgvector, because it is the only store that supports metadata filters.",
+      "Amazon OpenSearch Serverless, which is serverless (no shard/capacity management), scales to very large vector counts, and supports HYBRID search and filtering in Knowledge Bases.",
+      "Amazon Redis / MemoryDB, because in-memory storage is required for any hybrid search."
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: Neptune Analytics targets GraphRAG via graph traversal, not hybrid semantic+keyword vector search, and graph adjacency does not provide the fastest hybrid search.",
+      "Wrong: pgvector supports filters but is not the only store that does, and Aurora requires instance/capacity management, violating the no-capacity-planning requirement.",
+      "Correct: OpenSearch Serverless needs no shard/capacity management, scales to very large vector counts, and supports HYBRID search plus metadata filtering in Knowledge Bases.",
+      "Wrong: Redis/MemoryDB is not required for hybrid search and its in-memory model is unsuited to hundreds of millions of vectors at low cost."
+    ],
+    "explanation": "OpenSearch Serverless removes capacity planning, scales to large vector volumes, and is the store that supports overrideSearchType=HYBRID in Bedrock Knowledge Bases. Aurora pgvector supports filters too, so B's exclusivity claim is false. Neptune Analytics targets GraphRAG, not general hybrid vector search, and Redis is not required for hybrid search, so A and D are wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 8
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You call InvokeAgent and seed state:\n\n```python\nrt = boto3.client(\"bedrock-agent-runtime\")\nrt.invoke_agent(\n    agentId=\"A1\", agentAliasId=\"TSTALIASID\", sessionId=\"s-42\",\n    inputText=\"What is the status?\",\n    sessionState={\n        \"sessionAttributes\": {\"tenantId\": \"t-9\"},\n        \"promptSessionAttributes\": {\"today\": \"2026-07-14\"},\n    },\n)\n```\n\nHow do sessionAttributes and promptSessionAttributes differ in scope?",
+    "options": [
+      "Both are injected verbatim into the orchestration prompt for the whole session.",
+      "sessionAttributes persist across turns for the whole session and are passed to your Lambda; promptSessionAttributes are also session-scoped but are additionally substituted into the orchestration prompt template.",
+      "sessionAttributes are single-turn only; promptSessionAttributes persist forever including across different sessionIds.",
+      "Neither reaches the Lambda; both are only visible to Knowledge Bases."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: only promptSessionAttributes are substituted into the orchestration prompt; sessionAttributes are opaque key/values passed to the Lambda and are not injected into the prompt.",
+      "Correct: both persist for the whole session, but promptSessionAttributes are additionally rendered into the prompt template (e.g. via $prompt_session_attributes$) while sessionAttributes are handed to the action-group Lambda.",
+      "Wrong: sessionAttributes are not single-turn and promptSessionAttributes do not persist across different sessionIds; both are scoped to the single session.",
+      "Wrong: sessionAttributes are delivered to the action-group Lambda, and neither attribute is restricted to Knowledge Bases."
+    ],
+    "explanation": "Both live for the session, but promptSessionAttributes are the ones surfaced into the prompt (e.g. via $prompt_session_attributes$) so the model can reason over them, while sessionAttributes are opaque key/values handed to the action-group Lambda. sessionAttributes are not injected into the prompt, and neither is single-turn or cross-session.",
+    "reference": {
+      "title": "Amazon Bedrock — Agents",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html"
+    },
+    "difficulty": "hard",
+    "id": 9
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A developer attaches a guardrail to a Converse call:\n\n```python\nbedrock_runtime.converse(\n    modelId=\"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n    messages=[{\"role\": \"user\", \"content\": [{\"text\": prompt}]}],\n    guardrailConfig={\n        \"guardrailIdentifier\": \"gr-abc123\",\n        \"guardrailVersion\": \"DRAFT\"\n    }\n)\n```\n\nThe guardrail was published as version 2 last week, but edits are still being made to the working copy. What does specifying \"DRAFT\" cause?",
+    "options": [
+      "The call fails because DRAFT cannot be used at runtime and a numeric version is required",
+      "The guardrail is silently ignored because DRAFT has no immutable snapshot",
+      "The call evaluates against version 2, since DRAFT is an alias for the latest published version",
+      "The call evaluates against the current unpublished working draft, reflecting the latest in-progress edits"
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: DRAFT is a valid runtime value for guardrailVersion; a numeric version is not required, and the call does not fail.",
+      "Wrong: the guardrail is not ignored; DRAFT points at the mutable working copy and is actively evaluated against the request.",
+      "Wrong: DRAFT is the unpublished working copy, not an alias for the latest published number; it does not resolve to version 2.",
+      "Correct: guardrailVersion='DRAFT' evaluates against the current unpublished working draft, so the in-progress edits are applied at runtime."
+    ],
+    "explanation": "guardrailVersion='DRAFT' targets the mutable working draft, which is valid at runtime and useful for testing in-progress changes before publishing. It is not rejected (A wrong) or ignored (B wrong). Numbered versions like '2' are immutable snapshots; DRAFT is not an alias for the latest published version (C wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 10
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An offline job must score 4 million stored documents against a Bedrock model overnight at the lowest cost, with no real-time latency requirement.\n\n```python\nbc = boto3.client(\"bedrock\")\nresp = bc.create_model_invocation_job(\n    jobName=\"score-docs\", roleArn=ROLE,\n    modelId=\"anthropic.claude-3-haiku-20240307-v1:0\",\n    inputDataConfig={\"s3InputDataConfig\": {\"s3Uri\": \"s3://bkt/in/\"}},\n    outputDataConfig={\"s3OutputDataConfig\": {\"s3Uri\": \"s3://bkt/out/\"}},\n)\n```\n\nWhy is this batch approach the best fit versus a synchronous loop?",
+    "options": [
+      "Batch inference via CreateModelInvocationJob reads/writes JSONL in S3 asynchronously and offers lower per-token pricing for large offline workloads",
+      "A synchronous Converse loop with a large thread pool is cheaper because it avoids S3 storage costs",
+      "Provisioned throughput with per-document InvokeModelWithResponseStream minimizes total cost for one-off jobs",
+      "Batch inference guarantees sub-second latency per record, which the synchronous loop cannot"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: CreateModelInvocationJob runs asynchronous S3 JSONL batch inference at discounted per-token pricing, which fits large, latency-tolerant offline scoring.",
+      "A synchronous Converse thread pool pays full on-demand per-token rates and risks throttling; avoiding trivial S3 storage costs does not make it cheaper.",
+      "Provisioned throughput reserves paid real-time capacity by the hour, which is expensive and wasteful for a one-off offline job.",
+      "Batch inference is explicitly asynchronous and latency-tolerant and makes no sub-second per-record latency guarantee."
+    ],
+    "explanation": "CreateModelInvocationJob processes JSONL records from S3 asynchronously and writes results back to S3 at a discounted per-token rate suited to large, latency-tolerant jobs. Synchronous loops incur higher on-demand cost and throttling risk, provisioned throughput is about reserved real-time capacity (not cheap bulk scoring), and batch is explicitly not a low-latency path.",
+    "reference": {
+      "title": "Amazon Bedrock — Custom models & customization",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization.html"
+    },
+    "difficulty": "hard",
+    "id": 11
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "multi",
+    "question": "You need Claude on Bedrock to reliably return a JSON object your code can `json.loads` without post-processing. Which techniques materially improve reliability? Select TWO.",
+    "options": [
+      "Set `inferenceConfig.temperature` to 1.0 so the model is more creative about matching your schema.",
+      "Define a tool whose `inputSchema.json` is your target schema and use `toolChoice: {\"tool\": {\"name\": ...}}`, then read the structured object from the `toolUse.input`.",
+      "Prefill the start of the assistant turn with `{` (an assistant message ending in an open brace) to constrain the model to begin emitting JSON immediately.",
+      "Instruct the model to wrap the JSON in a friendly natural-language explanation so you can locate it more easily."
+    ],
+    "correct": [
+      1,
+      2
+    ],
+    "optionExplanations": [
+      "Temperature 1.0 raises sampling randomness and format drift, making schema-conformant JSON less reliable, not more.",
+      "Correct — forcing a tool call via `toolChoice: {\"tool\": {\"name\": ...}}` yields a schema-validated object in `toolUse.input`, the most robust structured-output approach.",
+      "Correct — prefilling the assistant turn with `{` constrains the model to begin emitting JSON immediately and suppresses conversational preamble.",
+      "Wrapping JSON in natural-language prose forces brittle substring/regex extraction and risks unescaped braces, defeating a clean `json.loads`."
+    ],
+    "explanation": "Forcing a tool call gives you a schema-validated object in `toolUse.input`, the most robust approach. Prefilling the assistant turn with `{` constrains output to start as JSON and suppresses preamble. High temperature (A) increases format drift, and wrapping JSON in prose (D) forces brittle extraction, the opposite of the goal.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 12
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "You are choosing a chunking strategy for a Bedrock Knowledge Base ingesting long inspection reports where related clauses span multiple paragraphs. Select TWO statements that are correct.\n\n```json\n{\n  \"chunkingConfiguration\": {\n    \"chunkingStrategy\": \"SEMANTIC\",\n    \"semanticChunkingConfiguration\": {\n      \"maxTokens\": 300,\n      \"bufferSize\": 1,\n      \"breakpointPercentileThreshold\": 95\n    }\n  }\n}\n```\n\nSelect TWO.",
+    "options": [
+      "SEMANTIC chunking uses embedding similarity between adjacent sentences and splits at points where similarity drops below the breakpointPercentileThreshold, keeping semantically coherent text together.",
+      "Choosing chunkingStrategy=NONE tells Bedrock to treat each source file as a single chunk, so you must pre-chunk documents yourself if they exceed the embedding model's context.",
+      "SEMANTIC chunking guarantees each chunk is exactly maxTokens tokens with fixed overlap, identical to FIXED_SIZE.",
+      "HIERARCHICAL and SEMANTIC are the same strategy under two names and can be set interchangeably.",
+      "chunkingStrategy=NONE automatically applies a 300-token default fixed-size split."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: SEMANTIC chunking embeds adjacent sentences and splits where similarity drops past breakpointPercentileThreshold, keeping semantically coherent text together.",
+      "Correct: chunkingStrategy=NONE treats each source file as a single chunk, so files exceeding the embedding model's context must be pre-chunked yourself.",
+      "Wrong: only FIXED_SIZE guarantees uniform token counts with fixed overlap; SEMANTIC chunk sizes vary with similarity and maxTokens is only an upper cap.",
+      "Wrong: HIERARCHICAL is a distinct parent/child strategy, not another name for SEMANTIC's similarity-breakpoint splitting; they are not interchangeable.",
+      "Wrong: NONE applies no splitting at all, so there is no 300-token default fixed-size split."
+    ],
+    "explanation": "SEMANTIC chunking embeds sentences and breaks where semantic similarity drops past the percentile threshold, so coherent passages stay together (A). NONE treats each file as one chunk, so oversized files must be pre-split (B). C is wrong because only FIXED_SIZE guarantees uniform token counts. HIERARCHICAL (parent/child) differs from SEMANTIC, so D is wrong, and NONE applies no default split, so E is wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 13
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You override the orchestration prompt:\n\n```python\nba.update_agent(agentId=\"A1\", agentName=\"a\", foundationModel=FM, agentResourceRoleArn=ROLE,\n  promptOverrideConfiguration={\"promptConfigurations\": [{\n    \"promptType\": \"ORCHESTRATION\",\n    \"promptCreationMode\": \"OVERRIDDEN\",\n    \"basePromptTemplate\": \"...custom template...\",\n    \"inferenceConfiguration\": {\"temperature\": 0.0, \"maximumLength\": 2048},\n    \"parserMode\": \"DEFAULT\",\n  }]})\n```\n\nWhat is a required constraint when supplying a custom basePromptTemplate for ORCHESTRATION?",
+    "options": [
+      "The template is free-form; Bedrock injects tools and instructions regardless of placeholders.",
+      "The template must retain the required placeholder variables (e.g. $instruction$, $tools$/$functions$, $conversation_history$) or the agent cannot inject its context and orchestration breaks.",
+      "You must also set parserMode to OVERRIDDEN whenever promptCreationMode is OVERRIDDEN.",
+      "Overriding ORCHESTRATION disables all attached action groups automatically."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: an overridden template is not free-form; Bedrock substitutes context only where the required placeholders exist, so omitting them prevents injection of instructions and tools.",
+      "Correct: a custom ORCHESTRATION template must retain the required placeholder variables (e.g. $instruction$, $tools$/$functions$, $conversation_history$) or the runtime cannot inject its context and orchestration breaks.",
+      "Wrong: parserMode is independent of promptCreationMode; you set parserMode to OVERRIDDEN only when supplying a custom parser Lambda, not merely because the prompt is overridden.",
+      "Wrong: overriding the orchestration prompt does not disable attached action groups; the tools remain available and are injected via the $tools$/$functions$ placeholder."
+    ],
+    "explanation": "An overridden orchestration template must keep the documented placeholders so the runtime can substitute instructions, tool/function definitions, and history; omitting them yields a broken agent. parserMode is independent of promptCreationMode (you only override the parser when you supply a custom Lambda parser), and overriding the prompt does not disable action groups.",
+    "reference": {
+      "title": "Amazon Bedrock — Agent action groups",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents-action-create.html"
+    },
+    "difficulty": "hard",
+    "id": 14
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A financial-advice bot must refuse questions asking for individualized investment recommendations. You add this to create_guardrail:\n\n```python\ntopicPolicyConfig={\n    \"topicsConfig\": [{\n        \"name\": \"IndividualizedInvestmentAdvice\",\n        \"definition\": \"Requests for personalized buy/sell/hold recommendations for specific securities.\",\n        \"examples\": [\"Should I buy TSLA today?\"],\n        \"type\": \"DENY\"\n    }]\n}\n```\n\nWhy is this the correct policy type versus the alternatives?",
+    "options": [
+      "A content filter of type MISCONDUCT set to HIGH would block the same topic more precisely",
+      "A word filter listing 'invest', 'stock', 'portfolio' is the recommended equivalent",
+      "A denied topic defines the subject by name, definition, and examples, which is purpose-built to block a business topic that harm-category filters do not cover",
+      "A sensitive-information PII entity of type INVESTMENT_ADVICE set to BLOCK is required"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: content filters only cover fixed harm categories (hate, insults, sexual, violence, misconduct, prompt attack); MISCONDUCT is about illicit/criminal conduct, not a custom business topic like personalized investment advice.",
+      "Wrong: a raw word list ('invest','stock','portfolio') is brittle, over-blocks legitimate mentions, and cannot capture the intent of a personalized recommendation the way a defined topic can.",
+      "Correct: a denied topic (topicPolicyConfig, type DENY) defines an arbitrary subject by name, definition, and examples, which is purpose-built to block a custom business topic that harm-category filters do not cover.",
+      "Wrong: there is no INVESTMENT_ADVICE PII entity type; sensitive-information policies detect identifiers like SSNs or card numbers, not subject matter."
+    ],
+    "explanation": "Denied topics (topicPolicyConfig, type DENY) target an arbitrary subject area via name/definition/examples. Content filters only cover fixed harm categories (hate, insults, sexual, violence, misconduct, prompt attack), not custom business topics (A wrong). A raw word list is brittle and over-blocks legitimate mentions (B wrong). There is no INVESTMENT_ADVICE PII entity type (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 15
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer wants a Converse call to behave nearly deterministically for regression tests.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=msgs,\n    inferenceConfig={\"maxTokens\": 256, <PLACEHOLDER>},\n)\n```\n\nWhich setting best minimizes run-to-run variance, and why?",
+    "options": [
+      "\"temperature\": 1.0, \"topP\": 1.0 because maximum values disable sampling randomness",
+      "\"temperature\": 0.0 (or the lowest supported), which minimizes sampling randomness and yields near-greedy decoding",
+      "\"topP\": 0.0 which forces the model to always emit the end-of-sequence token first",
+      "\"maxTokens\": 1 because limiting length removes nondeterminism"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "temperature 1.0 and topP 1.0 are maximum-randomness settings that increase, not disable, sampling variance.",
+      "Correct: temperature 0.0 (or the lowest supported) yields near-greedy decoding, minimizing run-to-run variance.",
+      "topP 0.0 is not a determinism control (it is ill-defined/invalid) and does not force the end-of-sequence token first.",
+      "maxTokens 1 only truncates output to a single token; it does not remove the sampling nondeterminism in decoding."
+    ],
+    "explanation": "Setting temperature to 0 (or the minimum) makes decoding effectively greedy, minimizing variance across runs. High temperature/topP increase randomness, topP of 0 is not a determinism control (and is ill-defined/invalid), and clamping maxTokens just truncates output without removing nondeterminism.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 16
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "Following Anthropic's Claude prompting guidance, you are assembling a prompt that mixes reference documents with instructions:\n\n```python\nprompt = (\n    f\"{reference_specs}\\n\"\n    f\"Given the specs above, list every non-compliant clause.\"\n)\nmessages = [{\"role\": \"user\", \"content\": [{\"text\": prompt}]}]\n```\n\nWhich change best reduces the model confusing data with instructions?",
+    "options": [
+      "Wrap the reference material in XML tags (e.g. `<documents>...</documents>`) and refer to those tags in your instructions.",
+      "Use Markdown backticks around everything and hope the model infers boundaries.",
+      "Put instructions and data in one unstructured paragraph so the model reads them together.",
+      "Base64-encode the documents so the model treats them as opaque."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct — Claude is trained to respect XML-style tags, so wrapping reference material in named tags and referencing them cleanly separates data from instructions.",
+      "Backticks are weaker, ambiguous delimiters (also used for inline code) and do not provide the named, referenceable boundaries XML tags give.",
+      "Blending instructions and data into one unstructured paragraph maximizes instruction/data confusion—the exact problem being solved.",
+      "Base64-encoding hides the content the model must read and reason over, wasting tokens while providing no separation benefit."
+    ],
+    "explanation": "Claude is specifically trained to respect XML-style tags, so wrapping inputs in named tags (`<documents>`, `<instructions>`) and referencing them cleanly separates data from directives. Backticks (B) are weaker and ambiguous, a single blended paragraph (C) invites instruction/data confusion, and base64 (D) just wastes tokens and hides content the model needs to read.",
+    "reference": {
+      "title": "Amazon Bedrock — Prompt engineering guidelines",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-engineering-guidelines.html"
+    },
+    "difficulty": "hard",
+    "id": 17
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You call retrieve_and_generate against a Knowledge Base. The call fails validation.\n\n```python\nrt = boto3.client(\"bedrock-agent-runtime\")\nresp = rt.retrieve_and_generate(\n    input={\"text\": \"Summarize non-conformances for lot 7.\"},\n    retrieveAndGenerateConfiguration={\n        \"type\": \"KNOWLEDGE_BASE\",\n        \"knowledgeBaseConfiguration\": {\n            \"knowledgeBaseId\": \"KB123ABCDE\"\n        }\n    }\n)\n```\n\nWhat is the minimal fix?",
+    "options": [
+      "Add sessionConfiguration with a KMS key; modelArn is optional.",
+      "Add modelArn inside knowledgeBaseConfiguration, because retrieve_and_generate must know which foundation model generates the grounded answer.",
+      "Change type to \"RETRIEVE\" because \"KNOWLEDGE_BASE\" is not a valid type.",
+      "Move knowledgeBaseId to the top-level input object."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: sessionConfiguration/KMS is optional and not the validation failure; modelArn is what is required, not optional.",
+      "Correct: retrieve_and_generate requires a modelArn inside knowledgeBaseConfiguration so Bedrock knows which foundation model synthesizes the grounded answer.",
+      "Wrong: KNOWLEDGE_BASE is the valid type; RETRIEVE is not a valid retrieveAndGenerateConfiguration type value.",
+      "Wrong: knowledgeBaseId correctly belongs inside knowledgeBaseConfiguration; moving it to input would itself be invalid."
+    ],
+    "explanation": "retrieve_and_generate needs a modelArn in knowledgeBaseConfiguration so Bedrock knows which model synthesizes the grounded answer; omitting it fails validation, so B is correct. sessionConfiguration/KMS is optional (A wrong), the valid type is KNOWLEDGE_BASE not RETRIEVE (C wrong), and knowledgeBaseId belongs in knowledgeBaseConfiguration, not input (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Data encryption",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/encryption.html"
+    },
+    "difficulty": "hard",
+    "id": 18
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "You attach a guardrail to an agent:\n\n```python\nba.update_agent(agentId=\"A1\", agentName=\"a\", foundationModel=FM, agentResourceRoleArn=ROLE,\n  guardrailConfiguration={\"guardrailIdentifier\": \"gr-abc\", \"guardrailVersion\": \"3\"})\n```\n\nWhich statements about how this guardrail behaves are correct? Select TWO.",
+    "options": [
+      "The guardrail must be published to a numbered version (or use DRAFT) to be referenced; you cannot point an agent at an unpublished, unnumbered state implicitly.",
+      "You must call prepare/PrepareAgent again after changing the guardrail configuration for it to take effect in a working draft alias.",
+      "Attaching a guardrail to the agent automatically also applies it to every Knowledge Base query as a separate ApplyGuardrail step you configure per KB.",
+      "The guardrail overrides the agent's foundationModel selection at runtime."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: a guardrail reference must point to a concrete version (a published number or DRAFT); you cannot implicitly reference an unpublished, unnumbered state.",
+      "Correct: agent configuration changes, including guardrail attachment, require re-running PrepareAgent for them to take effect in the working draft the test alias serves.",
+      "Wrong: attaching a guardrail to the agent does not auto-insert a separate per-KB ApplyGuardrail step; the guardrail governs the agent's model interactions, not a self-configured KB pipeline.",
+      "Wrong: a guardrail filters inputs and outputs but never overrides which foundationModel the agent uses at runtime."
+    ],
+    "explanation": "A guardrail reference needs a concrete version (a published number or DRAFT), and agent config changes require re-preparing the agent to propagate into the draft/working version. The guardrail applies to the agent's model interactions but does not silently reconfigure each KB, nor does it change which foundation model the agent uses.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 19
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "This IAM policy is attached to an application role that should only be able to invoke Claude 3.5 Sonnet in us-east-1:\n\n```json\n{\n  \"Effect\": \"Allow\",\n  \"Action\": \"bedrock:InvokeModel\",\n  \"Resource\": \"*\"\n}\n```\n\nWhich change enforces least privilege for exactly that one model and Region?",
+    "options": [
+      "Add \"bedrock:*\" to Action and keep Resource as \"*\"",
+      "Change Resource to \"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0\"",
+      "Add a Condition with \"aws:RequestedRegion\": \"us-east-1\" but leave Resource as \"*\"",
+      "Change Resource to \"arn:aws:bedrock:*::foundation-model/anthropic.*\""
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: adding bedrock:* on Resource '*' broadens the grant to every Bedrock action on every resource, the opposite of least privilege for one model and Region.",
+      "Correct: scoping Resource to the exact foundation-model ARN encodes the Region and the specific model id (foundation-model ARNs have an empty account field), granting only that one model in us-east-1.",
+      "Wrong: an aws:RequestedRegion condition with Resource '*' still allows invoking every model available in us-east-1, not just Claude 3.5 Sonnet.",
+      "Wrong: the anthropic.* wildcard with a '*' Region field permits all Anthropic models across all Regions, far broader than the required single model and Region."
+    ],
+    "explanation": "Scoping Resource to the specific foundation-model ARN (Region plus exact model id) grants only that model in that Region; foundation-model ARNs have an empty account field and encode the Region. 'bedrock:*' on '*' is far broader (A wrong). A region condition with Resource '*' still permits every model in us-east-1 (C wrong). The anthropic.* wildcard across all Regions permits all Anthropic models everywhere (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Identity and access management",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html"
+    },
+    "difficulty": "hard",
+    "id": 20
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A workload needs the lowest possible time-to-first-token for a supported Claude model, accepting the same output quality.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=msgs,\n    <PLACEHOLDER>,\n    inferenceConfig={\"maxTokens\": 512},\n)\n```\n\nWhich argument enables latency-optimized inference?",
+    "options": [
+      "performanceConfig={\"latency\": \"optimized\"}",
+      "inferenceConfig={\"latencyMode\": \"fast\"}",
+      "additionalModelRequestFields={\"topP\": 0.1} to shrink the sampling search space",
+      "Switching to InvokeModel, which is inherently lower latency than Converse"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: latency-optimized inference is enabled via performanceConfig={\"latency\": \"optimized\"} on supported models/regions, reducing latency without changing outputs.",
+      "There is no latencyMode field in inferenceConfig, so this argument is invalid.",
+      "topP narrows the sampling nucleus (affecting token selection), not the latency tier or time-to-first-token.",
+      "InvokeModel is not inherently lower-latency than Converse; swapping APIs does not enable the latency-optimized tier."
+    ],
+    "explanation": "Latency-optimized inference is requested via performanceConfig with latency set to \"optimized\" on supported models/regions, reducing latency without changing outputs. There is no latencyMode field, topP alters sampling breadth not the latency tier, and InvokeModel is not inherently faster than Converse.",
+    "reference": {
+      "title": "Amazon Bedrock — Latency-optimized inference",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/latency-optimized-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 21
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "A teammate builds this multi-turn array and gets a ValidationException:\n\n```python\nmessages = [\n    {\"role\": \"user\", \"content\": [{\"text\": \"Summarize lot 12.\"}]},\n    {\"role\": \"user\", \"content\": [{\"text\": \"Also lot 13.\"}]},\n    {\"role\": \"assistant\", \"content\": [{\"text\": \"Sure.\"}]}\n]\n```\n\nWhat is the root cause?",
+    "options": [
+      "`content` must be a string, not a list of blocks.",
+      "The array must end with an `assistant` message, not begin with `user`.",
+      "A `system` message is required as the first element.",
+      "Converse requires messages to alternate strictly between `user` and `assistant`; two consecutive `user` turns are invalid."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "`content` is correctly a list of blocks in Converse (a plain string is the non-canonical form), so this is not the cause.",
+      "Conversations must *begin* with `user`, not end with `assistant`; the ordering rule is misstated here.",
+      "`system` is a top-level parameter, never required or allowed as a message element, so its absence is not the error.",
+      "Correct — Converse enforces strict `user`/`assistant` alternation, and two consecutive `user` turns cause the ValidationException."
+    ],
+    "explanation": "Converse enforces strict role alternation and a conversation that begins with `user`; two `user` turns in a row is rejected. `content` is correctly a list of blocks (A wrong). Conversations start with `user`, not end with `assistant` (B wrong), and `system` is a separate top-level parameter, never a message element (C wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 22
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A teammate leaves numberOfResults unset and asks how many chunks are retrieved, and what the ceiling is.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": query},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {}}  # numberOfResults omitted\n)\n```\n\nWhich statement is correct?",
+    "options": [
+      "Omitting it returns all matching vectors in the store, ignoring any cap.",
+      "It defaults to 1, and the maximum you can request is 5.",
+      "It defaults to 25, and there is no maximum.",
+      "It defaults to a small number (5) when omitted, and the value you pass is capped at a documented maximum (100), so requesting 500 is rejected/clamped."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: omitting numberOfResults does not return the entire store; a default applies and a documented cap still bounds results.",
+      "Wrong: the default is not 1 and the maximum is not 5; the ceiling is 100.",
+      "Wrong: the default is not 25 and there is a maximum of 100, so it is not unbounded.",
+      "Correct: numberOfResults defaults to a small value (about 5) and is capped at 100, so an oversized request like 500 is rejected/clamped."
+    ],
+    "explanation": "numberOfResults has a small default (5) and an upper bound of 100 in Knowledge Bases, so oversized requests are rejected/clamped, making D correct. It never returns the entire store (A), the default is not 1 with a max of 5 (B), and it is not unbounded (C).",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 23
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You build a supervisor agent for multi-agent collaboration:\n\n```python\nba.update_agent(agentId=\"SUP\", agentName=\"sup\", foundationModel=FM,\n  agentResourceRoleArn=ROLE, agentCollaboration=\"SUPERVISOR\")\nba.associate_agent_collaborator(\n    agentId=\"SUP\", agentVersion=\"DRAFT\",\n    agentDescriptor={\"aliasArn\": \"arn:aws:bedrock:...:agent-alias/SUB1/AL1\"},\n    collaboratorName=\"specExtractor\",\n    collaborationInstruction=\"Use for extracting values from specification PDFs.\",\n    relayConversationHistory=\"TO_COLLABORATOR\",\n)\n```\n\nWhat does associating a collaborator by aliasArn (not agentId) imply?",
+    "options": [
+      "The supervisor routes to a specific published/version-backed alias of the subagent, so the subagent must be prepared and have a usable alias before collaboration works.",
+      "The supervisor always invokes the subagent's DRAFT working version regardless of alias.",
+      "aliasArn is optional decoration; collaboration is resolved purely by collaboratorName.",
+      "Using an aliasArn disables the supervisor's own action groups."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: referencing a collaborator by aliasArn pins the supervisor to a specific prepared, versioned subagent, which must therefore exist as a usable alias before collaboration works.",
+      "Wrong: an aliasArn resolves to whatever version the alias routes to, not the subagent's DRAFT working version, so it does not force DRAFT.",
+      "Wrong: the aliasArn is what actually resolves the target subagent; collaboratorName is only a display label and cannot resolve collaboration on its own.",
+      "Wrong: associating a collaborator does not disable the supervisor's own action groups; the supervisor keeps its tools while delegating."
+    ],
+    "explanation": "Collaborators are referenced by an alias ARN, which pins the supervisor to a specific prepared, versioned subagent; the subagent must exist as a working alias first. It does not force DRAFT, the ARN is what actually resolves the target (not the display name), and the supervisor keeps its own action groups.",
+    "reference": {
+      "title": "Amazon Bedrock — Multi-agent collaboration",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents-multi-agent-collaboration.html"
+    },
+    "difficulty": "hard",
+    "id": 24
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "An application invokes a Bedrock Agent that consults a knowledge base. The agent's execution role has bedrock:InvokeModel, but at runtime the KB query fails with AccessDenied. You inspect the role:\n\n```json\n{\n  \"Effect\": \"Allow\",\n  \"Action\": [\"bedrock:InvokeModel\"],\n  \"Resource\": \"arn:aws:bedrock:us-east-1::foundation-model/*\"\n}\n```\n\nWhich statement should be added?",
+    "options": [
+      "{ \"Effect\": \"Allow\", \"Action\": [\"bedrock:Retrieve\", \"bedrock:RetrieveAndGenerate\"], \"Resource\": \"arn:aws:bedrock:us-east-1:111122223333:knowledge-base/KB123\" }",
+      "{ \"Effect\": \"Allow\", \"Action\": [\"bedrock:CreateKnowledgeBase\"], \"Resource\": \"*\" }",
+      "{ \"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\"], \"Resource\": \"arn:aws:s3:::agent-lambda/*\" }",
+      "{ \"Effect\": \"Allow\", \"Action\": [\"bedrock:InvokeModel\"], \"Resource\": \"*\" }"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: querying a knowledge base at runtime requires bedrock:Retrieve and bedrock:RetrieveAndGenerate scoped to the KB ARN, which is exactly the missing permission.",
+      "Wrong: bedrock:CreateKnowledgeBase is a control-plane provisioning action for building a KB, not for querying one at runtime, so it does not resolve the AccessDenied.",
+      "Wrong: s3:GetObject on an 'agent-lambda' path is unrelated to KB retrieval; the runtime failure is a Bedrock Retrieve permission gap, not an S3 read.",
+      "Wrong: widening bedrock:InvokeModel to Resource '*' still grants no Retrieve actions, so the KB query keeps failing."
+    ],
+    "explanation": "Querying a KB at runtime needs bedrock:Retrieve (and RetrieveAndGenerate) scoped to the KB ARN. CreateKnowledgeBase is control-plane provisioning, not querying (B wrong). s3:GetObject on a 'lambda' path is nonsensical; Lambda uses lambda:InvokeFunction (C wrong). Widening InvokeModel to '*' does not grant the missing Retrieve actions (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Agents",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html"
+    },
+    "difficulty": "hard",
+    "id": 25
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "This Converse call raises ValidationException.\n\n```python\nresp = br.converse(\n    modelId=mid,\n    messages=[\n        {\"role\": \"system\", \"content\": [{\"text\": \"You are a compliance auditor.\"}]},\n        {\"role\": \"user\", \"content\": [{\"text\": q}]},\n    ],\n    inferenceConfig={\"maxTokens\": 600},\n)\n```\n\nWhat is the correct fix?",
+    "options": [
+      "Change the system message role to \"assistant\" so the model treats it as guidance",
+      "Move the system content into the top-level system parameter: system=[{\"text\": \"You are a compliance auditor.\"}]",
+      "Prefix the user text with 'SYSTEM:' since Converse has no separate system field",
+      "Wrap the system text in inferenceConfig={\"systemPrompt\": ...}"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Relabeling the message to role \"assistant\" does not convey system instructions and misuses the assistant role; the ValidationException is because role \"system\" is invalid inside messages.",
+      "Correct: system instructions go in the dedicated top-level system parameter as a list of content blocks (system=[{\"text\": ...}]).",
+      "Converse does have a dedicated system field, so prefixing the user text with 'SYSTEM:' is unnecessary and loses the system semantics.",
+      "There is no systemPrompt field under inferenceConfig, so this wrapping is invalid."
+    ],
+    "explanation": "Converse accepts only \"user\" and \"assistant\" roles in messages; system instructions go in the dedicated top-level system parameter (a list of content blocks). Using role \"system\" is invalid, faking it via assistant or a text prefix loses the system semantics, and there is no systemPrompt field under inferenceConfig.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 26
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "You attach a PDF specification for the model to reason over:\n\n```python\nwith open(\"spec-A.pdf\", \"rb\") as f:\n    pdf_bytes = f.read()\ncontent = [<BLOCK>, {\"text\": \"Summarize the acceptance criteria.\"}]\n```\n\nWhich `<BLOCK>` is the correctly structured Converse document block?",
+    "options": [
+      "`{\"document\": {\"format\": \"pdf\", \"source\": {\"bytes\": pdf_bytes}}}`",
+      "`{\"file\": {\"mimeType\": \"application/pdf\", \"bytes\": pdf_bytes}}`",
+      "`{\"document\": {\"format\": \"pdf\", \"name\": \"spec-A\", \"source\": {\"bytes\": pdf_bytes}}}`",
+      "`{\"document\": {\"s3Location\": {\"uri\": \"s3://b/spec.pdf\"}}}` with no `format`"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "This omits the required `name` field; a Converse document block must include `format`, `name`, and `source`.",
+      "`file`/`mimeType` is not a Converse block; documents use `{\"document\": {\"format\", \"name\", \"source\"}}`.",
+      "Correct — it includes the required `format` (pdf), a `name`, and a `source` with `bytes`, matching the Converse document block spec.",
+      "This drops the required `format` field; even with an `s3Location` source, `format` and `name` are mandatory."
+    ],
+    "explanation": "A Converse document block requires `format` (pdf, csv, doc, docx, xls, xlsx, html, txt, md), a `name`, and a `source` (`bytes` or `s3Location`). Option A omits the required `name`. Option B invents a `file`/`mimeType` shape. Option D drops the required `format` field.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 27
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You want keyword precision (exact clause numbers like \"AS 3600\") plus semantic recall in one KB query.\n\n```python\nresp = rt.retrieve(\n    knowledgeBaseId=\"KB123ABCDE\",\n    retrievalQuery={\"text\": \"cover requirements in AS 3600\"},\n    retrievalConfiguration={\"vectorSearchConfiguration\": {\n        \"numberOfResults\": 8,\n        \"overrideSearchType\": \"HYBRID\"\n    }}\n)\n```\n\nWhich statement is correct?",
+    "options": [
+      "HYBRID combines semantic (vector) and keyword (text) matching and is supported when the KB is backed by OpenSearch (Serverless/managed); it improves recall of exact tokens like standard numbers.",
+      "HYBRID is the default for every KB, so setting overrideSearchType has no effect anywhere.",
+      "overrideSearchType only accepts \"KEYWORD\" or \"NEURAL\"; \"HYBRID\" raises a ValidationException.",
+      "HYBRID is supported on all vector stores including pgvector, Pinecone, Redis, and Neptune identically."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: HYBRID blends semantic vector and keyword text matching on OpenSearch-backed KBs, improving recall of exact tokens like standard numbers.",
+      "Wrong: SEMANTIC is the default search type, not HYBRID, so overrideSearchType does change behavior.",
+      "Wrong: the valid overrideSearchType values are SEMANTIC and HYBRID, not KEYWORD or NEURAL, so HYBRID does not raise a ValidationException.",
+      "Wrong: HYBRID support is store-dependent (OpenSearch), not universally available across pgvector, Pinecone, Redis, and Neptune."
+    ],
+    "explanation": "HYBRID blends vector and keyword search and is available on OpenSearch-backed Knowledge Bases, helping match exact tokens such as standard numbers (A). SEMANTIC is the default, not HYBRID (B wrong). The valid values are SEMANTIC and HYBRID, not KEYWORD/NEURAL (C wrong). HYBRID support is store-dependent, not universal across all stores (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Supported vector stores",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported-vector-stores.html"
+    },
+    "difficulty": "hard",
+    "id": 28
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You launch a fine-tuning job:\n\n```python\nbr = boto3.client(\"bedrock\")\nbr.create_model_customization_job(\n    jobName=\"ft-titan-1\", customModelName=\"titan-support\",\n    roleArn=ROLE, customizationType=\"FINE_TUNING\",\n    baseModelIdentifier=\"amazon.titan-text-express-v1\",\n    trainingDataConfig={\"s3Uri\": \"s3://data/train.jsonl\"},\n    hyperParameters={\"epochCount\": \"3\", \"batchSize\": \"1\",\n                     \"learningRateMultiplier\": \"0.2\"},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhich statement about this job and its resulting model is correct?",
+    "options": [
+      "FINE_TUNING requires unlabeled text only; labeled prompt/completion pairs are rejected.",
+      "FINE_TUNING uses labeled prompt/completion examples, and the resulting custom model can only be invoked after you buy Provisioned Throughput for it.",
+      "The output custom model is immediately invocable on-demand via InvokeModel with its model ID.",
+      "hyperParameter values may be passed as native ints; strings raise a type error."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: this describes CONTINUED_PRE_TRAINING; FINE_TUNING requires labeled prompt/completion pairs and does not reject them.",
+      "Correct: fine-tuning consumes labeled prompt/completion examples, and the resulting custom model is invocable only after you buy Provisioned Throughput for it.",
+      "Wrong: fine-tuned custom models are not available on-demand via InvokeModel; they need Provisioned Throughput first.",
+      "Wrong: the customization API expects hyperparameter values as strings (e.g. \"3\"); native ints are not the required form."
+    ],
+    "explanation": "Fine-tuning consumes labeled prompt/completion pairs, and every resulting custom model must be deployed behind Provisioned Throughput before InvokeModel works, no on-demand access. Continued pre-training is the one that uses unlabeled text, and the API expects hyperparameter values as strings.",
+    "reference": {
+      "title": "Amazon Bedrock — Custom models & customization",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization.html"
+    },
+    "difficulty": "hard",
+    "id": 29
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "You must ensure a fine-tuned custom model's artifacts are encrypted with a CMK you control:\n\n```python\nbedrock.create_model_customization_job(\n    jobName=\"ft-1\",\n    customModelName=\"my-ft\",\n    roleArn=ROLE,\n    baseModelIdentifier=BASE,\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n    trainingDataConfig={\"s3Uri\": \"s3://train/data.jsonl\"},\n    # which parameter here?\n)\n```\n\nWhich parameter encrypts the resulting custom model with your key?",
+    "options": [
+      "customModelKmsKeyId=\"arn:aws:kms:us-east-1:111122223333:key/abcd-...\"",
+      "Set the output S3 bucket default encryption to SSE-S3",
+      "encryptionType=\"AWS_OWNED_KEY\", which you can rotate on demand",
+      "Add a bucket policy requiring aws:kms on PutObject"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: create_model_customization_job accepts customModelKmsKeyId, which encrypts the resulting custom model with your CMK and gives you key-policy and grant control.",
+      "Wrong: SSE-S3 encrypts only the S3 output objects with an AWS-managed S3 key you cannot control, not the custom-model artifact Bedrock stores.",
+      "Wrong: AWS_OWNED_KEY (an AWS-owned key) is not visible, manageable, or rotatable by you, so it fails the CMK-you-control requirement.",
+      "Wrong: a bucket policy requiring aws:kms only governs S3 PutObject encryption, not the encryption of the custom model artifact managed by Bedrock."
+    ],
+    "explanation": "create_model_customization_job accepts customModelKmsKeyId so the custom model is encrypted with your CMK, giving key control and grants. SSE-S3 uses an AWS-managed S3 key you do not control (B wrong). AWS-owned keys cannot be managed or rotated by you (C wrong). A bucket policy protects the S3 object but not the custom-model artifact Bedrock stores (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Data encryption",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/encryption.html"
+    },
+    "difficulty": "hard",
+    "id": 30
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "The following code parses an InvokeModelWithResponseStream response for an Anthropic Claude model but crashes with a KeyError.\n\n```python\nresp = br.invoke_model_with_response_stream(modelId=mid, body=body)\nfor event in resp[\"body\"]:\n    payload = json.loads(event[\"chunk\"][\"bytes\"])\n    print(payload[\"completion\"], end=\"\")\n```\n\nWhat is the correct way to extract streamed text?",
+    "options": [
+      "Read payload[\"outputText\"] which is the standard field for all Bedrock models",
+      "Use event[\"contentBlockDelta\"][\"delta\"][\"text\"] as with ConverseStream",
+      "Call event[\"chunk\"].decode() directly because chunks are already plain UTF-8 text",
+      "Each chunk is a native event; for Claude Messages streaming, handle type \"content_block_delta\" and read payload[\"delta\"][\"text\"]"
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "outputText is a Titan-specific field, not a universal Bedrock streaming field, and it is not used by Claude.",
+      "The contentBlockDelta shape belongs to ConverseStream and is not returned by InvokeModelWithResponseStream.",
+      "chunk bytes are JSON payloads that must be json.loads-parsed, not raw plain UTF-8 text to decode directly.",
+      "Correct: native Claude Messages streaming emits events of type \"content_block_delta\" whose delta.text holds the token text (\"completion\" is the legacy field)."
+    ],
+    "explanation": "InvokeModelWithResponseStream returns native provider events; for Claude Messages streaming, deltas arrive as objects with type \"content_block_delta\" whose delta.text holds the token text (\"completion\" is the legacy field). The Converse-style contentBlockDelta shape only applies to ConverseStream, outputText is a Titan field, and chunk bytes must be JSON-parsed, not just decoded.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 31
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "You call Converse with a stop sequence:\n\n```python\nresp = br.converse(\n    modelId=MID, messages=msgs,\n    inferenceConfig={\"maxTokens\": 500, \"stopSequences\": [\"</result>\"]}\n)\n```\n\nThe model generates `<result>PASS</result>` and halts. What is true about `stopReason` and the returned text?",
+    "options": [
+      "`stopReason` is `max_tokens` because the sequence counts as reaching the cap.",
+      "The call errors because `stopSequences` must be a single string, not a list.",
+      "The stop sequence is always appended to and included in the returned output text.",
+      "`stopReason` is `stop_sequence` and the generated text stops at the matched sequence, which is not continued past."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Hitting a configured stop sequence yields `stopReason == \"stop_sequence\"`, which is distinct from `max_tokens` (the output-cap reason).",
+      "`stopSequences` is a list of strings, not a single string, so no error occurs here.",
+      "The stop sequence is not guaranteed to be appended or included; generation halts at the match and the sequence itself is typically not returned in the text.",
+      "Correct — the model halts with `stopReason == \"stop_sequence\"` and does not continue generating past the matched sequence."
+    ],
+    "explanation": "When a configured `stopSequences` entry is generated, Converse halts with `stopReason == \"stop_sequence\"` and does not continue past the match. `stopSequences` is a list (B wrong), and hitting a stop sequence is distinct from `max_tokens` (A wrong). The generation stops at the sequence rather than guaranteeing extra appended text (C is misleading/wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 32
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You uploaded new PDFs to the S3 data source. Retrieval still returns only the old content.\n\n```python\nagent = boto3.client(\"bedrock-agent\")\n# ??? call needed here\nresp = agent.list_ingestion_jobs(\n    knowledgeBaseId=\"KB123ABCDE\",\n    dataSourceId=\"DS987ZYX\"\n)\n```\n\nWhat must you do so the new documents become searchable?",
+    "options": [
+      "Nothing; Knowledge Bases automatically embed new S3 objects the instant they are uploaded.",
+      "Delete and recreate the Knowledge Base, because ingestion cannot be re-run.",
+      "Call start_ingestion_job(knowledgeBaseId=..., dataSourceId=...) to sync the data source; ingestion chunks and embeds only the new/changed objects into the vector store.",
+      "Call retrieve with a special flag forceReindex=true to trigger embedding."
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: Knowledge Bases do not embed S3 objects automatically on upload; an ingestion job is required.",
+      "Wrong: you never need to delete and recreate the KB; ingestion can be re-run at any time.",
+      "Correct: call start_ingestion_job for the data source to sync it, which incrementally chunks and embeds only new or changed S3 objects.",
+      "Wrong: retrieve has no forceReindex flag; retrieval only queries the existing index."
+    ],
+    "explanation": "Ingestion is not automatic; you must call start_ingestion_job for the data source, which incrementally chunks and embeds new or changed S3 objects (C). Uploading to S3 alone does nothing (A wrong), you never need to recreate the KB (B wrong), and retrieve has no forceReindex flag (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Agents",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html"
+    },
+    "difficulty": "hard",
+    "id": 33
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "Below is one line of a fine-tuning training file for a text model:\n\n```json\n{\"prompt\": \"Summarize: The slab pour was delayed by rain.\", \"completion\": \"Slab pour delayed due to rain.\"}\n```\n\nWhich requirements of this JSONL training data are correct? Select TWO.",
+    "options": [
+      "Each line must be one complete JSON object (JSON Lines); a single pretty-printed JSON array spanning multiple lines is invalid.",
+      "The keys must literally be \"prompt\" and \"completion\" for text fine-tuning; a record missing either key is rejected during validation.",
+      "Records may freely mix {\"prompt\",\"completion\"} and {\"input\"}-only continued-pre-training records in the same file.",
+      "The completion may be empty because only the prompt is used for gradient updates."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: the training file is JSON Lines, one complete JSON object per line; a pretty-printed multi-line JSON array is invalid input.",
+      "Correct: text fine-tuning requires the literal keys prompt and completion, and validation rejects any record missing either key.",
+      "Wrong: you cannot mix fine-tuning {prompt,completion} records with continued-pre-training {input}-only records in one job; each job takes a single record shape.",
+      "Wrong: completion is the learning target for gradient updates, so it cannot be empty; an empty completion gives the model nothing to learn."
+    ],
+    "explanation": "Text fine-tuning data is JSON Lines (one object per line, not a wrapped array) with the exact keys prompt and completion, and validation fails if either is missing. You cannot mix fine-tuning and continued-pre-training record shapes in one job, and the completion is the learning target so it cannot be empty.",
+    "reference": {
+      "title": "Amazon Bedrock — Custom models & customization",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization.html"
+    },
+    "difficulty": "hard",
+    "id": 34
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A security reviewer asks whether prompts and completions sent to Bedrock base foundation models are used by AWS or the providers to train those base models. What is correct?",
+    "options": [
+      "Yes, prompts may improve the base model unless you file an opt-out ticket",
+      "Only prompts that trigger a guardrail block are retained for provider training",
+      "No. Your inputs and outputs are not used to train the original base models and are not shared with third-party model providers",
+      "Yes, but only aggregate embeddings, never raw text, are used for training"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: there is no opt-out ticket because Bedrock never uses your prompts to train base models by default; the premise of a default training use is false.",
+      "Wrong: guardrail-blocked content is not retained or funneled to provider training; blocked traffic is handled by your guardrail, not shared with providers.",
+      "Correct: Bedrock does not use your inputs or outputs to train the underlying base models and does not share them with third-party model providers; data stays in your AWS boundary.",
+      "Wrong: neither raw text nor aggregate embeddings derived from your traffic are used to train the base models."
+    ],
+    "explanation": "Bedrock does not use your prompts or completions to train the underlying base models and does not share them with providers; data stays within your AWS boundary. There is no opt-out ticket because there is no default training use (A wrong), guardrail-blocked content is not funneled to provider training (B wrong), and neither raw text nor aggregate embeddings from your traffic train the base models (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 35
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer configures boto3's built-in retries for bedrock-runtime to smooth over ThrottlingException without hand-rolling backoff.\n\n```python\nfrom botocore.config import Config\ncfg = Config(retries={\"max_attempts\": 8, \"mode\": \"<PLACEHOLDER>\"})\nbr = boto3.client(\"bedrock-runtime\", config=cfg)\n```\n\nWhich retry mode adds exponential backoff plus a client-side rate limiter best suited to throttling?",
+    "options": [
+      "\"legacy\"",
+      "\"none\"",
+      "\"adaptive\"",
+      "\"aggressive\""
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "\"legacy\" is the older limited-scope retry mode with no client-side rate limiter suited to throttling.",
+      "\"none\" disables retries entirely, providing no backoff at all.",
+      "Correct: \"adaptive\" layers a client-side rate limiter on top of standard exponential backoff, best suited to throttling.",
+      "\"aggressive\" is not a valid botocore retry mode."
+    ],
+    "explanation": "The \"adaptive\" retry mode layers a client-side rate limiter on top of \"standard\" exponential backoff, throttling requests proactively when the service returns throttling errors. \"legacy\" is the older limited-scope mode, \"none\" disables retries, and \"aggressive\" is not a valid botocore retry mode.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 36
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "Your app inserts untrusted user text into a prompt that also contains privileged instructions. To defend against prompt injection, which single measure is most effective?",
+    "options": [
+      "Raise `maxTokens` so the model has room to ignore malicious instructions.",
+      "Enclose the untrusted input in clearly named XML tags, state in the system prompt that content inside those tags is data only and must never be treated as instructions, and keep privileged rules in the trusted `system` block.",
+      "Lower `temperature` to 0 so the model cannot follow injected instructions.",
+      "Concatenate the user text directly after your instructions with no delimiters so the model reads them as one directive."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Raising `maxTokens` only changes the output length budget; it has no effect on whether the model obeys injected instructions.",
+      "Correct — delimiting untrusted input in named tags, declaring it data-only in `system`, and keeping privileged rules in the trusted `system` block is the core defense-in-depth pattern.",
+      "Temperature 0 only makes decoding greedy/deterministic; it does not change instruction-following priority, so injected commands can still be obeyed.",
+      "Removing delimiters blends untrusted text with your instructions, making injection easier rather than harder."
+    ],
+    "explanation": "Delimiting untrusted input with named tags plus an explicit system-level rule that tagged content is data (never instructions), while keeping trusted rules in `system`, is the core defense-in-depth pattern. Token budget (A) and temperature (C) do not govern instruction-following priority, and removing delimiters (D) makes injection easier, not harder.",
+    "reference": {
+      "title": "Amazon Bedrock — Inference parameters",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html"
+    },
+    "difficulty": "hard",
+    "id": 37
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "Answers from your RAG system occasionally state facts that are not in the retrieved passages (hallucination). Select TWO techniques that most directly reduce this.",
+    "options": [
+      "Instruct the generation model, via a custom prompt template, to answer only from the provided search results and to say it does not know when the context is insufficient.",
+      "Add a reranking stage so the most relevant passages actually reach the model's context window instead of being crowded out by weak matches.",
+      "Increase the model's temperature so it explores more phrasings of the answer.",
+      "Remove citations from the response so users cannot see mismatches.",
+      "Switch chunkingStrategy to NONE so each answer is generated without any retrieved context."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: a custom prompt template constraining the model to answer only from retrieved results and to abstain when context is insufficient directly reduces fabrication.",
+      "Correct: a reranking stage ensures the most relevant passages actually reach the model's context window instead of being crowded out by weak matches.",
+      "Wrong: raising temperature increases output variability and makes hallucination more likely, not less.",
+      "Wrong: removing citations merely hides mismatches from users; it does not reduce hallucination.",
+      "Wrong: chunkingStrategy=NONE is a chunking option, not a way to drop context; generating without grounding would increase hallucination."
+    ],
+    "explanation": "Constraining the model to answer only from retrieved context and to abstain when context is insufficient reduces fabrication (A), and reranking ensures the truly relevant passages occupy the context window (B). Higher temperature increases variability/hallucination (C wrong), hiding citations masks rather than fixes errors (D wrong), and NONE does not remove context and generating without grounding would increase hallucination (E wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 38
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "For the fine-tuning hyperParameters map:\n\n```python\nhyperParameters={\"epochCount\": \"4\", \"batchSize\": \"8\",\n                 \"learningRateMultiplier\": \"1.0\"}\n```\n\nWhich statements about tuning these are accurate? Select THREE.",
+    "options": [
+      "epochCount controls how many full passes over the training set are made; too high risks overfitting the small dataset.",
+      "learningRateMultiplier scales the base learning rate; larger values speed adaptation but can destabilize or overfit training.",
+      "batchSize is the number of samples processed before a weight update; it interacts with effective learning dynamics and memory.",
+      "Omitting all three is invalid because Bedrock has no defaults for customization hyperparameters."
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "optionExplanations": [
+      "Correct: epochCount is the number of full passes over the training set, and setting it too high risks overfitting a small dataset.",
+      "Correct: learningRateMultiplier scales the base learning rate; larger values adapt faster but can destabilize training or overfit.",
+      "Correct: batchSize is the number of samples processed before each weight update, trading off learning dynamics against memory use.",
+      "Wrong: Bedrock provides sensible per-base-model defaults for these hyperparameters, so omitting them is valid rather than an error."
+    ],
+    "explanation": "epochCount is dataset passes (overfitting risk when high on small data), learningRateMultiplier scales the LR (stability/overfitting trade-off), and batchSize is samples per update affecting dynamics and memory. Bedrock does provide sensible defaults per base model, so omitting them is valid, unlike the fourth option claims.",
+    "reference": {
+      "title": "Amazon Bedrock — Custom models & customization",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization.html"
+    },
+    "difficulty": "hard",
+    "id": 39
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "multi",
+    "question": "To defend against data exfiltration where a model or agent tool could leak sensitive data outbound, which controls are effective? Select TWO.",
+    "options": [
+      "Run the workload in a VPC with no internet egress and reach Bedrock only via Interface endpoints",
+      "Set guardrailVersion to DRAFT so filters can be disabled quickly under load",
+      "Attach a guardrail with sensitive-information (PII) filters set to BLOCK on the output",
+      "Grant the execution role s3:* so it can quarantine suspicious payloads anywhere"
+    ],
+    "correct": [
+      0,
+      2
+    ],
+    "optionExplanations": [
+      "Correct: running in a VPC with no internet egress and reaching Bedrock only via Interface endpoints keeps traffic off the internet, removing outbound exfiltration paths.",
+      "Wrong: DRAFT is the mutable working copy, not a rapid safety toggle; disabling filters increases exfiltration risk rather than defending against it.",
+      "Correct: a guardrail with sensitive-information (PII) filters set to BLOCK on the output stops sensitive values from leaving in responses.",
+      "Wrong: granting s3:* is the opposite of least privilege and actually enables broad data exfiltration to arbitrary buckets."
+    ],
+    "explanation": "No-egress VPCs with PrivateLink keep traffic off the internet, cutting exfil paths (A), and PII BLOCK on output stops sensitive values leaving in responses (C). DRAFT is a working copy, not a safety toggle, and disabling filters increases risk (B wrong). Granting s3:* broadly is the opposite of least privilege and enables exfiltration (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 40
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "A developer tunes sampling for a Converse call and needs to reason about exact parameter effects.\n\n```python\ninferenceConfig = {\"maxTokens\": 512, \"temperature\": 0.7, \"topP\": 0.9, \"stopSequences\": [\"###\"]}\n```\n\nWhich statements about these inferenceConfig fields are correct? Select TWO.",
+    "options": [
+      "topP is nucleus sampling: it restricts choices to the smallest token set whose cumulative probability reaches the threshold (0.9)",
+      "temperature rescales the probability distribution, with lower values concentrating mass on high-probability tokens",
+      "stopSequences increases the maximum output length beyond maxTokens when a delimiter is present",
+      "maxTokens counts both input and output tokens toward a single combined budget"
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: topP is nucleus sampling, restricting choices to the smallest token set whose cumulative probability reaches the threshold (0.9).",
+      "Correct: temperature rescales the probability distribution, with lower values concentrating mass on high-probability tokens.",
+      "stopSequences ends generation early at a delimiter; it never extends output length beyond maxTokens.",
+      "maxTokens caps only generated output tokens, not a single combined input+output budget."
+    ],
+    "explanation": "topP performs nucleus sampling over the smallest cumulative-probability token set (0.9 here), and temperature rescales the distribution so lower values sharpen it toward high-probability tokens. stopSequences ends generation early rather than extending length, and maxTokens caps only generated output tokens (not a combined input+output budget), so those two options are wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 41
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "Your tool raised an exception while looking up a record. How should you report this back so the model can recover gracefully within the loop?\n\n```python\ntool_result = {\n    \"toolResult\": {\n        \"toolUseId\": tid,\n        \"content\": [{\"text\": \"Record not found for id X\"}],\n        <FIELD>\n    }\n}\n```",
+    "options": [
+      "`\"status\": \"error\"`",
+      "`\"error\": True`",
+      "Omit any status and instead set `stopReason` to `error` on the message.",
+      "Raise the Python exception so Converse retries automatically."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct — a failed tool returns `\"status\": \"error\"` in the `toolResult` with an explanatory content block, letting the model see the failure and adapt.",
+      "There is no `error: True` field on `toolResult`; failure is signaled via `status: \"error\"`.",
+      "`stopReason` is set by the service on responses, not by your request, so you cannot set it on an outgoing message.",
+      "Raising the Python exception aborts your loop; Converse does not auto-retry tools, so the model gets no chance to recover."
+    ],
+    "explanation": "A failed tool should return a `toolResult` with `\"status\": \"error\"` plus an explanatory content block, letting the model see the failure and adapt (retry, ask, or apologize). There is no `error: True` field (B). `stopReason` is set by the service on responses, not by your request (C). Raising the exception (D) aborts the call with no model-side recovery.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 42
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Users ask compound questions like \"Compare curing times for N32 and N40 and list defects for each.\" Single-shot retrieval misses parts of the answer. You enable query reformulation in retrieve_and_generate.\n\n```python\nconfig = {\n  \"type\": \"KNOWLEDGE_BASE\",\n  \"knowledgeBaseConfiguration\": {\n    \"knowledgeBaseId\": \"KB123ABCDE\",\n    \"modelArn\": MODEL_ARN,\n    \"orchestrationConfiguration\": {\n      \"queryTransformationConfiguration\": {\"type\": \"???\"}\n    }\n  }\n}\n```\n\nWhich type addresses this problem?",
+    "options": [
+      "PROMPT_COMPRESSION, which shortens the query to a single keyword before retrieval.",
+      "QUERY_DECOMPOSITION, which breaks a complex query into multiple sub-queries, retrieves for each, and combines the results before generation.",
+      "VECTOR_QUANTIZATION, which reformulates queries into binary vectors.",
+      "SEMANTIC_ROUTING, which sends the query to a different Knowledge Base."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: PROMPT_COMPRESSION is not a valid queryTransformation type, and reducing a compound question to one keyword would drop parts of the intent.",
+      "Correct: QUERY_DECOMPOSITION breaks a complex query into sub-queries, retrieves for each, and combines the results before generation, covering all parts of the answer.",
+      "Wrong: VECTOR_QUANTIZATION is not a query transformation type; quantization compresses vectors and does not reformulate multi-intent queries.",
+      "Wrong: SEMANTIC_ROUTING is not a valid queryTransformationConfiguration type and routing to another KB does not address multi-part questions."
+    ],
+    "explanation": "QUERY_DECOMPOSITION splits a multi-part question into sub-queries, retrieves separately for each, and merges the evidence, covering all parts of the answer (B). PROMPT_COMPRESSION (A), VECTOR_QUANTIZATION (C), and SEMANTIC_ROUTING (D) are not the decomposition transformation and do not solve multi-intent retrieval.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge Bases",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html"
+    },
+    "difficulty": "hard",
+    "id": 43
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You configure model distillation via a customization job:\n\n```python\nbr.create_model_customization_job(\n    jobName=\"distill-1\", customModelName=\"distilled-student\",\n    roleArn=ROLE, customizationType=\"DISTILLATION\",\n    baseModelIdentifier=\"amazon.nova-lite-v1:0\",\n    customizationConfig={\"distillationConfig\": {\"teacherModelConfig\": {\n        \"teacherModelIdentifier\": \"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n        \"maxResponseLengthForInference\": 1000}}},\n    trainingDataConfig={\"s3Uri\": \"s3://data/prompts.jsonl\"},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhat is the point of distillation here and what does the training data provide?",
+    "options": [
+      "A larger, accurate teacher generates responses used to fine-tune a smaller cheaper student, so the training file can be prompts only (labels come from the teacher).",
+      "The student teaches the teacher; the file must contain graded completions.",
+      "Distillation merges two models' weights and needs no training data.",
+      "It compresses the teacher via quantization; the S3 file holds calibration text only."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: distillation uses a larger, accurate teacher to synthesize responses that fine-tune a smaller, cheaper student, so the training file can be prompts only and the teacher produces the completions.",
+      "Wrong: the direction is teacher-to-student, not student teaching teacher, and the file does not need pre-graded completions.",
+      "Wrong: distillation trains a student on teacher-generated data; it does not merge two models' weights and it does require training data (prompts).",
+      "Wrong: distillation is knowledge transfer via training, not quantization compression, and the S3 file holds prompts rather than calibration text."
+    ],
+    "explanation": "Distillation uses a capable teacher to synthesize training targets that fine-tune a smaller, cheaper student aimed at matching teacher quality on your prompts; you can supply prompts and let the teacher produce the completions. It is not weight-merging or quantization, and the direction is teacher-to-student, not the reverse.",
+    "reference": {
+      "title": "Amazon Bedrock — Model distillation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-distillation.html"
+    },
+    "difficulty": "hard",
+    "id": 44
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "An auditor wants a tamper-evident record of who called control-plane operations like CreateGuardrail, including caller identity and source IP:\n\n```bash\naws cloudtrail lookup-events \\\n  --lookup-attributes AttributeKey=EventName,AttributeValue=CreateGuardrail\n```\n\nWhich statement is correct, including the caveat about InvokeModel?",
+    "options": [
+      "CloudWatch Logs records InvokeModel prompt/response bodies by default, so CloudTrail is unnecessary",
+      "CloudTrail captures control-plane management events, but InvokeModel data-plane content is captured by model invocation logging, not in CloudTrail event bodies",
+      "AWS Config snapshots each InvokeModel request payload",
+      "CloudTrail always records InvokeModel prompt bodies as request parameters"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: CloudWatch Logs does not record InvokeModel prompt/response bodies by default; that requires explicitly enabling model invocation logging, so CloudTrail is still needed for control-plane audit.",
+      "Correct: CloudTrail captures control-plane management events like CreateGuardrail with caller identity and source IP, while InvokeModel data-plane content is captured by model invocation logging, not in CloudTrail event bodies.",
+      "Wrong: AWS Config tracks resource configuration state over time; it does not snapshot per-request InvokeModel payloads.",
+      "Wrong: CloudTrail does not embed InvokeModel prompt bodies as request parameters; data-plane payloads go to model invocation logging."
+    ],
+    "explanation": "CloudTrail logs control-plane management events (caller, time, source IP) for operations like CreateGuardrail. InvokeModel prompt/response bodies live in model invocation logging (S3/CloudWatch), not CloudTrail. CloudWatch does not capture invocation bodies by default (A wrong), Config tracks resource state, not payloads (C wrong), and CloudTrail does not embed prompt bodies (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 45
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "This Converse pipeline intermittently fails under load. The team wants to retry only transient errors and surface client errors immediately.\n\n```python\nfrom botocore.exceptions import ClientError\ntry:\n    resp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 400})\nexcept ClientError as e:\n    code = e.response[\"Error\"][\"Code\"]\n    # <PLACEHOLDER>\n```\n\nWhich retry decision is correct?",
+    "options": [
+      "Retry on ValidationException and AccessDeniedException; do not retry ThrottlingException",
+      "Retry with backoff on ThrottlingException and ModelTimeoutException; re-raise ValidationException and AccessDeniedException immediately",
+      "Retry on every ClientError uniformly to keep the code simple",
+      "Retry only on AccessDeniedException because IAM propagation is eventually consistent"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "This inverts the correct logic: ValidationException and AccessDeniedException are deterministic client errors that should not be retried, while ThrottlingException should be.",
+      "Correct: retry transient ThrottlingException/ModelTimeoutException with backoff, and re-raise deterministic ValidationException/AccessDeniedException immediately.",
+      "Uniformly retrying every ClientError wastes time and masks non-transient client bugs.",
+      "AccessDeniedException here reflects missing IAM/model access, not eventual-consistency propagation, so retrying will not resolve it."
+    ],
+    "explanation": "Transient errors (ThrottlingException, ModelTimeoutException) warrant retry with exponential backoff, whereas ValidationException (bad request) and AccessDeniedException (authorization) are deterministic client-side failures that should be raised. Blanket retries waste time and mask bugs, and IAM/model-access issues are not fixed by retry loops.",
+    "reference": {
+      "title": "Amazon Bedrock — Identity and access management",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html"
+    },
+    "difficulty": "hard",
+    "id": 46
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "multi",
+    "question": "Which of the following are valid content block kinds inside a Converse `message.content` list? Select THREE.",
+    "options": [
+      "`text`",
+      "`toolUse`",
+      "`system`",
+      "`toolResult`"
+    ],
+    "correct": [
+      0,
+      1,
+      3
+    ],
+    "optionExplanations": [
+      "Correct — `text` is a valid message content block kind.",
+      "Correct — `toolUse` is a valid content block kind, emitted by the assistant when it calls a tool.",
+      "`system` is a top-level Converse parameter, not a content block kind, and it is never a valid message role.",
+      "Correct — `toolResult` is a valid content block kind, sent in a user turn to return tool output."
+    ],
+    "explanation": "`text`, `toolUse`, and `toolResult` (along with `image`, `document`, `video`, `guardContent`, and `cachePoint`) are valid content block kinds within a message. `system` is a top-level Converse parameter, not a content block kind, and it is never a valid `role` inside `messages`.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 47
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "Your documents have a clear section hierarchy, and you want retrieval to match small precise child chunks but feed the model the larger parent context.\n\n```json\n{\n  \"chunkingStrategy\": \"HIERARCHICAL\",\n  \"hierarchicalChunkingConfiguration\": {\n    \"levelConfigurations\": [\n      {\"maxTokens\": 1500},\n      {\"maxTokens\": 300}\n    ],\n    \"overlapTokens\": 60\n  }\n}\n```\n\nWhat behavior does HIERARCHICAL chunking provide?",
+    "options": [
+      "It ignores the smaller level and only ever returns 1500-token chunks.",
+      "It embeds only parent chunks, so child sizes are cosmetic.",
+      "It produces overlapping fixed windows with no parent/child relationship.",
+      "It searches on the smaller child chunks (300 tokens) for precise matching but returns the associated larger parent chunk (1500 tokens) so the model receives fuller surrounding context."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: HIERARCHICAL does not ignore the child level; child chunks are what searches match against.",
+      "Wrong: it does not embed only parents; the small child chunks are embedded and searched, so their sizes are not cosmetic.",
+      "Wrong: it explicitly maintains a parent/child relationship, not flat overlapping fixed windows.",
+      "Correct: HIERARCHICAL searches on the small child chunks (300 tokens) for precise matching but returns the associated larger parent chunk (1500 tokens) so the model gets fuller context."
+    ],
+    "explanation": "HIERARCHICAL chunking matches on small child chunks for precision and returns their parent chunk so the model gets broader context (D). It does not return only parents or only children, so A and B are wrong, and it explicitly maintains a parent/child relationship rather than flat overlapping windows, so C is wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 48
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "You create an automatic model evaluation job:\n\n```python\nbr.create_evaluation_job(\n    jobName=\"auto-eval-1\", roleArn=ROLE,\n    evaluationConfig={\"automated\": {\"datasetMetricConfigs\": [{\n        \"taskType\": \"QuestionAndAnswer\",\n        \"dataset\": {\"name\": \"qa\", \"datasetLocation\": {\"s3Uri\": \"s3://d/qa.jsonl\"}},\n        \"metricNames\": [\"Accuracy\"]}]}},\n    inferenceConfig={\"models\": [{\"bedrockModel\": {\"modelIdentifier\": FM}}]},\n    outputDataConfig={\"s3Uri\": \"s3://out/\"},\n)\n```\n\nWhat is required of the dataset for an automatic job with the Accuracy metric?",
+    "options": [
+      "The dataset needs only prompts; automatic Accuracy needs no ground truth.",
+      "The dataset must include reference/ground-truth answers per prompt, since automatic Accuracy compares model output against the provided references.",
+      "Accuracy is only available in human evaluation jobs.",
+      "You must supply at least two models; single-model automatic evaluation is unsupported."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: automatic Accuracy compares outputs against references, so a prompts-only dataset with no ground truth cannot compute it.",
+      "Correct: automatic Accuracy scores model output against the provided reference answers, so each prompt in the JSONL must carry a ground-truth target.",
+      "Wrong: Accuracy is an automatic metric, not human-only; it is computed programmatically against references.",
+      "Wrong: a single model is valid for an automatic evaluation job; two or more models are not required."
+    ],
+    "explanation": "Automatic evaluation with Accuracy scores model outputs against reference answers, so the JSONL prompts must carry ground-truth targets. Accuracy is an automatic metric (not human-only), and a single model is perfectly valid for an automatic job.",
+    "reference": {
+      "title": "Amazon Bedrock — Custom models & customization",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization.html"
+    },
+    "difficulty": "hard",
+    "id": 49
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "Your agent sends a large, unchanging system prompt plus tool definitions (about 6,000 tokens) on every turn. You add:\n\n```python\nsystem = [\n    {\"text\": LARGE_STATIC_INSTRUCTIONS},\n    {\"cachePoint\": {\"type\": \"default\"}}\n]\nbedrock_runtime.converse(modelId=MODEL, system=system, messages=msgs)\n```\n\nWhat does the cachePoint achieve?",
+    "options": [
+      "It truncates the input to fit within a cache",
+      "It reserves provisioned throughput for the prompt",
+      "It marks the static prefix so repeated tokens are billed at a reduced cache-read rate with lower latency on subsequent calls",
+      "It stores the prompt inside the guardrail server-side for free"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: a cachePoint does not truncate input; it marks a cacheable prefix boundary while the full prompt is still processed.",
+      "Wrong: reserving throughput is Provisioned Throughput, a separate reservation model; cachePoint enables prompt caching, not capacity reservation.",
+      "Correct: the cachePoint marks the static prefix so repeated tokens on subsequent calls are billed at a reduced cache-read rate with lower latency.",
+      "Wrong: guardrails are safety policies and do not store prompts; prompt caching is a Bedrock inference feature, not a guardrail function."
+    ],
+    "explanation": "A cachePoint after the static prefix enables prompt caching: later requests reuse the cached prefix at a much lower read rate and lower latency. It does not truncate input (A wrong). Provisioned Throughput is a separate reservation model, not what cachePoint does (B wrong). Guardrails are safety policies, not a prompt store (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 50
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An application streams responses and needs to detect why generation ended (natural stop vs truncation).\n\n```python\nfor event in resp[\"stream\"]:\n    if \"<EVENT>\" in event:\n        reason = event[\"<EVENT>\"][\"stopReason\"]\n```\n\nIn ConverseStream, which event carries stopReason (e.g., end_turn, max_tokens, stop_sequence)?",
+    "options": [
+      "contentBlockDelta, under delta.stopReason",
+      "messageStop",
+      "metadata, under metadata.stopReason",
+      "messageStart, which pre-declares how generation will end"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "contentBlockDelta carries only text/tool deltas; there is no delta.stopReason field.",
+      "Correct: the messageStop event carries stopReason (end_turn, max_tokens, stop_sequence, tool_use).",
+      "The metadata event carries usage and latency metrics, not stopReason.",
+      "messageStart only opens the message with the role and cannot pre-declare how generation will end."
+    ],
+    "explanation": "ConverseStream emits the stopReason in the messageStop event (values like end_turn, max_tokens, stop_sequence, tool_use). contentBlockDelta carries only text/tool deltas, the metadata event carries usage and metrics, and messageStart only opens the message with the role.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 51
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "This tool loop hangs in an infinite cycle, repeatedly asking for the same tool:\n\n```python\nwhile True:\n    resp = br.converse(modelId=MID, messages=messages, toolConfig=tc)\n    if resp[\"stopReason\"] != \"tool_use\":\n        break\n    tu = next(b[\"toolUse\"] for b in resp[\"output\"][\"message\"][\"content\"] if \"toolUse\" in b)\n    result = run_tool(tu[\"name\"], tu[\"input\"])\n    messages.append({\"role\": \"user\", \"content\": [\n        {\"toolResult\": {\"toolUseId\": tu[\"toolUseId\"],\n                         \"content\": [{\"json\": result}]}}]})\n```\n\nWhat bug causes the loop, and what is the fix?",
+    "options": [
+      "`toolResult.content` must use `text`, not `json`; switch it and the loop ends.",
+      "`maxTokens` is unset, so the model never stops; set it to 1024.",
+      "The assistant's `toolUse` message is never appended before the `toolResult`, so each turn the model re-issues the call against a broken history; append `resp['output']['message']` before the tool result.",
+      "`stopReason` should be compared to `end_turn`, not `tool_use`."
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "`{\"json\": result}` is a valid `toolResult.content` block; switching to `text` is unnecessary and would not stop the loop.",
+      "`maxTokens` governs output length, not loop termination; leaving it unset does not cause the model to re-request the tool.",
+      "Correct — the assistant `toolUse` message is never appended, so history holds an orphaned `toolResult` and the model keeps re-issuing the call; append `resp['output']['message']` before the tool result.",
+      "Comparing `stopReason` to `tool_use` is correct; `end_turn` is the exit condition, so this is not the bug."
+    ],
+    "explanation": "The loop appends the `toolResult` but never appends the assistant message that contained the `toolUse`, so the request history has an orphaned tool result and the model keeps re-requesting the tool. Appending `resp['output']['message']` before the tool-result `user` message restores valid pairing. `json` content is valid (A), `maxTokens` is unrelated (B), and comparing to `tool_use` is correct (D).",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 52
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You configure SEMANTIC chunking and want fewer, larger coherent chunks that only split at strong topic shifts.\n\n```json\n{\n  \"chunkingStrategy\": \"SEMANTIC\",\n  \"semanticChunkingConfiguration\": {\n    \"maxTokens\": 500,\n    \"bufferSize\": 1,\n    \"breakpointPercentileThreshold\": 99\n  }\n}\n```\n\nWhat is the effect of these parameter values?",
+    "options": [
+      "A high breakpointPercentileThreshold (99) means only the largest similarity drops become split points, yielding fewer/larger chunks, while maxTokens caps chunk size and bufferSize controls how many surrounding sentences are grouped when evaluating similarity.",
+      "breakpointPercentileThreshold sets the number of chunks to produce, so 99 forces exactly 99 chunks.",
+      "maxTokens is ignored in SEMANTIC mode; only the threshold controls size.",
+      "bufferSize is the overlap in tokens between adjacent chunks."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: a high breakpointPercentileThreshold (99) makes only the largest similarity drops become split points, yielding fewer/larger chunks, while maxTokens caps chunk size and bufferSize sets how many surrounding sentences are grouped when evaluating similarity.",
+      "Wrong: breakpointPercentileThreshold is a percentile on similarity drops, not a count of chunks, so 99 does not force 99 chunks.",
+      "Wrong: maxTokens is still enforced as a size cap in SEMANTIC mode; it is not ignored.",
+      "Wrong: bufferSize is a sentence-grouping window used when computing similarity, not a token overlap between chunks."
+    ],
+    "explanation": "A high breakpointPercentileThreshold makes only the most significant similarity drops become breakpoints, producing fewer/larger chunks; maxTokens still caps size and bufferSize groups neighboring sentences when computing similarity (A). The threshold is a percentile, not a chunk count (B wrong), maxTokens still applies (C wrong), and bufferSize is a sentence-grouping window, not a token overlap (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Model evaluation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation.html"
+    },
+    "difficulty": "hard",
+    "id": 53
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "For an automatic evaluation job you can request task-appropriate metrics such as Accuracy, Robustness, and Toxicity. Which pairing of metric to what it measures is correct?",
+    "options": [
+      "Accuracy measures output toxicity; Toxicity measures factual correctness.",
+      "Robustness measures response latency under load.",
+      "Toxicity measures how well outputs match references word-for-word.",
+      "Robustness measures how stable outputs are under small perturbations of the input (e.g. typos/paraphrase), while Toxicity measures the presence of harmful/offensive content."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: this swaps the definitions; Accuracy measures correctness against references and Toxicity measures harmful content, not the reverse.",
+      "Wrong: Robustness measures output stability under input perturbations, not response latency, which is an operational rather than quality metric.",
+      "Wrong: word-for-word reference matching is Accuracy-style scoring; Toxicity measures harmful/offensive content, not lexical overlap.",
+      "Correct: Robustness measures how stable outputs are under small input perturbations (typos/paraphrase), while Toxicity measures the presence of harmful/offensive content."
+    ],
+    "explanation": "Robustness gauges output stability when inputs are perturbed, and Toxicity flags harmful/offensive content in generations. Accuracy (not toxicity) tracks correctness against references, and none of these metrics measure latency, which is an operational, not quality, dimension.",
+    "reference": {
+      "title": "Amazon Bedrock — Model evaluation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation.html"
+    },
+    "difficulty": "hard",
+    "id": 54
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "Under bursty traffic your service intermittently gets ThrottlingException from bedrock-runtime:\n\n```python\nimport random, time\nfor attempt in range(6):\n    try:\n        return bedrock_runtime.converse(**params)\n    except botocore.exceptions.ClientError as e:\n        if e.response['Error']['Code'] == 'ThrottlingException':\n            time.sleep(min(2 ** attempt + random.random(), 30))\n            continue\n        raise\n```\n\nWhat property makes this behave better than a fixed 1-second retry?",
+    "options": [
+      "It uses a constant delay, which is more predictable for the service",
+      "It retries all exception types, maximizing eventual success",
+      "The attempt cap of 6 alone prevents a retry storm",
+      "It applies exponential backoff plus random jitter, desynchronizing concurrent clients to avoid a thundering-herd retry storm"
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: this loop does not use a constant delay; it computes 2 ** attempt plus jitter, so predictability is not its advantage and a constant delay is exactly what it improves on.",
+      "Wrong: the code retries only ThrottlingException and re-raises all other errors, so it does not retry all exception types (and doing so would be incorrect).",
+      "Wrong: the attempt cap of 6 limits total tries but does nothing to spread out concurrent clients; it alone does not prevent a retry storm.",
+      "Correct: it applies exponential backoff (2 ** attempt) plus random jitter, desynchronizing concurrent clients to avoid a thundering-herd retry storm that a fixed delay would cause."
+    ],
+    "explanation": "2 ** attempt grows the delay exponentially and random.random() adds jitter, so concurrent clients desynchronize and avoid a retry storm a fixed delay would cause. The delay is not constant (A wrong). It retries only ThrottlingException and re-raises others, which is correct, not indiscriminate (B wrong). The attempt cap limits total tries but does not desynchronize retries (C wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 55
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer sets maxTokens too low and the model stops mid-sentence.\n\n```python\nresp = br.converse(modelId=mid, messages=msgs, inferenceConfig={\"maxTokens\": 20})\nprint(resp[\"stopReason\"], len(resp[\"output\"][\"message\"][\"content\"][0][\"text\"]))\n```\n\nWhat stopReason is reported, and what does maxTokens control?",
+    "options": [
+      "\"end_turn\"; maxTokens caps the combined input and output token count",
+      "\"content_filtered\"; maxTokens triggers a guardrail when exceeded",
+      "\"max_tokens\"; maxTokens caps only generated output tokens, so hitting it truncates the response",
+      "\"stop_sequence\"; maxTokens is treated as an implicit stop sequence"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "\"end_turn\" signals a natural finish; hitting the token cap does not report end_turn, and maxTokens does not cap combined input+output.",
+      "\"content_filtered\" is a guardrail action; maxTokens is a length cap and does not trigger a guardrail.",
+      "Correct: maxTokens caps only generated output tokens, so reaching it truncates the response and reports stopReason \"max_tokens\".",
+      "maxTokens is a numeric length cap, not an implicit stop sequence, so stopReason is not \"stop_sequence\"."
+    ],
+    "explanation": "maxTokens limits only generated output tokens; when the model reaches that cap before finishing, Converse returns stopReason \"max_tokens\" and the text is truncated. It does not include input tokens, is unrelated to content filtering/guardrails, and is not a stop sequence.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 56
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "A single assistant turn returns two `toolUse` blocks (parallel tool calls):\n\n```python\ncontent = resp[\"output\"][\"message\"][\"content\"]\ncalls = [b[\"toolUse\"] for b in content if \"toolUse\" in b]\n# calls[0][\"toolUseId\"] == \"t1\", calls[1][\"toolUseId\"] == \"t2\"\n```\n\nHow must you respond on the next turn?",
+    "options": [
+      "Send two separate `user` messages, one `toolResult` each, in separate Converse calls.",
+      "Send only the `toolResult` for `t1`; the model will re-request `t2` afterward.",
+      "Merge both results into one `toolResult` with a list of ids.",
+      "Send one `user` message whose `content` list contains a `toolResult` block for `t1` and another for `t2`, each echoing its own `toolUseId`."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Splitting results across separate `user` messages/Converse calls leaves outstanding `toolUseId`s unmatched at each step, causing validation errors.",
+      "The model will not re-request `t2`; both results must be returned together or the history has an unanswered tool call and errors.",
+      "A `toolResult` block carries exactly one `toolUseId`, so you cannot merge multiple ids into a single result block.",
+      "Correct — reply with one `user` message whose `content` list contains a separate `toolResult` block per `toolUseId` (t1 and t2)."
+    ],
+    "explanation": "Parallel tool calls are answered in a single `user` message containing one `toolResult` block per outstanding `toolUseId`. Splitting into separate calls (A) or answering only one id (B) leaves the request history with unmatched tool calls and errors. A `toolResult` carries exactly one `toolUseId`, so you cannot merge ids into one block (C).",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 57
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A low-latency chatbot must serve a modest, frequently-updated set of embeddings with sub-millisecond vector lookups, and the data comfortably fits in memory. Which Bedrock-supported vector store best fits?",
+    "options": [
+      "OpenSearch Serverless, because only it supports vector search.",
+      "Aurora PostgreSQL pgvector, because in-memory speed requires a relational engine.",
+      "Amazon MemoryDB / Redis, an in-memory store offering very low-latency vector search well-suited to small, hot, frequently-updated datasets.",
+      "Amazon Neptune Analytics, because in-memory latency requires a graph engine."
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: OpenSearch Serverless is not the only store that supports vector search, and it is not the lowest-latency in-memory option.",
+      "Wrong: Aurora pgvector is disk-backed relational storage and does not deliver sub-millisecond in-memory lookups.",
+      "Correct: Amazon MemoryDB/Redis is an in-memory store offering very low-latency vector search, well-suited to small, hot, frequently-updated datasets.",
+      "Wrong: Neptune Analytics is a graph/GraphRAG engine, not an in-memory store optimized for sub-millisecond vector lookups."
+    ],
+    "explanation": "MemoryDB/Redis is an in-memory store that gives very low-latency vector lookups, ideal for small, hot, frequently-updated datasets (C). OpenSearch Serverless is not the only vector store (A), Aurora pgvector is disk-backed and not the lowest-latency option (B), and Neptune Analytics targets graph/GraphRAG rather than in-memory speed (D).",
+    "reference": {
+      "title": "Amazon Bedrock — Supported vector stores",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported-vector-stores.html"
+    },
+    "difficulty": "hard",
+    "id": 58
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "You are wiring a Lambda-backed action group. Which of the following are required or true for the executor to work end to end? Select TWO.",
+    "options": [
+      "The Lambda's resource policy must allow bedrock.amazonaws.com to invoke it (typically scoped to the agent's ARN via SourceArn).",
+      "The Lambda must return a response matching the agent's expected event contract (echoing actionGroup, function/apiPath, and a responseBody), or the agent cannot continue orchestration.",
+      "The Lambda handler must import the bedrock-agent-runtime SDK to send results back manually.",
+      "The action group's functionSchema and an apiSchema must both be supplied for Lambda execution."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: Bedrock invokes your Lambda, so the function's resource policy must allow the bedrock.amazonaws.com principal, typically scoped to the agent ARN via SourceArn.",
+      "Correct: the Lambda must return a response matching the agent's expected event contract (echoing actionGroup, function/apiPath, and a responseBody), or the agent cannot continue orchestration.",
+      "Wrong: with Lambda execution the agent manages the round-trip; the handler simply returns its response and does not call bedrock-agent-runtime to send results back.",
+      "Wrong: an action group takes exactly one of functionSchema or apiSchema, not both, so requiring both for Lambda execution is incorrect."
+    ],
+    "explanation": "Bedrock invokes your Lambda, so its resource policy must permit the Bedrock principal (usually restricted to the agent ARN), and the function must return the structured response the agent expects (echoing identifiers and a responseBody). With Lambda execution the agent handles the round-trip, so the handler does not call the runtime SDK, and you provide exactly one of functionSchema or apiSchema, not both.",
+    "reference": {
+      "title": "Amazon Bedrock — Agent action groups",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents-action-create.html"
+    },
+    "difficulty": "hard",
+    "id": 59
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "multi",
+    "question": "Which practices correctly reduce Bedrock inference cost without changing the model provider? Select THREE.",
+    "options": [
+      "Right-size the model: use a smaller/cheaper model for simple classification and reserve the largest model for hard tasks",
+      "Use prompt caching for large static prompt prefixes reused across requests",
+      "Send all traffic on-demand at maximum concurrency to finish faster",
+      "Use batch inference for large latency-tolerant jobs to get a lower per-token price"
+    ],
+    "correct": [
+      0,
+      1,
+      3
+    ],
+    "optionExplanations": [
+      "Correct: right-sizing the model, using a cheaper small model for simple classification and the largest only for hard tasks, directly lowers cost.",
+      "Correct: prompt caching for large static prompt prefixes reused across requests bills repeated tokens at the reduced cache-read rate.",
+      "Wrong: sending all traffic on-demand at maximum concurrency pays full per-token price and triggers throttling, saving nothing.",
+      "Correct: batch inference for large latency-tolerant jobs is billed at a lower per-token price than on-demand."
+    ],
+    "explanation": "Model right-sizing (A), prompt caching of static prefixes (B), and batch inference for offline jobs (D) all lower cost. Blasting on-demand at max concurrency pays full price and triggers throttling without saving money (C wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Batch inference",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 60
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer builds a Converse request with a system prompt and tuned sampling for a Mistral model on Bedrock. Which request is well-formed?",
+    "options": [
+      "converse(modelId=mid, messages=[{\"role\": \"user\", \"content\": \"Answer only in JSON. \" + q}], inferenceConfig={\"max_tokens\": 512})",
+      "converse(modelId=mid, system=\"Answer only in JSON.\", messages=[{\"role\": \"user\", \"text\": q}])",
+      "converse(modelId=mid, system=[{\"text\": \"Answer only in JSON.\"}], messages=[{\"role\": \"user\", \"content\": [{\"text\": q}]}], inferenceConfig={\"temperature\": 0.2, \"topP\": 0.9, \"maxTokens\": 512})",
+      "converse(modelId=mid, messages=[{\"role\": \"user\", \"content\": [{\"text\": q}]}], samplingConfig={\"temperature\": 0.2})"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Content is a raw string rather than a list of typed blocks, and the field is max_tokens instead of the required camelCase maxTokens.",
+      "system must be a list of content blocks (not a bare string), and the user message must use a content list of typed blocks (not a \"text\" key).",
+      "Correct: system is a list of content blocks, messages use content as a list of typed blocks ([{\"text\": ...}]), and inferenceConfig uses camelCase maxTokens with temperature/topP.",
+      "There is no samplingConfig parameter in Converse; sampling settings belong in inferenceConfig."
+    ],
+    "explanation": "The correct shape uses system as a list of content blocks, messages with content as a list of typed blocks ([{\"text\": ...}]), and inferenceConfig with camelCase maxTokens plus temperature/topP. Content must be a list of blocks (not a raw string), system must be a list (not a bare string), the field is maxTokens (not max_tokens), and there is no samplingConfig parameter.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 61
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "You switch from `converse` to `converse_stream` for a tool-using agent:\n\n```python\nresp = br.converse_stream(modelId=MID, messages=msgs, toolConfig=tc)\nfor event in resp[\"stream\"]:\n    if \"contentBlockDelta\" in event:\n        ...  # handle deltas\n    if \"messageStop\" in event:\n        ...  # stopReason here\n```\n\nWhat changes about handling the `tool_use` stop condition?",
+    "options": [
+      "Streaming does not support tool use; you must fall back to `converse`.",
+      "You accumulate `toolUse` input from `contentBlockDelta` events (the `input` arrives as incremental JSON string fragments) and read `stopReason` from the `messageStop` event before running the tool.",
+      "The full `toolUse.input` arrives atomically in the first `messageStart` event, so no accumulation is needed.",
+      "`converse_stream` returns `toolResult` blocks automatically; you only read them."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Streaming fully supports tool use; there is no need to fall back to `converse`.",
+      "Correct — accumulate `toolUse.input` from `contentBlockDelta` events (partial JSON string fragments) and read `stopReason` from the `messageStop` event before running the tool.",
+      "`toolUse.input` does not arrive atomically in `messageStart`; it streams incrementally and must be concatenated.",
+      "`converse_stream` never fabricates `toolResult` blocks—you produce those yourself after executing the tool."
+    ],
+    "explanation": "With `converse_stream`, tool-use arguments stream as partial JSON in `contentBlockDelta` events that you concatenate and parse, and the `stopReason` is delivered in the `messageStop` event. Streaming fully supports tool use (A wrong). Input is not delivered atomically at start (C), and the API never fabricates `toolResult` blocks for you (D) — those are yours to produce.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 62
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "multi",
+    "question": "A developer is deciding between retrieve, retrieve_and_generate, and multi-turn sessions in bedrock-agent-runtime. Select TWO correct statements.",
+    "options": [
+      "retrieve returns ranked chunks without calling a model, giving you full control to build a custom prompt downstream.",
+      "retrieve_and_generate both fetches passages and produces a grounded, cited answer in one call using the specified modelArn.",
+      "retrieve accepts a modelArn to generate a short summary of each chunk.",
+      "retrieve_and_generate cannot return citations; you must call retrieve separately to get sources.",
+      "retrieve performs generation but skips retrieval when a sessionId is supplied."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: retrieve returns ranked chunks without calling a model, giving you full control to build a custom prompt downstream.",
+      "Correct: retrieve_and_generate both fetches passages and produces a grounded, cited answer in one call using the specified modelArn.",
+      "Wrong: retrieve takes no modelArn and does not summarize chunks; it only returns raw ranked passages.",
+      "Wrong: retrieve_and_generate does return citations, so a separate retrieve call is not needed for sources.",
+      "Wrong: retrieve performs retrieval only and does not generate; a sessionId does not turn it into generation or disable retrieval."
+    ],
+    "explanation": "retrieve returns ranked chunks only, leaving prompt construction to you (A), while retrieve_and_generate retrieves and generates a grounded, cited answer in a single call with the given modelArn (B). retrieve takes no modelArn (C wrong), retrieve_and_generate does return citations (D wrong), and a sessionId adds conversational memory without disabling retrieval (E wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Agents",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html"
+    },
+    "difficulty": "hard",
+    "id": 63
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "multi",
+    "question": "Which statements correctly contrast Bedrock model customization approaches? Select TWO.",
+    "options": [
+      "Fine-tuning needs labeled prompt/completion data; continued pre-training uses unlabeled text.",
+      "Distillation is cheaper to serve than the teacher because the student is a smaller model, at the cost of some quality.",
+      "Continued pre-training produces an on-demand invocable model, unlike fine-tuning.",
+      "Imported models are produced by CreateModelCustomizationJob just like fine-tuned ones."
+    ],
+    "correct": [
+      0,
+      1
+    ],
+    "optionExplanations": [
+      "Correct: fine-tuning requires labeled prompt/completion data, whereas continued pre-training adapts the model from unlabeled text.",
+      "Correct: distillation yields a smaller student that is cheaper to serve than the teacher, trading some quality for lower inference cost.",
+      "Wrong: continued-pre-trained custom models are not on-demand; like fine-tuned models they require Provisioned Throughput to invoke.",
+      "Wrong: imported models come from CreateModelImportJob, not CreateModelCustomizationJob, which produces fine-tuned, continued-pre-trained, or distilled models."
+    ],
+    "explanation": "Fine-tuning is labeled, continued pre-training is unlabeled, and distillation yields a smaller, cheaper-to-serve student that trades a bit of quality for cost. Both fine-tuned and continued-pre-trained custom models require Provisioned Throughput (neither is on-demand), and imported models come from CreateModelImportJob, not the customization API.",
+    "reference": {
+      "title": "Amazon Bedrock — Model distillation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-distillation.html"
+    },
+    "difficulty": "hard",
+    "id": 64
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A guardrail has profanity blocking plus a custom word list:\n\n```python\nwordPolicyConfig={\n    \"wordsConfig\": [{\"text\": \"competitorX\"}],\n    \"managedWordListsConfig\": [{\"type\": \"PROFANITY\"}]\n}\n```\n\nWhich statement about this configuration is accurate?",
+    "options": [
+      "wordsConfig entries are regular expressions matched case-insensitively across substrings",
+      "PROFANITY is a content-filter harm category and cannot appear under wordPolicyConfig",
+      "managedWordListsConfig PROFANITY uses an AWS-maintained list, while wordsConfig blocks the exact custom terms you specify",
+      "Custom words require a denied topic definition to take effect"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: wordsConfig entries are literal terms, not regular expressions, and are not treated as regex substring patterns.",
+      "Wrong: PROFANITY here is a managed word list under wordPolicyConfig, which is a valid placement distinct from the content-filter harm categories.",
+      "Correct: managedWordListsConfig PROFANITY uses an AWS-maintained list, while wordsConfig blocks the exact custom terms you specify (e.g. competitorX).",
+      "Wrong: custom words in wordsConfig take effect on their own and do not require a denied topic definition."
+    ],
+    "explanation": "The managed PROFANITY list is maintained by AWS, and wordsConfig lets you add exact custom terms like a competitor name. wordsConfig entries are literal terms, not regexes (A wrong). PROFANITY is a managed word list under wordPolicyConfig, distinct from content-filter harm categories (B wrong). Custom words work on their own without a denied topic (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 65
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "multi",
+    "question": "An engineer parses a ConverseStream response and must handle each event correctly.\n\n```python\nfor event in resp[\"stream\"]:\n    ...  # dispatch by event key\n```\n\nWhich handling statements are correct? Select THREE.",
+    "options": [
+      "messageStart announces the assistant message and carries the role",
+      "contentBlockDelta carries incremental output via delta.text (or tool-use input deltas)",
+      "metadata carries usage (token counts) and latency metrics for the whole response",
+      "contentBlockStart carries the final aggregated usage totals for billing"
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "optionExplanations": [
+      "Correct: messageStart announces the assistant message and carries its role.",
+      "Correct: contentBlockDelta carries incremental output via delta.text (or tool-use input deltas).",
+      "Correct: the metadata event carries usage (token counts) and latency metrics for the whole response.",
+      "contentBlockStart only signals the beginning of a content block (e.g., a tool-use block) and carries no aggregated usage/billing totals."
+    ],
+    "explanation": "messageStart opens the assistant message with its role, contentBlockDelta streams incremental text/tool deltas, and the metadata event carries usage and latency metrics. contentBlockStart only signals the beginning of a content block (e.g., a tool-use block) and does not carry billing usage totals, so that option is wrong.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 66
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "For a deterministic extraction pipeline you set `inferenceConfig={\"temperature\": 0}`. A colleague claims outputs will now be byte-for-byte identical across every call forever. What is the most accurate response?",
+    "options": [
+      "Temperature 0 makes selection greedy and near-deterministic for a fixed model/version and input, but identical output is not guaranteed across model updates, region routing, or minor prompt changes; do not treat it as a cryptographic guarantee.",
+      "Correct — temperature 0 guarantees identical output permanently regardless of model version.",
+      "Temperature 0 is invalid; the minimum accepted value is 0.1.",
+      "You must also set `topP` to 0 or the output stays fully random."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct — temperature 0 gives greedy, near-deterministic decoding for a fixed model/version and input, but output can shift across model updates, region routing, or prompt changes.",
+      "Temperature 0 does not guarantee permanently identical output; model-version updates and backend changes can alter results.",
+      "Temperature 0 is a valid value; there is no 0.1 minimum in Converse's `inferenceConfig`.",
+      "`topP` need not be 0 for low-temperature determinism; greedy decoding at temperature 0 already selects the top token."
+    ],
+    "explanation": "Temperature 0 yields greedy, highly repeatable decoding for a fixed model version and input, but reproducibility can still shift across model version updates or backend changes, so it is not an absolute guarantee. Temperature 0 is valid (C wrong), and topP does not need to be 0 for low-temperature determinism (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Inference parameters",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html"
+    },
+    "difficulty": "hard",
+    "id": 67
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You need a multi-turn RAG assistant where follow-up questions like \"and what about lot 8?\" resolve against prior context.\n\n```python\nresp = rt.retrieve_and_generate(\n    input={\"text\": \"and what about lot 8?\"},\n    retrieveAndGenerateConfiguration={...},\n    sessionId=\"???\"\n)\n```\n\nHow should sessionId be used across turns?",
+    "options": [
+      "Generate a brand-new sessionId on every request so turns stay isolated for privacy.",
+      "Capture the sessionId returned by the first response and pass that same value on subsequent calls so Bedrock maintains conversational context across turns.",
+      "Set sessionId to the knowledgeBaseId so the KB tracks history.",
+      "sessionId must equal the modelArn to bind the conversation to a model."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: generating a brand-new sessionId every request discards prior context, so follow-ups cannot resolve against earlier turns.",
+      "Correct: capture the sessionId returned by the first response and reuse it on subsequent calls so Bedrock maintains conversational context across turns.",
+      "Wrong: sessionId is a conversation identifier, not the knowledgeBaseId, and the KB does not track history via that field.",
+      "Wrong: sessionId is unrelated to the modelArn and does not bind the conversation to a model."
+    ],
+    "explanation": "retrieve_and_generate returns a sessionId; reusing that same value on later calls lets Bedrock carry conversational context so follow-ups resolve correctly (B). A fresh sessionId each turn discards context (A), and sessionId is neither the knowledgeBaseId (C) nor the modelArn (D).",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge Bases",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html"
+    },
+    "difficulty": "hard",
+    "id": 68
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A developer creates an agent and an action group, then calls InvokeAgent against the TSTALIASID, but the new action group is never invoked and traces show the old toolset. They never called:\n\n```python\nba.prepare_agent(agentId=\"A1\")\n```\n\nWhat is the role of PrepareAgent and why does its absence explain this?",
+    "options": [
+      "PrepareAgent publishes a numbered version; without it no alias exists at all.",
+      "PrepareAgent retrains the foundation model on the new tools.",
+      "PrepareAgent only validates IAM permissions and has no effect on tool availability.",
+      "PrepareAgent packages the current DRAFT configuration (instructions, action groups, KBs) into the working draft the test alias serves; until you re-prepare after edits, the test alias keeps serving the previously prepared state."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: PrepareAgent does not publish a numbered version; versioning is a separate CreateAgentVersion step, and the TSTALIASID test alias exists independently.",
+      "Wrong: PrepareAgent does not retrain the foundation model; it recompiles the agent's configuration, and tools are never learned through training.",
+      "Wrong: PrepareAgent does far more than validate IAM; it packages the DRAFT config into the working draft, which is exactly what governs tool availability.",
+      "Correct: PrepareAgent compiles the current DRAFT (instructions, action groups, KB associations, guardrails) into the working draft that TSTALIASID serves, so edits made after the last prepare stay invisible until you prepare again."
+    ],
+    "explanation": "PrepareAgent compiles the current DRAFT (instructions, action groups, KB associations, guardrails) into the testable working draft that TSTALIASID serves, so edits made after the last prepare are invisible until you prepare again. It does not train the model, is more than an IAM check, and creating numbered versions is a separate CreateAgentVersion/alias step.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 69
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A developer wants the guardrail to explain WHY a Converse response was blocked, for tuning logs:\n\n```python\nresp = bedrock_runtime.converse(\n    modelId=\"anthropic.claude-3-5-sonnet-20240620-v1:0\",\n    messages=msgs,\n    guardrailConfig={\"guardrailIdentifier\": \"gr-1\", \"guardrailVersion\": \"3\", \"trace\": \"enabled\"}\n)\n```\n\nWhere does the assessment detail appear, and what is stopReason on a block?",
+    "options": [
+      "In resp['output']['message']; stopReason is 'end_turn' even when blocked",
+      "In resp['trace']['guardrail'], with stopReason 'guardrail_intervened'",
+      "Only in CloudTrail; the Converse response contains no trace",
+      "In resp['usage']; stopReason is 'max_tokens'"
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Wrong: a blocked response is not returned as a normal message in resp['output']['message'] with stopReason 'end_turn'; a block surfaces as guardrail intervention.",
+      "Correct: with trace='enabled', the Converse response includes resp['trace']['guardrail'] detailing which policies assessed the content, and a block sets stopReason to 'guardrail_intervened'.",
+      "Wrong: the trace is returned inline in the Converse API response when trace is enabled, not solely in CloudTrail.",
+      "Wrong: resp['usage'] reports token counts, not guardrail assessments, and 'max_tokens' is a length stopReason unrelated to guardrail blocks."
+    ],
+    "explanation": "With trace='enabled', the Converse response includes a guardrail trace (resp['trace']['guardrail']) detailing which policies assessed the content, and a block surfaces stopReason 'guardrail_intervened'. Blocked content is not a normal message with 'end_turn' (A wrong). The trace is in the API response, not solely CloudTrail (C wrong). 'max_tokens' is unrelated to guardrail blocks (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 70
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A developer must pass a base64/raw image plus a question to Amazon Nova via Converse for multimodal reasoning.\n\n```python\ncontent = <PLACEHOLDER>\nresp = br.converse(modelId=NOVA_ID,\n    messages=[{\"role\": \"user\", \"content\": content}],\n    inferenceConfig={\"maxTokens\": 300})\n```\n\nWhich content structure is correct?",
+    "options": [
+      "[{\"imageUrl\": \"data:image/jpeg;base64,...\"}, {\"text\": \"What defect is shown?\"}]",
+      "\"<image>...base64...</image> What defect is shown?\"",
+      "[{\"image\": {\"format\": \"jpeg\", \"source\": {\"bytes\": img_bytes}}}, {\"text\": \"What defect is shown?\"}]",
+      "[{\"text\": \"What defect is shown?\"}] with the image passed in inferenceConfig={\"image\": img_bytes}"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Converse has no imageUrl/data-URI field; images are passed as image blocks with raw bytes, not as URLs.",
+      "Converse does not accept an image embedded in a raw text string with pseudo-tags.",
+      "Correct: a Converse image block uses a format and a source carrying raw bytes (source.bytes), alongside a text block in the content list.",
+      "Images are never passed via inferenceConfig; multimodal input belongs in the message content list."
+    ],
+    "explanation": "Converse multimodal content uses an image block with a format and a source carrying raw bytes (source.bytes), alongside a text block, in the content list. Converse does not use an imageUrl/data-URI field, does not accept images embedded in a raw string, and images are never passed via inferenceConfig.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 71
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "You send 12 high-resolution site photos plus a long spec PDF in one Converse request and hit throughput/context pressure. Which statement about multimodal token budgeting is accurate?",
+    "options": [
+      "Images are free; only text blocks consume input tokens, so image count never affects the context budget.",
+      "Each image consumes input tokens roughly proportional to its dimensions/resolution, so downsizing images and sending fewer per request reduces token usage and helps stay within the context window.",
+      "Documents are converted to a single token regardless of length, so PDF size is irrelevant.",
+      "Multimodal blocks are billed as output tokens, not input tokens."
+    ],
+    "correct": [
+      1
+    ],
+    "optionExplanations": [
+      "Images are not free—they consume input tokens proportional to resolution/size, so image count does affect the context budget.",
+      "Correct — each image costs input tokens roughly proportional to its dimensions/resolution, so downsizing and sending fewer per request reduces token usage.",
+      "Documents are tokenized by their extracted text content, not collapsed to a single token, so PDF length very much matters.",
+      "Multimodal inputs are billed as input tokens, not output tokens."
+    ],
+    "explanation": "Images cost input tokens scaling with resolution/size, and documents are tokenized by their text content, so both count against the input context budget; downsizing and trimming images (and splitting requests) is the practical fix. Images are not free (A), documents are not one token (C), and multimodal inputs are billed as input, not output, tokens (D).",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 72
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "You want each S3 document to carry filterable attributes (project, docType) usable in retrieval filters. How do you attach this metadata for a Bedrock Knowledge Base S3 data source?",
+    "options": [
+      "Embed the attributes as the first line of each PDF's text and Bedrock will parse them into filters.",
+      "Pass a metadata dict in the retrieve call; ingestion metadata is not supported.",
+      "Set S3 object tags only; Bedrock reads tags as filter metadata automatically.",
+      "Place a companion <filename>.metadata.json sidecar next to each object containing a metadataAttributes object, then run an ingestion job so the attributes are indexed and become usable in filter expressions."
+    ],
+    "correct": [
+      3
+    ],
+    "optionExplanations": [
+      "Wrong: attributes placed in the PDF body text are not parsed into filterable metadata by Bedrock.",
+      "Wrong: ingestion-time metadata is supported and filters operate on it; you do not supply filter metadata as a dict in the retrieve call.",
+      "Wrong: Bedrock does not read S3 object tags as filter metadata for Knowledge Bases.",
+      "Correct: place a <filename>.metadata.json sidecar with a metadataAttributes object next to each object, then run an ingestion job so the attributes are indexed and usable in filters."
+    ],
+    "explanation": "For S3 sources you attach a <filename>.metadata.json sidecar with metadataAttributes, then run ingestion so the attributes are indexed and filterable (D). Attributes in body text are not parsed into filters (A), filters operate on ingested metadata rather than being supplied only at query time (B), and S3 object tags are not the metadata mechanism for Knowledge Bases (C).",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge Bases",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html"
+    },
+    "difficulty": "hard",
+    "id": 73
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "During distillation you notice the teacher's synthesized responses are what the student learns from. Given:\n\n```python\ncustomizationConfig={\"distillationConfig\": {\"teacherModelConfig\": {\n    \"teacherModelIdentifier\": TEACHER,\n    \"maxResponseLengthForInference\": 512}}}\n```\n\nWhat does maxResponseLengthForInference control and why does it matter for distillation quality?",
+    "options": [
+      "It caps the length of the teacher's generated responses used as training targets; too small truncates the labels the student learns, hurting quality on long-form tasks.",
+      "It sets the student's maximum output length at deployment time.",
+      "It limits the number of training prompts processed.",
+      "It is the maximum sequence length of the input prompts, rejecting longer ones."
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: it caps the length of the teacher's generated responses used as training targets, so setting it too low truncates those labels and hurts the student on long-form tasks.",
+      "Wrong: it bounds the teacher's label-generation length during training, not the student's maximum output length at deployment time.",
+      "Wrong: it governs generated response length, not the number of training prompts processed.",
+      "Wrong: it limits generated response length, not input prompt sequence length, and does not reject over-length prompts."
+    ],
+    "explanation": "maxResponseLengthForInference bounds how long the teacher's generated answers (the distillation labels) can be; setting it too low truncates the very targets the student imitates, degrading long-form performance. It governs teacher outputs during label synthesis, not the student's deployment output length, the prompt count, or input truncation.",
+    "reference": {
+      "title": "Amazon Bedrock — Model distillation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-distillation.html"
+    },
+    "difficulty": "hard",
+    "id": 74
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "A guardrail is attached in your wrapper, but a pen test shows a user can still get disallowed content by calling InvokeModel directly (bypassing the wrapper that adds guardrailConfig). What is the correct architectural fix?",
+    "options": [
+      "Publish a new guardrail version so it applies globally to the account's InvokeModel calls",
+      "Set the guardrail to DRAFT so it enforces on all calls automatically",
+      "Add an IAM condition (bedrock:GuardrailIdentifier) so InvokeModel is denied unless the matching guardrail is attached to the request",
+      "Rely on the model provider's built-in alignment instead of a guardrail"
+    ],
+    "correct": [
+      2
+    ],
+    "optionExplanations": [
+      "Wrong: publishing a new guardrail version creates an immutable snapshot but does not make the guardrail auto-apply to the account's InvokeModel calls; guardrails are per-request.",
+      "Wrong: DRAFT is just the mutable working copy and does not enforce automatically on all calls; it has no global-enforcement effect.",
+      "Correct: guardrails are per-request, so enforcement is made mandatory via an IAM condition (bedrock:GuardrailIdentifier) that denies InvokeModel unless the matching guardrail is attached, closing the bypass.",
+      "Wrong: relying on the provider's built-in alignment is not a substitute for an enforced guardrail and cannot close the direct-InvokeModel bypass."
+    ],
+    "explanation": "Guardrails are per-request, not account-global, so enforcement must be made mandatory via IAM: denying InvokeModel unless the request carries the required guardrail (bedrock:GuardrailIdentifier condition) closes the bypass. Publishing a version does not make it auto-apply (A wrong). DRAFT is just a working copy, not a global enforcement switch (B wrong). Provider alignment is not a substitute for enforced guardrails (D wrong).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 75
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A production endpoint invoking Anthropic Claude in us-east-1 begins returning ThrottlingException during daily traffic peaks, even though the account is well under its overall service quota. The team wants higher sustained throughput without reserving dedicated capacity and can tolerate requests being served from other Regions in the same geography. What should they use?",
+    "options": [
+      "An on-demand cross-region inference profile so requests are automatically routed across Regions in the geography for higher throughput and resilience",
+      "A single-Region Provisioned Throughput reservation pinned to us-east-1",
+      "Batch inference jobs to spread the load over time",
+      "A latency-optimized inference profile to remove throttling"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: an on-demand cross-region (system-defined) inference profile distributes traffic across the Regions in its geography, raising effective throughput and resilience with no reserved capacity.",
+      "Provisioned Throughput reserves dedicated capacity (and cost) in one Region — the opposite of 'without reserving dedicated capacity'.",
+      "Batch inference is asynchronous and does not help a real-time endpoint's peak throughput.",
+      "Latency-optimized inference reduces response latency on supported models; it does not add cross-Region capacity to relieve throttling."
+    ],
+    "explanation": "Cross-region inference profiles route on-demand requests across the Regions in a geography, increasing sustained throughput and availability without a capacity reservation. Requests may be processed in any Region within the profile's geography. Provisioned Throughput reserves capacity in a single Region, batch is asynchronous, and latency-optimized inference targets latency, not throttling.",
+    "reference": {
+      "title": "Amazon Bedrock — Cross-region inference",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 76
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "During a Converse tool-use exchange, the model returns a response with stopReason 'tool_use' containing a toolUse block that names a function and its input. What must the application do next to continue the conversation correctly?",
+    "options": [
+      "Execute the requested tool, then send the result back as a toolResult content block in a new user message and call Converse again",
+      "Ignore the block and re-send the original prompt with a higher temperature",
+      "Return the toolUse block unchanged as the assistant's final answer",
+      "Switch to InvokeModel because Converse cannot complete tool calls"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: the app runs the tool, wraps the output in a toolResult (referencing the toolUseId) inside a user-role message, and calls Converse again so the model can use the result.",
+      "Re-sending the prompt discards the tool request and breaks the tool-use loop.",
+      "A toolUse block is a request for data, not a final answer to surface to the user.",
+      "Converse fully supports the tool-use loop; switching APIs is unnecessary."
+    ],
+    "explanation": "The tool-use loop: model emits toolUse with stopReason 'tool_use' → app executes the tool → app returns a toolResult (matching toolUseId) in a user message → Converse is called again so the model incorporates the result.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 77
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A Knowledge Base indexes long policy manuals. Retrieved chunks frequently cut sentences mid-thought and lose surrounding context, degrading answer quality. Which change most directly addresses this at ingestion time?",
+    "options": [
+      "Adjust the chunking strategy — e.g., semantic or hierarchical chunking, or larger chunks with overlap — so retrieved segments preserve context",
+      "Lower the model temperature during generation",
+      "Switch the generation model to a larger one",
+      "Increase the number of results returned (topK) without changing chunking"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: chunking strategy determines how documents are split; semantic/hierarchical chunking or larger overlapping chunks keep context intact.",
+      "Temperature affects generation randomness, not how source text was split during ingestion.",
+      "A bigger generation model cannot recover context that was lost when the source was fragmented.",
+      "Returning more fragmented chunks adds noise without fixing the underlying fragmentation."
+    ],
+    "explanation": "Context loss from mid-sentence splits is a chunking problem solved at ingestion. Bedrock Knowledge Bases support fixed, semantic, and hierarchical chunking (plus overlap); choosing a context-preserving strategy is the direct fix.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge base chunking & parsing",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking-parsing.html"
+    },
+    "difficulty": "hard",
+    "id": 78
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A Bedrock Agent must be able to look up order status by calling an existing internal REST service during a conversation. What is the standard way to give the agent this capability?",
+    "options": [
+      "Define an action group with an API/function schema, backed by a Lambda function that calls the internal service",
+      "Paste the API documentation into the agent's instructions and hope it calls the endpoint",
+      "Enable Provisioned Throughput on the agent",
+      "Attach a Guardrail that forwards requests to the service"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: action groups define the operations (via OpenAPI/function schema) and are fulfilled by a Lambda function (or return of control) that performs the call.",
+      "Instructions alone cannot make the agent invoke an external service; there is no execution path.",
+      "Provisioned Throughput is a capacity mode and does not grant tool/API capabilities.",
+      "Guardrails filter content for safety; they do not execute API calls."
+    ],
+    "explanation": "Bedrock Agents call external systems through action groups: you declare operations with a schema and back them with a Lambda function that performs the work (or use return of control to let your app execute).",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 79
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "Across several applications and models, a company must consistently block disallowed topics, filter hate/violence content, and redact PII from both prompts and responses. Which Bedrock capability provides this reusable policy layer?",
+    "options": [
+      "Amazon Bedrock Guardrails, which can be attached to model calls or applied via ApplyGuardrail to filter content, denied topics, and PII",
+      "IAM policies scoped to model ARNs",
+      "A VPC interface endpoint",
+      "Model invocation logging"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: Guardrails enforce content filters, denied topics, word filters, and PII handling, and can be reused across models and applications.",
+      "IAM controls who can invoke which models; it does not inspect or filter prompt/response content.",
+      "A VPC endpoint controls network path privacy, not content safety.",
+      "Invocation logging records requests/responses for audit; it does not block or redact content."
+    ],
+    "explanation": "Bedrock Guardrails provide a reusable responsible-AI policy layer (content filters, denied topics, word/PII filters, contextual grounding). They can be attached to Converse/InvokeModel or applied independently with ApplyGuardrail across models.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 80
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "A nightly pipeline must summarize roughly two million archived documents stored in Amazon S3. Latency per item is irrelevant, but cost matters and the job should not compete with the interactive API traffic. Which Bedrock capability best fits?",
+    "options": [
+      "Batch inference via CreateModelInvocationJob, reading input from S3 and writing results back to S3 at a lower per-token price",
+      "A high concurrency of on-demand InvokeModel calls",
+      "ConverseStream to overlap generation with processing",
+      "Provisioned Throughput sized for two million requests"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: batch inference processes large S3 datasets asynchronously at a discounted price and runs separately from real-time traffic.",
+      "Flooding on-demand InvokeModel would risk throttling and compete with interactive traffic at full price.",
+      "Streaming only changes how a single response is delivered; it does not address large asynchronous batch workloads or cost.",
+      "Provisioned Throughput reserves capacity for steady real-time load and is not the cost-optimal path for a one-off bulk job."
+    ],
+    "explanation": "Bedrock batch inference (CreateModelInvocationJob) is designed for large, latency-insensitive datasets in S3, runs asynchronously, and is offered at a lower price than on-demand — ideal for bulk offline summarization.",
+    "reference": {
+      "title": "Amazon Bedrock — Batch inference",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 81
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "A model intermittently returns answers in prose when the downstream parser requires a strict JSON object. Instructions alone have not fixed it. Which prompt-engineering technique most reliably enforces the exact output shape?",
+    "options": [
+      "Provide few-shot examples that each show input paired with the exact desired JSON output",
+      "Increase temperature so the model explores more formats",
+      "Remove the system prompt to avoid conflicting guidance",
+      "Ask the model to 'try harder to use JSON' at the end of the prompt"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: concrete few-shot examples demonstrating the precise JSON shape strongly bias the model toward that format.",
+      "Higher temperature increases variability, making format drift more likely, not less.",
+      "Removing the system prompt discards useful constraints and rarely improves formatting.",
+      "Vague pleading is far less effective than showing exemplars of the required structure."
+    ],
+    "explanation": "Few-shot prompting — showing several input→output pairs in the exact target format — is the most dependable way to lock in a structured output shape, especially combined with a low temperature.",
+    "reference": {
+      "title": "Amazon Bedrock — Converse API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html"
+    },
+    "difficulty": "hard",
+    "id": 82
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A team replaces the embedding model used for their vector index with a newer one that produces different-dimension vectors. Queries now return irrelevant results. What is the required corrective action?",
+    "options": [
+      "Re-embed and re-index the entire corpus with the new model so document and query embeddings come from the same model",
+      "Keep the old document vectors and only switch the query-time model",
+      "Pad the old vectors with zeros to match the new dimensions",
+      "Lower the similarity threshold to accept more matches"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: query and document vectors must be produced by the same embedding model; changing models requires rebuilding the whole index.",
+      "Mixing an old document space with a new query model yields incomparable vectors and poor retrieval.",
+      "Zero-padding does not map old vectors into the new model's semantic space; results stay wrong.",
+      "Loosening the threshold surfaces more irrelevant matches rather than fixing the space mismatch."
+    ],
+    "explanation": "Embeddings are only comparable within the same model's vector space. Switching embedding models invalidates existing vectors, so you must re-embed and re-index the full corpus with the new model.",
+    "reference": {
+      "title": "Amazon Bedrock — Titan Text Embeddings",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html"
+    },
+    "difficulty": "hard",
+    "id": 83
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "A company has thousands of labeled prompt-and-ideal-response pairs and wants a base model to adopt their specific answer style and terminology. Which customization approach fits, and how does it differ from continued pre-training?",
+    "options": [
+      "Fine-tuning on the labeled pairs; continued pre-training instead uses large amounts of unlabeled domain text",
+      "Continued pre-training on the labeled pairs; fine-tuning requires unlabeled text",
+      "Model distillation on the labeled pairs; it needs no data",
+      "RAG, because customization always means retrieval"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: fine-tuning uses labeled prompt/completion examples to shape behavior/style; continued pre-training ingests large unlabeled corpora to add domain knowledge.",
+      "This reverses the definitions — fine-tuning is the labeled-data method.",
+      "Distillation transfers a teacher model's behavior and requires data; it is not the labeled-pairs style-adaptation method described.",
+      "RAG grounds answers with retrieved context but does not change the model's weights or inherent style."
+    ],
+    "explanation": "Fine-tuning uses labeled examples (e.g., JSONL prompt/completion) to specialize style and behavior. Continued pre-training uses large unlabeled domain text to build knowledge. Both produce custom models needing Provisioned Throughput to invoke.",
+    "reference": {
+      "title": "Amazon Bedrock — Model distillation",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-distillation.html"
+    },
+    "difficulty": "hard",
+    "id": 84
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "Compliance requires that data associated with a fine-tuning job and the resulting custom model be encrypted with a key the organization controls and can audit and revoke. What should be used?",
+    "options": [
+      "A customer managed AWS KMS key (CMK) configured for the model customization job and custom model",
+      "The default AWS owned key with no configuration",
+      "Client-side base64 encoding of the training data",
+      "A VPC interface endpoint"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: a customer managed KMS key lets the organization control, audit (via CloudTrail), rotate, and revoke access to the encryption key used for the job and custom model.",
+      "An AWS owned/managed key does not give the customer control, key policies, or revocation as required.",
+      "Base64 is an encoding, not encryption, and provides no confidentiality.",
+      "A VPC endpoint addresses network privacy, not encryption key ownership."
+    ],
+    "explanation": "For customer-controlled encryption of customization jobs and custom models, configure a customer managed KMS key (CMK). This gives you key policies, rotation, auditability, and revocation that AWS owned keys do not.",
+    "reference": {
+      "title": "Amazon Bedrock — VPC interface endpoints (PrivateLink)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/vpc-interface-endpoints.html"
+    },
+    "difficulty": "hard",
+    "id": 85
+  },
+  {
+    "category": "Foundation Models & Bedrock Inference APIs",
+    "type": "single",
+    "question": "An extraction service must return the same structured output for the same input as consistently as possible. Which inference parameter change most directly reduces randomness in the generated text?",
+    "options": [
+      "Lower the temperature toward 0",
+      "Increase maxTokens",
+      "Raise top_p toward 1.0",
+      "Add more stop sequences"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: temperature scales the randomness of sampling; lowering it toward 0 makes output more deterministic and repeatable.",
+      "maxTokens only caps output length; it does not affect determinism.",
+      "Raising top_p widens the candidate token pool, generally increasing variability rather than reducing it.",
+      "Stop sequences control where generation halts, not how random the sampled tokens are."
+    ],
+    "explanation": "Determinism is governed chiefly by temperature (and secondarily top_p). Lowering temperature toward 0 minimizes randomness. maxTokens and stop sequences shape length/termination, not variability.",
+    "reference": {
+      "title": "Amazon Bedrock — Inference parameters",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference-parameters.html"
+    },
+    "difficulty": "hard",
+    "id": 86
+  },
+  {
+    "category": "Prompt Engineering & Tool Use",
+    "type": "single",
+    "question": "For a step in a workflow, the application must guarantee that the model calls a specific declared tool rather than answering directly or choosing another tool. Assuming the model supports it, how is this enforced in Converse?",
+    "options": [
+      "Set toolChoice to require that specific tool by name",
+      "Delete all other tools from toolConfig for that request",
+      "Set temperature to 0 so the model is forced to call the tool",
+      "Add 'you must call the tool' only in the user message and hope the model complies"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: toolChoice can be set to 'tool' with the tool's name to force that specific tool call on models that support toolChoice.",
+      "Removing other tools limits options but still does not guarantee the remaining tool is called rather than a text answer.",
+      "temperature affects sampling randomness, not whether a tool is invoked.",
+      "Natural-language insistence is not a guarantee; toolChoice is the explicit control."
+    ],
+    "explanation": "toolChoice controls tool invocation: 'auto' (model decides), 'any' (must call some tool), or 'tool' with a name (must call that tool). To force a named tool, set toolChoice to that tool, on models that support it.",
+    "reference": {
+      "title": "Amazon Bedrock — Use a tool (function calling)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html"
+    },
+    "difficulty": "hard",
+    "id": 87
+  },
+  {
+    "category": "RAG, Embeddings & Knowledge Bases",
+    "type": "single",
+    "question": "A multi-tenant RAG application must ensure that a query only retrieves passages belonging to the requesting tenant, even though all tenants share one Knowledge Base index. What is the appropriate mechanism?",
+    "options": [
+      "Attach tenant metadata to documents at ingestion and apply a metadata filter on each retrieval request",
+      "Rely on a higher similarity threshold to exclude other tenants",
+      "Create a separate foundation model per tenant",
+      "Lower topK so fewer cross-tenant results appear"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: document metadata plus a metadata filter at query time restricts retrieval to the matching tenant's passages.",
+      "Similarity thresholds rank by relevance, not ownership; they cannot enforce tenant isolation.",
+      "The foundation model does not control which passages are retrieved from the index.",
+      "Reducing topK just returns fewer results and still risks leaking other tenants' data."
+    ],
+    "explanation": "Bedrock Knowledge Bases support attaching metadata to documents and applying metadata filters on Retrieve/RetrieveAndGenerate. Filtering on a tenant attribute enforces per-tenant retrieval isolation within a shared index.",
+    "reference": {
+      "title": "Amazon Bedrock — Knowledge Bases",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html"
+    },
+    "difficulty": "hard",
+    "id": 88
+  },
+  {
+    "category": "Agents, Customization & Evaluation",
+    "type": "single",
+    "question": "Before launch, a team must compare two candidate models on their own dataset for accuracy and quality, using both automatic metrics and human reviewers. Which Bedrock feature supports this directly?",
+    "options": [
+      "Bedrock model evaluation jobs, which offer automatic metrics and human (or LLM-as-a-judge) evaluation on your dataset",
+      "CloudWatch metrics for the endpoints",
+      "Provisioned Throughput benchmarking",
+      "Guardrails content filters"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: Bedrock model evaluation lets you compare models on your dataset using automatic metrics, human review, or LLM-as-a-judge.",
+      "CloudWatch reports operational metrics (latency, invocations), not answer quality/accuracy on a dataset.",
+      "Provisioned Throughput concerns capacity, not evaluation of output quality.",
+      "Guardrails enforce safety policies; they do not benchmark model accuracy."
+    ],
+    "explanation": "Bedrock model evaluation supports automatic metric-based jobs, human evaluation, and LLM-as-a-judge to compare models on a task dataset — the right tool for pre-launch quality/accuracy comparison.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 89
+  },
+  {
+    "category": "Security, Responsible AI & Operations",
+    "type": "single",
+    "question": "Following least privilege, an IAM role for a service should be able to invoke only two approved foundation models and nothing else in Bedrock. How should the policy be written?",
+    "options": [
+      "Grant bedrock:InvokeModel (and InvokeModelWithResponseStream) with Resource scoped to the two specific model ARNs",
+      "Grant bedrock:* on Resource '*' for simplicity",
+      "Grant bedrock:InvokeModel on Resource '*' and rely on a Guardrail to restrict models",
+      "Attach the AdministratorAccess managed policy to the role"
+    ],
+    "correct": [
+      0
+    ],
+    "optionExplanations": [
+      "Correct: scoping bedrock:InvokeModel/InvokeModelWithResponseStream to the two model ARNs enforces least privilege on exactly the approved models.",
+      "bedrock:* on '*' grants far more than invoking two models, violating least privilege.",
+      "Guardrails do not restrict which models a principal may invoke; the Resource scope must do that.",
+      "AdministratorAccess is the opposite of least privilege."
+    ],
+    "explanation": "Least privilege for model access is enforced with an IAM policy allowing bedrock:InvokeModel (and the streaming variant) on the specific model ARNs. Guardrails govern content, not which models an identity can call.",
+    "reference": {
+      "title": "Amazon Bedrock — Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html"
+    },
+    "difficulty": "hard",
+    "id": 90
+  }
+]
